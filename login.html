@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>로그인 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>🌾 추억카드뽑기</h1>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">이메일</label>
+          <input type="email" id="email" required placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="login-btn" id="loginBtn">로그인</button>
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './js/firebase.js';
+    import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMessage.style.display = 'none';
+      loginBtn.classList.add('loading');
+      loginBtn.disabled = true;
+
+      try {
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+        window.location.href = './index.html';
+      } catch (error) {
+        let message = '로그인에 실패했습니다.';
+
+        if (error.code === 'auth/invalid-email') {
+          message = '유효하지 않은 이메일입니다.';
+        } else if (error.code === 'auth/user-not-found') {
+          message = '등록되지 않은 계정입니다.';
+        } else if (error.code === 'auth/wrong-password') {
+          message = '비밀번호가 틀렸습니다.';
+        } else if (error.code === 'auth/too-many-requests') {
+          message = '너무 많은 시도를 했습니다. 잠시 후 다시 시도해주세요.';
+        }
+
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        loginBtn.classList.remove('loading');
+        loginBtn.disabled = false;
+      }
+    });
+
+    // 이미 로그인되어 있으면 홈으로
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        window.location.href = './index.html';
+      }
+    });
+  </script>
+</body>
+</html>

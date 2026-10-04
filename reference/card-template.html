@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>추억카드 템플릿</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceaf3;--ink:#1f1d2e;--mute:#6b6880;--surf:#fbfaff;--line:#d5d1e4;--btn:#2b2547;--btn-ink:#fff;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#16151f;--ink:#eceaf6;--mute:#a09cb8;--surf:#23212f;--line:#363349;--btn:#e7e2ff;--btn-ink:#1f1d2e}
+}
+:root[data-theme="dark"]{--bg:#16151f;--ink:#eceaf6;--mute:#a09cb8;--surf:#23212f;--line:#363349;--btn:#e7e2ff;--btn-ink:#1f1d2e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.6}
+main{max-width:960px;margin:0 auto;padding:28px 18px 56px}
+h1,h2{font-family:"Gowun Batang","Noto Serif KR",serif;margin:0}
+h1{font-size:28px}
+h2{font-size:20px;margin-top:44px}
+.lead{color:var(--mute);margin:6px 0 0;max-width:46ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-top:16px}
+
+/* ---- 카드 템플릿 ---- */
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes spin{to{--a:360deg}}
+.card{display:block;aspect-ratio:5/7;padding:5px;border-radius:14px;background:var(--frame);position:relative;box-shadow:var(--glow,0 2px 8px rgba(0,0,0,.14))}
+.card__in{height:100%;border-radius:10px;background:var(--surf);display:flex;flex-direction:column;overflow:hidden}
+.card__photo{flex:0 0 54%;position:relative;
+  background:radial-gradient(circle at 72% 28%,rgba(255,255,255,.55) 0 13%,transparent 14%),linear-gradient(160deg,hsl(var(--h) 55% 78%),hsl(calc(var(--h) + 40) 50% 58%))}
+.card__no{position:absolute;left:8px;top:8px;font-size:11px;background:rgba(0,0,0,.5);color:#fff;padding:1px 8px;border-radius:99px}
+.card__body{padding:8px 10px 9px;display:flex;flex-direction:column;gap:3px;min-height:0;flex:1}
+.card__badge{align-self:flex-start;font-size:11px;color:#fff;background:var(--frame);padding:0 8px;border-radius:99px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.card__title{font-family:"Gowun Batang",serif;font-weight:700;font-size:15px;line-height:1.3;margin:2px 0 0}
+.card__desc{font-size:12px;color:var(--mute);margin:0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card__meta{margin-top:auto;font-size:11px;color:var(--mute)}
+
+/* 등급은 data-rarity 속성으로만 분기 */
+.card[data-rarity="rare"]{--frame:linear-gradient(145deg,#8fb0d0,#5a7ea3)}
+.card[data-rarity="superrare"]{--frame:linear-gradient(145deg,#5cc4bb,#23847e)}
+.card[data-rarity="hero"]{--frame:linear-gradient(145deg,#b48ae6,#6a3fb0)}
+.card[data-rarity="myth"]{--frame:linear-gradient(145deg,#f27a9a,#b32a52 55%,#f27a9a);--glow:0 0 16px rgba(220,70,110,.4)}
+.card[data-rarity="legend"]{--frame:linear-gradient(135deg,#f6d878,#c18a1c 40%,#fff2b0 55%,#c18a1c 70%,#f0cf6a);--glow:0 0 18px rgba(230,180,60,.5)}
+.card[data-rarity="ultra"]{--frame:conic-gradient(from var(--a),#ff6ec7,#ffd36e,#7dffb0,#6ec8ff,#b46eff,#ff6ec7);--glow:0 0 22px rgba(180,110,255,.55);animation:spin 6s linear infinite}
+
+/* 도감 미보유 */
+.card--locked{--frame:linear-gradient(145deg,var(--line),var(--line));box-shadow:none}
+.card--locked .card__photo{background:var(--line)}
+.card--locked .card__no{background:transparent;color:var(--mute)}
+.card--locked .card__title,.card--locked .card__meta{color:var(--mute)}
+.card--locked .card__badge{display:none}
+
+/* ---- 뽑기 연출 ---- */
+.stage{width:min(230px,62vw);margin:20px auto 0;perspective:1000px}
+.flipper{aspect-ratio:5/7;position:relative;transform-style:preserve-3d;transition:transform .7s}
+.flipper.on{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.front{transform:rotateY(180deg)}
+.back{border-radius:14px;background:linear-gradient(145deg,#3a3560,#1f1d2e);display:grid;place-items:center;color:#d9d3ff;font-size:44px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.back::before{content:"";position:absolute;inset:8px;border:1.5px solid rgba(217,211,255,.35);border-radius:9px}
+.row{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:20px}
+button{font:inherit;border:0;border-radius:99px;padding:11px 26px;min-height:44px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+button:focus-visible{outline:3px solid #8a5cc8;outline-offset:3px}
+button:disabled{opacity:.5;cursor:default}
+#result{min-height:1.6em;margin:0;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){.card[data-rarity="ultra"]{animation:none}.flipper{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>추억카드 템플릿</h1>
+  <p class="lead">카드 한 장은 데이터(사진, 제목, 설명, 등급, 분류) 하나로 만들어져요. 아래 카드는 모두 샘플이에요.</p>
+
+  <h2>도감 미리보기</h2>
+  <p class="lead">6개 등급이 모두 보이고, 마지막 카드는 아직 못 뽑은 상태예요.</p>
+  <div class="grid" id="grid"></div>
+
+  <h2>뽑기 연출</h2>
+  <p class="lead">PRD의 등급 확률대로 뽑아요. 울트라는 2%라 쉽게 안 나와요.</p>
+  <div class="stage"><div class="flipper" id="flipper">
+    <div class="face back" aria-hidden="true">♡</div>
+    <div class="face front" id="front"></div>
+  </div></div>
+  <div class="row">
+    <button id="draw" type="button">한 장 뽑기</button>
+    <p id="result" aria-live="polite"></p>
+  </div>
+</main>
+
+<script>
+const RARITY = {
+  ultra:{label:"울트라",w:2}, legend:{label:"전설",w:5}, myth:{label:"신화",w:8},
+  hero:{label:"영웅",w:15}, superrare:{label:"초희귀",w:30}, rare:{label:"희귀",w:40}
+};
+// 실제로는 Firestore의 cards 컬렉션에서 가져올 데이터 모양
+const CARDS = [
+  {dexNo:3,  title:"첫 데이트 카페", desc:"어색해서 아메리카노만 두 잔 시켰던 날.", rarity:"rare",      category:"데이트", date:"2024.03.09", hue:30},
+  {dexNo:11, title:"우산 하나",      desc:"비가 와서 한 우산을 같이 쓰고 걸었어.",   rarity:"superrare", category:"일상",   date:"2024.05.18", hue:190},
+  {dexNo:17, title:"한강 야경",      desc:"돗자리 펴고 치킨 먹으며 밤까지 있었던 날.", rarity:"hero",      category:"데이트", date:"2024.07.02", hue:260},
+  {dexNo:24, title:"같이 끓인 라면", desc:"계란을 두 개 넣을지로 진지하게 싸웠다.",   rarity:"myth",      category:"일상",   date:"2024.09.14", hue:340},
+  {dexNo:31, title:"처음 간 여행",   desc:"기차 창가 자리를 서로 양보하던 아침.",     rarity:"legend",    category:"여행",   date:"2024.11.23", hue:45},
+  {dexNo:50, title:"우리의 첫날",    desc:"모든 게 여기서부터 시작됐어.",             rarity:"ultra",     category:"기념일", date:"2024.02.14", hue:300}
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad = n => String(n).padStart(3, "0");
+
+function cardHTML(c){
+  return `<article class="card" data-rarity="${c.rarity}" style="--h:${c.hue}">
+    <div class="card__in">
+      <div class="card__photo"><span class="card__no">No.${pad(c.dexNo)}</span></div>
+      <div class="card__body">
+        <span class="card__badge">${RARITY[c.rarity].label}</span>
+        <h3 class="card__title">${esc(c.title)}</h3>
+        <p class="card__desc">${esc(c.desc)}</p>
+        <div class="card__meta">${esc(c.category)} · ${esc(c.date)}</div>
+      </div>
+    </div></article>`;
+}
+function lockedHTML(no){
+  return `<article class="card card--locked" style="--h:0" aria-label="미보유 카드">
+    <div class="card__in">
+      <div class="card__photo"><span class="card__no">No.${pad(no)}</span></div>
+      <div class="card__body"><h3 class="card__title">???</h3><div class="card__meta">아직 못 뽑았어요</div></div>
+    </div></article>`;
+}
+
+document.getElementById("grid").innerHTML = CARDS.map(cardHTML).join("") + lockedHTML(12);
+
+// 뽑기: 등급 먼저 추첨 → 그 등급 카드 중 랜덤
+const flipper = document.getElementById("flipper");
+const front = document.getElementById("front");
+const result = document.getElementById("result");
+const btn = document.getElementById("draw");
+
+function pickRarity(){
+  let r = Math.random() * 100;
+  for (const [key, v] of Object.entries(RARITY)){ if ((r -= v.w) < 0) return key; }
+  return "rare";
+}
+btn.addEventListener("click", () => {
+  btn.disabled = true;
+  result.textContent = "";
+  flipper.classList.remove("on");
+  const rarity = pickRarity();
+  const pool = CARDS.filter(c => c.rarity === rarity);
+  const card = pool[Math.floor(Math.random() * pool.length)];
+  setTimeout(() => {
+    front.innerHTML = cardHTML(card);
+    flipper.classList.add("on");
+    setTimeout(() => {
+      result.textContent = `${RARITY[rarity].label} · No.${pad(card.dexNo)} ${card.title} 획득!`;
+      btn.disabled = false;
+    }, 700);
+  }, 450);
+});
+</script>
+</body>
+</html>

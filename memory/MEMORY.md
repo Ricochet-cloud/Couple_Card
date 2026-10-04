@@ -1,0 +1,3 @@
+- [프로젝트 개요](project_overview.md) — 추억카드뽑기 웹사이트, Firebase 기반 커플 앱
+- [진행 상황](progress.md) — 완료된 기능, 남은 작업
+- [기술 결정사항](technical_decisions.md) — 카드 구조, 뽑기권 시스템, 보안 규칙

@@ -1,0 +1,172 @@
+/* 로그인 페이지 - 스타듀밸리 감성 */
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  background: var(--bg-cream);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      #d4a574 0px,
+      #d4a574 35px,
+      #cca06a 35px,
+      #cca06a 36px,
+      #d4a574 36px,
+      #d4a574 71px,
+      #d9aa78 71px,
+      #d9aa78 72px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 24px,
+      rgba(0, 0, 0, 0.1) 24px,
+      rgba(0, 0, 0, 0.1) 26px
+    );
+  background-attachment: fixed;
+}
+
+.login-box {
+  background: var(--bg-cream);
+  padding: var(--spacing-xl);
+  border-radius: 0;
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  width: 100%;
+  max-width: 400px;
+  font-family: 'Galmuri';
+}
+
+.login-box h1 {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-family: 'Galmuri';
+}
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 11px;
+  font-family: 'Galmuri';
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
+  font-size: 11px;
+  box-sizing: border-box;
+  background: var(--white);
+  color: var(--text-dark);
+  font-family: 'Galmuri';
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8);
+  transition: border-color 0.1s steps(2);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--grass-green);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 0 2px var(--grass-green);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--grass-green);
+  color: var(--white);
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Galmuri';
+  cursor: pointer;
+  min-height: 44px;
+  transition: all 0.1s steps(2);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #7fb849;
+}
+
+.error-message {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(214, 48, 49, 0.1);
+  color: var(--error);
+  border: 2px solid var(--error);
+  border-radius: 0;
+  display: none;
+  font-size: 11px;
+  word-break: break-word;
+  font-family: 'Galmuri';
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 반응형 */
+@media (max-width: 480px) {
+  .login-container {
+    padding: var(--spacing-md);
+  }
+
+  .login-box {
+    padding: var(--spacing-lg);
+  }
+
+  .login-box h1 {
+    font-size: 18px;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group label {
+    font-size: 10px;
+  }
+
+  .form-group input {
+    font-size: 10px;
+    padding: 6px;
+  }
+
+  .login-btn {
+    font-size: 12px;
+    padding: 10px;
+    min-height: 40px;
+  }
+
+  .error-message {
+    font-size: 10px;
+    padding: var(--spacing-sm);
+  }
+}

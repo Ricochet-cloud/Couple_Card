@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>도감 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/collection.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <!-- 상단 요약 -->
+      <div class="collection-header">
+        <div class="collection-stats">
+          <div class="stat-line">
+            수집률: <span id="collectionRate">0</span> / <span id="totalCards">0</span>
+          </div>
+          <div class="stat-detail" id="collectionPercent">0%</div>
+          <div class="rarity-stats" id="rarityStats"></div>
+        </div>
+      </div>
+
+      <!-- 필터 & 정렬 -->
+      <div class="filters-section">
+        <div class="filter-row">
+          <label class="filter-label">등급</label>
+          <select id="filterRarity" class="filter-select">
+            <option value="all">전체</option>
+            <option value="ultra">울트라</option>
+            <option value="legend">전설</option>
+            <option value="myth">신화</option>
+            <option value="hero">영웅</option>
+            <option value="superrare">초희귀</option>
+            <option value="rare">희귀</option>
+          </select>
+        </div>
+
+        <div class="filter-row">
+          <label class="filter-label">분류</label>
+          <select id="filterCategory" class="filter-select">
+            <option value="all">전체</option>
+          </select>
+        </div>
+
+        <div class="filter-row">
+          <label class="filter-label">보유</label>
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-owned="all">전체</button>
+            <button class="filter-btn" data-owned="owned">보유</button>
+            <button class="filter-btn" data-owned="notOwned">미보유</button>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <label class="filter-label">정렬</label>
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-sort="number">번호순</button>
+            <button class="filter-btn" data-sort="recent">최근 획득순</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 카드 그리드 -->
+      <div id="cardsContainer">
+        <div class="loading-state">로딩 중...</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item active" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <!-- 상세 모달 -->
+  <div class="modal-overlay" id="cardModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">카드 상세</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import { renderCard, renderLockedCard, RARITY } from './js/card.js';
+    import {
+      getCollectionData,
+      getCollectionStats,
+      filterAndSortCards,
+      getCategories,
+    } from './js/collection.js';
+
+    // 상태 변수
+    let allCards = [];
+    let filteredCards = [];
+    const filters = {
+      rarity: 'all',
+      category: 'all',
+      owned: 'all',
+    };
+    let sortBy = 'number';
+
+    // ========== 초기화 ==========
+    initAuth((user) => {
+      guardAuth();
+
+      if (isAdmin()) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      init();
+    });
+
+    async function init() {
+      try {
+        allCards = await getCollectionData();
+
+        if (allCards.length === 0) {
+          showEmptyState();
+          return;
+        }
+
+        // 카테고리 필터 업데이트
+        const categories = getCategories(allCards);
+        const categorySelect = document.getElementById('filterCategory');
+        categories.forEach((cat) => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categorySelect.appendChild(option);
+        });
+
+        // 통계 업데이트
+        updateStats();
+
+        // 카드 렌더링
+        applyFiltersAndRender();
+
+        // 이벤트 리스너
+        setupEventListeners();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+        showErrorState(error.message);
+      }
+    }
+
+    function updateStats() {
+      const stats = getCollectionStats(allCards);
+      const percent = stats.total > 0 ? Math.round((stats.owned / stats.total) * 100) : 0;
+
+      document.getElementById('collectionRate').textContent = stats.owned;
+      document.getElementById('totalCards').textContent = stats.total;
+      document.getElementById('collectionPercent').textContent = `${percent}%`;
+
+      // 등급별 통계
+      const rarityStatsHtml = Object.entries(stats.rarityStats)
+        .map(
+          ([key, value]) =>
+            `<div class="rarity-stat-item">
+              <div class="rarity-stat-label">${value.label}</div>
+              <div class="rarity-stat-count">${value.owned} / ${value.total}</div>
+            </div>`
+        )
+        .join('');
+      document.getElementById('rarityStats').innerHTML = rarityStatsHtml;
+    }
+
+    function setupEventListeners() {
+      // 필터 버튼
+      document.getElementById('filterRarity').addEventListener('change', (e) => {
+        filters.rarity = e.target.value;
+        applyFiltersAndRender();
+      });
+
+      document.getElementById('filterCategory').addEventListener('change', (e) => {
+        filters.category = e.target.value;
+        applyFiltersAndRender();
+      });
+
+      document.querySelectorAll('[data-owned]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-owned]').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          filters.owned = btn.dataset.owned;
+          applyFiltersAndRender();
+        });
+      });
+
+      document.querySelectorAll('[data-sort]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-sort]').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          sortBy = btn.dataset.sort;
+          applyFiltersAndRender();
+        });
+      });
+
+      // 모달 닫기
+      document.getElementById('cardModal').addEventListener('click', (e) => {
+        if (e.target.id === 'cardModal') {
+          closeModal();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+
+      // 로그아웃
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+          await logout();
+          window.location.href = './login.html';
+        } catch (error) {
+          alert('로그아웃 실패: ' + error.message);
+        }
+      });
+    }
+
+    function applyFiltersAndRender() {
+      filteredCards = filterAndSortCards(allCards, filters, sortBy);
+
+      if (filteredCards.length === 0) {
+        document.getElementById('cardsContainer').innerHTML =
+          '<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">필터 조건에 맞는 카드가 없습니다</div></div>';
+        return;
+      }
+
+      const gridHtml = filteredCards
+        .map((card) => {
+          if (card.isOwned) {
+            return `<div class="card-grid-item" onclick="openModal('${card.id}')">${renderCard(card)}</div>`;
+          } else {
+            return `<div class="card-grid-item locked">${renderLockedCard(card.dexNo)}</div>`;
+          }
+        })
+        .join('');
+
+      document.getElementById('cardsContainer').innerHTML = `<div class="collection-grid">${gridHtml}</div>`;
+    }
+
+    function showEmptyState() {
+      document.getElementById('cardsContainer').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-text">카드가 없습니다</div>
+          <div class="empty-state-detail">관리자가 카드를 추가할 때까지 기다려주세요</div>
+        </div>
+      `;
+    }
+
+    function showErrorState(message) {
+      document.getElementById('cardsContainer').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-text">오류가 발생했습니다</div>
+          <div class="empty-state-detail">${escapeHtml(message)}</div>
+        </div>
+      `;
+    }
+
+    // 모달 관리
+    window.openModal = function (cardId) {
+      const card = allCards.find((c) => c.id === cardId);
+      if (!card || !card.isOwned) return;
+
+      const cardDate = new Date(card.memoryDate);
+      const firstDate = card.firstAt ? new Date(card.firstAt) : null;
+
+      const modalTitle = `No.${String(card.dexNo).padStart(3, '0')} ${escapeHtml(card.title)}`;
+      const modalBody = `
+        <div class="modal-card-preview">
+          ${renderCard(card)}
+        </div>
+        <div class="modal-info">
+          <div class="modal-info-row">
+            <div class="modal-info-label">설명</div>
+            <div class="modal-info-value">${escapeHtml(card.description)}</div>
+          </div>
+          <div class="modal-info-row">
+            <div class="modal-info-label">추억 날짜</div>
+            <div class="modal-info-value">${card.memoryDate}</div>
+          </div>
+          <div class="modal-info-row">
+            <div class="modal-info-label">처음 얻은 날</div>
+            <div class="modal-info-value">${card.firstAt || '정보 없음'}</div>
+          </div>
+          <div class="modal-info-row">
+            <div class="modal-info-label">보유 수량</div>
+            <div class="modal-info-value count">×${card.count}</div>
+          </div>
+          <div class="modal-info-row">
+            <div class="modal-info-label">등급</div>
+            <div class="modal-info-value">${RARITY[card.rarity]?.label || '?'}</div>
+          </div>
+          <div class="modal-info-row">
+            <div class="modal-info-label">분류</div>
+            <div class="modal-info-value">${escapeHtml(card.category)}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalTitle').textContent = modalTitle;
+      document.getElementById('modalBody').innerHTML = modalBody;
+      document.getElementById('cardModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeModal = function () {
+      document.getElementById('cardModal').classList.remove('show');
+      document.body.style.overflow = '';
+    };
+
+    function escapeHtml(str) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+  </script>
+</body>
+</html>

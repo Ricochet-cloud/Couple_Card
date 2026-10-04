@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>뽑기 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/draw.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <div class="draw-container">
+        <div class="draw-title">뽑기 연출</div>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <!-- 로딩 -->
+        <div id="loadingState" class="loading">준비 중...</div>
+
+        <!-- 카드 뽑기 -->
+        <div id="drawState" style="display: none;">
+          <div class="card-stage">
+            <div class="card-flipper" id="cardflipper">
+              <div class="card-face card-back" aria-hidden="true">♡</div>
+              <div class="card-face card-front" id="cardFront"></div>
+            </div>
+          </div>
+
+          <!-- 결과 -->
+          <div class="result-section" id="resultSection">
+            <div class="result-text" id="resultText"></div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="action-buttons">
+              <button class="btn-action btn-primary" onclick="goCollection()">도감 보기</button>
+              <button class="btn-action btn-secondary" id="drawAgainBtn" onclick="drawAgain()">
+                한 번 더
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import { drawCard, getActiveCards } from './js/gacha.js';
+    import { renderCard, RARITY } from './js/card.js';
+    import { getTickets } from './js/ticket.js';
+
+    let drawResult = null;
+    let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ========== 초기화 ==========
+    initAuth(async (user) => {
+      guardAuth();
+
+      if (isAdmin()) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      try {
+        await init();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+      }
+    });
+
+    async function init() {
+      try {
+        // 카드 준비 상태 확인
+        const cards = await getActiveCards();
+        const tickets = await getTickets();
+
+        if (cards.length === 0) {
+          showError('뽑을 수 있는 카드가 없습니다.');
+          return;
+        }
+
+        if (tickets <= 0) {
+          showError('뽑기권이 없습니다. 홈으로 돌아가주세요.');
+          return;
+        }
+
+        // 뽑기 시작
+        performDraw();
+      } catch (error) {
+        showError('오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    async function performDraw() {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('drawState').style.display = 'block';
+
+      const flipper = document.getElementById('cardflipper');
+      const cardFront = document.getElementById('cardFront');
+      const resultSection = document.getElementById('resultSection');
+
+      flipper.classList.remove('flipped');
+      resultSection.classList.remove('show');
+
+      try {
+        // 뽑기 실행
+        drawResult = await drawCard();
+
+        // 첫 뽑기일 경우 NEW 배지 추가
+        const newBadge = drawResult.isFirstTime
+          ? '<div class="new-badge">NEW</div>'
+          : `<div style="position: absolute; top: 20px; right: 20px; font-size: 24px; font-weight: 700; color: var(--btn);">×${drawResult.card.isOwned ? drawResult.card.count : 1}</div>`;
+
+        cardFront.innerHTML = `
+          <div style="position: relative; width: 100%; height: 100%;">
+            ${renderCard(drawResult.card)}
+            ${newBadge}
+          </div>
+        `;
+
+        // 뒤집기 연출
+        if (!reducedMotion) {
+          await new Promise((resolve) => setTimeout(resolve, 450));
+        }
+
+        flipper.classList.add('flipped');
+
+        if (!reducedMotion) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+
+        // 결과 표시
+        showResult();
+
+        // 뽑기권 업데이트
+        updateTickets();
+      } catch (error) {
+        showError('뽑기 실패: ' + error.message);
+      }
+    }
+
+    function showResult() {
+      const card = drawResult.card;
+      const isFirstTime = drawResult.isFirstTime;
+
+      const padNo = (n) => String(n).padStart(3, '0');
+      const rarity = RARITY[card.rarity]?.label || '?';
+
+      const resultText = `${rarity} · No.${padNo(card.dexNo)} ${escapeHtml(card.title)} 획득!`;
+
+      const detailsHtml = `
+        <strong>${rarity}</strong> |
+        추억 날짜: ${card.memoryDate} |
+        ${isFirstTime ? '(처음 획득!)' : `(보유 ${drawResult.card.count}장)`}
+      `;
+
+      document.getElementById('resultText').textContent = resultText;
+      document.getElementById('resultDetails').innerHTML = detailsHtml;
+
+      document.getElementById('resultSection').classList.add('show');
+    }
+
+    async function updateTickets() {
+      try {
+        const tickets = await getTickets();
+        const drawAgainBtn = document.getElementById('drawAgainBtn');
+
+        if (tickets <= 0) {
+          drawAgainBtn.disabled = true;
+          drawAgainBtn.textContent = '뽑기권 없음';
+        } else {
+          drawAgainBtn.disabled = false;
+          drawAgainBtn.textContent = '한 번 더';
+        }
+      } catch (error) {
+        console.error('뽑기권 조회 실패:', error);
+      }
+    }
+
+    window.drawAgain = async function () {
+      performDraw();
+    };
+
+    window.goCollection = function () {
+      window.location.href = './collection.html';
+    };
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await logout();
+        window.location.href = './login.html';
+      } catch (error) {
+        alert('로그아웃 실패: ' + error.message);
+      }
+    });
+
+    function showError(message) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('drawState').style.display = 'none';
+      const errorElem = document.getElementById('errorMessage');
+      errorElem.textContent = message;
+      errorElem.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+  </script>
+</body>
+</html>

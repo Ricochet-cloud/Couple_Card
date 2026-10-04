@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>관리자 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>관리자 페이지</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <div class="admin-tabs">
+        <button class="tab-btn active" data-tab="cards">카드</button>
+        <button class="tab-btn" data-tab="missions">미션</button>
+        <button class="tab-btn" data-tab="tickets">뽑기권</button>
+      </div>
+
+      <!-- 카드 탭 -->
+      <div class="tab-content active" id="cards-tab">
+        <div id="cardMessage"></div>
+
+        <div class="form-section">
+          <h2>카드 추가</h2>
+          <form id="cardForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cardDexNo">도감번호 *</label>
+                <input type="number" id="cardDexNo" min="1" required placeholder="자동 제안됨">
+              </div>
+              <div class="form-group">
+                <label for="cardRarity">등급 *</label>
+                <select id="cardRarity" required>
+                  <option value="">선택하세요</option>
+                  <option value="ultra">울트라</option>
+                  <option value="legend">전설</option>
+                  <option value="myth">신화</option>
+                  <option value="hero">영웅</option>
+                  <option value="superrare">초희귀</option>
+                  <option value="rare">희귀</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cardTitle">제목 *</label>
+              <input type="text" id="cardTitle" required placeholder="예: 첫 데이트 카페">
+            </div>
+
+            <div class="form-group">
+              <label for="cardDesc">설명 *</label>
+              <textarea id="cardDesc" required placeholder="예: 어색해서 아메리카노만 두 잔 시켰던 날."></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cardCategory">분류 *</label>
+                <input type="text" id="cardCategory" required placeholder="예: 데이트, 여행">
+              </div>
+              <div class="form-group">
+                <label for="cardMemoryDate">추억 날짜 *</label>
+                <input type="date" id="cardMemoryDate" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cardPhoto">사진 (선택)</label>
+              <input type="file" id="cardPhoto" accept="image/*">
+              <div class="image-preview" id="cardPhotoPreview" style="display: none;"></div>
+              <div style="font-size: 12px; color: var(--mute); margin-top: 8px;">
+                최대 400KB, 긴 변 640px 이하로 자동 변환됨
+              </div>
+            </div>
+
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary">카드 추가</button>
+              <button type="button" class="btn-secondary" id="cardFormReset">초기화</button>
+            </div>
+          </form>
+        </div>
+
+        <h2>등록된 카드</h2>
+        <div id="cardsList" class="loading">로딩 중...</div>
+      </div>
+
+      <!-- 미션 탭 -->
+      <div class="tab-content" id="missions-tab">
+        <div id="missionMessage"></div>
+
+        <div class="form-section">
+          <h2>미션 추가</h2>
+          <form id="missionForm">
+            <div class="form-group">
+              <label for="missionText">미션 텍스트 *</label>
+              <textarea id="missionText" required placeholder="예: 오늘 함께 웃음이 나오는 영화를 보자"></textarea>
+            </div>
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary">미션 추가</button>
+              <button type="button" class="btn-secondary" id="missionFormReset">초기화</button>
+            </div>
+          </form>
+        </div>
+
+        <h2>등록된 미션</h2>
+        <div id="missionsList" class="loading">로딩 중...</div>
+      </div>
+
+      <!-- 뽑기권 탭 -->
+      <div class="tab-content" id="tickets-tab">
+        <div id="ticketMessage"></div>
+
+        <div class="form-section">
+          <h2>뽑기권 지급</h2>
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 18px; color: var(--ink); margin-bottom: 10px;">
+              현재 보유: <strong id="ticketCount">0</strong>개
+            </div>
+          </div>
+
+          <div class="form-row">
+            <button type="button" class="btn-primary" id="addTicket1">+1개</button>
+            <button type="button" class="btn-primary" id="addTicket5">+5개</button>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <input type="number" id="customTicketAmount" min="1" placeholder="수량" style="flex: 1; min-width: 80px;">
+            <button type="button" class="btn-primary" id="addCustomTickets" style="flex: 0 0 auto;">직접 입력</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./admin.html" class="nav-item active" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import {
+      getAllCards,
+      isDexNoDuplicate,
+      getNextDexNo,
+      addCard,
+      updateCard,
+      toggleCardActive,
+      deleteCard,
+      convertImageToWebP,
+      getAllMissions,
+      addMission,
+      updateMission,
+      toggleMissionActive,
+      deleteMission,
+    } from './js/admin.js';
+    import { initState, getTickets, addTickets } from './js/state.js';
+    import { renderCard } from './js/card.js';
+
+    // 관리자 권한 확인
+    initAuth((user) => {
+      guardAuth();
+      if (!isAdmin()) {
+        alert('관리자만 접근할 수 있습니다.');
+        window.location.href = './index.html';
+        return;
+      }
+      init();
+    });
+
+    // ========== 초기화 ==========
+    async function init() {
+      try {
+        await initState();
+        await loadCards();
+        await loadMissions();
+        await loadTickets();
+        suggestNextDexNo();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+      }
+    }
+
+    // ========== 탭 전환 ==========
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((t) => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`${tab}-tab`).classList.add('active');
+      });
+    });
+
+    // ========== 로그아웃 ==========
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await logout();
+        window.location.href = './login.html';
+      } catch (error) {
+        alert('로그아웃 실패: ' + error.message);
+      }
+    });
+
+    // ========== 카드 관리 ==========
+    async function loadCards() {
+      try {
+        const cards = await getAllCards();
+        const html = cards.length === 0
+          ? '<p style="color: var(--mute);">등록된 카드가 없습니다.</p>'
+          : `<div class="cards-grid">${cards
+              .map((card) => `
+                <div class="card-item-wrapper ${!card.active ? 'inactive' : ''}">
+                  ${renderCard({
+                    ...card,
+                    hue: 30,
+                  })}
+                  <div class="card-actions">
+                    <button class="btn-sm btn-secondary" onclick="editCard('${card.id}')">수정</button>
+                    <button class="btn-sm" onclick="toggleActive('${card.id}', ${card.active})" style="background: ${card.active ? '#ffc107' : '#28a745'}; color: white; border: 0;">
+                      ${card.active ? '비활성' : '활성'}
+                    </button>
+                    <button class="btn-sm btn-danger" onclick="deleteCardConfirm('${card.id}')">삭제</button>
+                  </div>
+                  <div class="card-status">${card.active ? '활성' : '비활성'}</div>
+                </div>
+              `)
+              .join('')}</div>`;
+        document.getElementById('cardsList').innerHTML = html;
+      } catch (error) {
+        document.getElementById('cardsList').innerHTML = `<div class="message error">카드 로드 실패: ${error.message}</div>`;
+      }
+    }
+
+    async function suggestNextDexNo() {
+      const nextNo = await getNextDexNo();
+      document.getElementById('cardDexNo').placeholder = `다음 번호: ${nextNo}`;
+      if (!document.getElementById('cardDexNo').value) {
+        document.getElementById('cardDexNo').value = nextNo;
+      }
+    }
+
+    // 사진 미리보기
+    document.getElementById('cardPhoto').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        document.getElementById('cardPhotoPreview').style.display = 'none';
+        return;
+      }
+
+      try {
+        const preview = document.getElementById('cardPhotoPreview');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+          preview.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        showMessage('cardMessage', `미리보기 실패: ${error.message}`, 'error');
+      }
+    });
+
+    // 카드 폼 제출
+    document.getElementById('cardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const dexNo = document.getElementById('cardDexNo').value;
+      const title = document.getElementById('cardTitle').value;
+      const description = document.getElementById('cardDesc').value;
+      const rarity = document.getElementById('cardRarity').value;
+      const category = document.getElementById('cardCategory').value;
+      const memoryDate = document.getElementById('cardMemoryDate').value;
+      const photoInput = document.getElementById('cardPhoto');
+
+      try {
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
+        let photoData = null;
+
+        if (photoInput.files[0]) {
+          const converted = await convertImageToWebP(photoInput.files[0]);
+          photoData = converted.base64;
+        }
+
+        await addCard({
+          dexNo: parseInt(dexNo),
+          title,
+          description,
+          photoData,
+          rarity,
+          category,
+          memoryDate,
+        });
+
+        showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
+        document.getElementById('cardForm').reset();
+        await suggestNextDexNo();
+        await loadCards();
+        btn.disabled = false;
+      } catch (error) {
+        showMessage('cardMessage', `카드 추가 실패: ${error.message}`, 'error');
+        e.target.querySelector('button[type="submit"]').disabled = false;
+      }
+    });
+
+    document.getElementById('cardFormReset').addEventListener('click', () => {
+      document.getElementById('cardForm').reset();
+      document.getElementById('cardPhotoPreview').style.display = 'none';
+    });
+
+    // 전역 함수 (카드 목록에서 호출됨)
+    window.editCard = function (cardId) {
+      alert('수정 기능은 다음 단계에서 구현됩니다.');
+    };
+
+    window.toggleActive = async function (cardId, currentActive) {
+      try {
+        await toggleCardActive(cardId, currentActive);
+        await loadCards();
+        showMessage('cardMessage', '카드 상태가 변경되었습니다.', 'success');
+      } catch (error) {
+        showMessage('cardMessage', `상태 변경 실패: ${error.message}`, 'error');
+      }
+    };
+
+    window.deleteCardConfirm = function (cardId) {
+      if (!confirm('정말로 이 카드를 삭제하시겠습니까?')) return;
+      deleteCardHandle(cardId);
+    };
+
+    async function deleteCardHandle(cardId) {
+      try {
+        await deleteCard(cardId);
+        await loadCards();
+        showMessage('cardMessage', '카드가 삭제되었습니다.', 'success');
+      } catch (error) {
+        showMessage('cardMessage', `카드 삭제 실패: ${error.message}`, 'error');
+      }
+    }
+
+    // ========== 미션 관리 ==========
+    async function loadMissions() {
+      try {
+        const missions = await getAllMissions();
+        const html = missions.length === 0
+          ? '<p style="color: var(--mute);">등록된 미션이 없습니다.</p>'
+          : `<div class="missions-list">${missions
+              .map((mission) => `
+                <div class="mission-item ${!mission.active ? 'inactive' : ''}">
+                  <div class="mission-text">${escapeHtml(mission.text)}</div>
+                  <div class="mission-actions">
+                    <button class="btn-sm" onclick="toggleMissionActiveHandle('${mission.id}', ${mission.active})" style="background: ${mission.active ? '#ffc107' : '#28a745'}; color: white; border: 0;">
+                      ${mission.active ? '비활성' : '활성'}
+                    </button>
+                    <button class="btn-sm btn-danger" onclick="deleteMissionConfirm('${mission.id}')">삭제</button>
+                  </div>
+                </div>
+              `)
+              .join('')}</div>`;
+        document.getElementById('missionsList').innerHTML = html;
+      } catch (error) {
+        document.getElementById('missionsList').innerHTML = `<div class="message error">미션 로드 실패: ${error.message}</div>`;
+      }
+    }
+
+    document.getElementById('missionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const text = document.getElementById('missionText').value;
+
+      try {
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
+        await addMission(text);
+
+        showMessage('missionMessage', '미션이 추가되었습니다!', 'success');
+        document.getElementById('missionForm').reset();
+        await loadMissions();
+        btn.disabled = false;
+      } catch (error) {
+        showMessage('missionMessage', `미션 추가 실패: ${error.message}`, 'error');
+        e.target.querySelector('button[type="submit"]').disabled = false;
+      }
+    });
+
+    document.getElementById('missionFormReset').addEventListener('click', () => {
+      document.getElementById('missionForm').reset();
+    });
+
+    window.toggleMissionActiveHandle = async function (missionId, currentActive) {
+      try {
+        await toggleMissionActive(missionId, currentActive);
+        await loadMissions();
+        showMessage('missionMessage', '미션 상태가 변경되었습니다.', 'success');
+      } catch (error) {
+        showMessage('missionMessage', `상태 변경 실패: ${error.message}`, 'error');
+      }
+    };
+
+    window.deleteMissionConfirm = function (missionId) {
+      if (!confirm('정말로 이 미션을 삭제하시겠습니까?')) return;
+      deleteMissionHandle(missionId);
+    };
+
+    async function deleteMissionHandle(missionId) {
+      try {
+        await deleteMission(missionId);
+        await loadMissions();
+        showMessage('missionMessage', '미션이 삭제되었습니다.', 'success');
+      } catch (error) {
+        showMessage('missionMessage', `미션 삭제 실패: ${error.message}`, 'error');
+      }
+    }
+
+    // ========== 뽑기권 관리 ==========
+    async function loadTickets() {
+      try {
+        const tickets = await getTickets();
+        document.getElementById('ticketCount').textContent = tickets;
+      } catch (error) {
+        showMessage('ticketMessage', `뽑기권 로드 실패: ${error.message}`, 'error');
+      }
+    }
+
+    document.getElementById('addTicket1').addEventListener('click', async () => {
+      try {
+        await addTickets(1);
+        await loadTickets();
+        showMessage('ticketMessage', '뽑기권 1개를 지급했습니다.', 'success');
+      } catch (error) {
+        showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
+      }
+    });
+
+    document.getElementById('addTicket5').addEventListener('click', async () => {
+      try {
+        await addTickets(5);
+        await loadTickets();
+        showMessage('ticketMessage', '뽑기권 5개를 지급했습니다.', 'success');
+      } catch (error) {
+        showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
+      }
+    });
+
+    document.getElementById('addCustomTickets').addEventListener('click', async () => {
+      const amount = parseInt(document.getElementById('customTicketAmount').value);
+      if (!amount || amount < 1) {
+        showMessage('ticketMessage', '1 이상의 수량을 입력하세요.', 'error');
+        return;
+      }
+
+      try {
+        await addTickets(amount);
+        await loadTickets();
+        document.getElementById('customTicketAmount').value = '';
+        showMessage('ticketMessage', `뽑기권 ${amount}개를 지급했습니다.`, 'success');
+      } catch (error) {
+        showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
+      }
+    });
+
+    // ========== 유틸 ==========
+    function escapeHtml(str) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+
+    function showMessage(elementId, text, type) {
+      const elem = document.getElementById(elementId);
+      elem.innerHTML = `<div class="message ${type}">${escapeHtml(text)}</div>`;
+      setTimeout(() => {
+        elem.innerHTML = '';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

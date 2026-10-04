@@ -1,0 +1,275 @@
+/* 스타듀밸리 감성 - 따뜻한 농장 일기장 */
+
+@font-face {
+  font-family: 'Galmuri';
+  src: url('../fonts/Galmuri-11.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* 스타듀밸리 팔레트 - 따뜻한 농장 */
+  --bg-cream: #f5f1e8;
+  --wood-dark: #8b5a3c;
+  --wood-light: #d4a574;
+  --grass-green: #6b9e3d;
+  --sky-blue: #87ceeb;
+  --gold: #ffd700;
+  --text-dark: #3d2817;
+  --text-muted: #8b7355;
+  --border: #c9a881;
+  --error: #d63031;
+  --white: #ffffff;
+
+  /* 호환성 변수 (다른 스타일에서 사용) */
+  --bg: #f5f1e8;
+  --surf: #ffffff;
+  --ink: #3d2817;
+  --mute: #8b7355;
+  --line: #c9a881;
+  --btn: #6b9e3d;
+  --btn-ink: #ffffff;
+  --frame: linear-gradient(145deg, #8fb0d0, #5a7ea3);
+
+  /* 레이아웃 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-cream);
+  color: var(--text-dark);
+  font-family: 'Galmuri', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Galmuri';
+  margin: 0;
+  color: var(--text-dark);
+}
+
+h1 {
+  font-size: 22px;
+}
+
+h2 {
+  font-size: 16px;
+}
+
+h3 {
+  font-size: 13px;
+}
+
+/* 패널 (나무 틀) */
+.panel {
+  background: var(--bg-cream);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2), inset -1px -1px 0 var(--wood-light);
+  padding: var(--spacing-md);
+  border-radius: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+/* 버튼 기본 스타일 */
+button {
+  font: inherit;
+  font-family: 'Galmuri';
+  background: var(--wood-light);
+  color: var(--text-dark);
+  border: 2px solid var(--wood-dark);
+  padding: 8px 16px;
+  cursor: pointer;
+  min-height: 44px;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+  transition: all 0.1s steps(2);
+}
+
+button:hover {
+  background: #ddb476;
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--grass-green);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.active {
+  background: var(--grass-green);
+  color: var(--white);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+button.danger {
+  background: var(--error);
+  color: var(--white);
+}
+
+/* 입력창 */
+input,
+textarea,
+select {
+  font: inherit;
+  font-family: 'Galmuri';
+  background: var(--white);
+  color: var(--text-dark);
+  border: 2px solid var(--wood-dark);
+  padding: 8px;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8);
+  transition: border-color 0.1s steps(2);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--grass-green);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 0 2px var(--grass-green);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* 메시지 박스 */
+.message {
+  padding: 12px;
+  border: 2px solid var(--wood-dark);
+  background: var(--bg-cream);
+  font-family: 'Galmuri';
+  margin-bottom: 12px;
+  border-radius: 0;
+  font-size: 11px;
+}
+
+.message.success {
+  border-color: var(--grass-green);
+  background: rgba(107, 158, 61, 0.1);
+}
+
+.message.error {
+  border-color: var(--error);
+  background: rgba(214, 48, 49, 0.1);
+}
+
+.message.info {
+  border-color: var(--sky-blue);
+  background: rgba(135, 206, 235, 0.1);
+}
+
+/* 카드 */
+.card {
+  background: var(--bg-cream);
+  border: 3px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+  outline: 1px solid var(--wood-light);
+  outline-offset: -6px;
+  border-radius: 0;
+}
+
+/* 배지 */
+.badge {
+  background: var(--gold);
+  color: var(--text-dark);
+  padding: 4px 8px;
+  border: 1px solid var(--wood-dark);
+  font-size: 9px;
+  font-weight: bold;
+  font-family: 'Galmuri';
+  border-radius: 0;
+  display: inline-block;
+}
+
+.badge.new {
+  animation: pulse 0.6s steps(3) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* 감소 동작 모드 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 반응형 */
+@media (max-width: 480px) {
+  body {
+    font-size: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  h2 {
+    font-size: 14px;
+  }
+
+  .panel {
+    padding: 12px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  button {
+    padding: 6px 12px;
+    min-height: 40px;
+  }
+
+  input,
+  textarea,
+  select {
+    padding: 6px;
+    font-size: 10px;
+  }
+}

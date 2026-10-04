@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>홈 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>🌾 추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <!-- 뽑기권 -->
+      <div class="home-section">
+        <div class="tickets-display">
+          <div class="ticket-icon">🎟️</div>
+          <div class="ticket-info">
+            <div class="ticket-label">보유 뽑기권</div>
+            <div class="ticket-count" id="ticketCount">0</div>
+          </div>
+        </div>
+
+        <button class="draw-button" id="drawBtn">뽑기</button>
+        <div class="draw-message" id="drawMessage"></div>
+      </div>
+
+      <!-- 최근 획득 -->
+      <div class="home-section">
+        <h2>✨ 최근 획득</h2>
+        <div class="recent-cards" id="recentCards">
+          <div class="recent-empty">아직 뽑은 카드가 없습니다</div>
+        </div>
+      </div>
+
+      <!-- 오늘의 미션 -->
+      <div class="home-section">
+        <h2>📝 오늘의 미션</h2>
+        <div class="mission-section" id="missionSection">
+          <div class="loading">로딩 중...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item active" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import { grantDailyTicketIfNeeded, getTickets } from './js/ticket.js';
+    import { getActiveCards } from './js/gacha.js';
+    import { renderCard } from './js/card.js';
+    import { getCollectionData } from './js/collection.js';
+    import { assignOrGetDailyMission, completeMission } from './js/mission.js';
+
+    // ========== 초기화 ==========
+    initAuth(async (user) => {
+      guardAuth();
+
+      if (isAdmin()) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      try {
+        await init();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+      }
+    });
+
+    async function init() {
+      // 뽑기권 자동 지급
+      try {
+        await grantDailyTicketIfNeeded();
+      } catch (error) {
+        console.error('뽄기권 지급 실패:', error);
+      }
+
+      // UI 업데이트
+      await updateUI();
+
+      // 이벤트 리스너
+      setupEventListeners();
+    }
+
+    async function updateUI() {
+      // 뽑기권
+      const tickets = await getTickets();
+      document.getElementById('ticketCount').textContent = tickets;
+
+      // 뽄기 버튼 상태
+      const drawBtn = document.getElementById('drawBtn');
+      if (tickets <= 0) {
+        drawBtn.disabled = true;
+        showDrawMessage('뽄기권이 없습니다. 내일 다시 시도해주세요.', 'error');
+      } else {
+        drawBtn.disabled = false;
+      }
+
+      // 최근 획득 카드
+      const allCards = await getCollectionData();
+      const owned = allCards.filter((c) => c.isOwned);
+      const recent = owned.sort((a, b) => {
+        const aDate = a.firstAt ? new Date(a.firstAt) : new Date(0);
+        const bDate = b.firstAt ? new Date(b.firstAt) : new Date(0);
+        return bDate - aDate;
+      });
+
+      if (recent.length === 0) {
+        document.getElementById('recentCards').innerHTML =
+          '<div class="recent-empty">아직 뽄은 카드가 없습니다</div>';
+      } else {
+        const html = recent
+          .slice(0, 3)
+          .map((card) => `<div class="recent-card-item">${renderCard(card)}</div>`)
+          .join('');
+        document.getElementById('recentCards').innerHTML = html;
+      }
+
+      // 오늘의 미션
+      await updateMissionUI();
+    }
+
+    async function updateMissionUI() {
+      try {
+        const missionResult = await assignOrGetDailyMission();
+        const missionSection = document.getElementById('missionSection');
+
+        if (missionResult.noMissions) {
+          missionSection.innerHTML =
+            '<div class="mission-empty"><div style="padding: 20px;">등록된 미션이 없어요</div></div>';
+          return;
+        }
+
+        const { mission, done } = missionResult;
+
+        if (!mission) {
+          missionSection.innerHTML =
+            '<div class="mission-empty"><div style="padding: 20px;">오류가 발생했습니다</div></div>';
+          return;
+        }
+
+        const html = `
+          <div class="mission-content">
+            <div class="mission-text">${escapeHtml(mission.text)}</div>
+            <button
+              class="mission-button"
+              id="missionBtn"
+              onclick="completeMissionHandle()"
+              ${done ? 'disabled' : ''}
+            >
+              ${done ? '<span class="mission-completed"><span class="checkmark"></span>완료함</span>' : '완료'}
+            </button>
+          </div>
+        `;
+
+        missionSection.innerHTML = html;
+        missionSection.classList.remove('mission-empty');
+        missionSection.classList.add('mission-content');
+      } catch (error) {
+        console.error('미션 로드 실패:', error);
+        document.getElementById('missionSection').innerHTML =
+          '<div class="mission-empty"><div style="padding: 20px;">미션을 불러올 수 없습니다</div></div>';
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('drawBtn').addEventListener('click', async () => {
+        try {
+          window.location.href = './draw.html';
+        } catch (error) {
+          showDrawMessage('오류가 발생했습니다: ' + error.message, 'error');
+        }
+      });
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+          await logout();
+          window.location.href = './login.html';
+        } catch (error) {
+          alert('로그아웃 실패: ' + error.message);
+        }
+      });
+    }
+
+    function showDrawMessage(text, type) {
+      const elem = document.getElementById('drawMessage');
+      elem.textContent = text;
+      elem.className = `draw-message show`;
+      if (type === 'error') {
+        elem.style.background = 'rgba(214, 48, 49, 0.1)';
+        elem.style.color = 'var(--error)';
+        elem.style.borderColor = 'var(--error)';
+      } else {
+        elem.style.background = 'rgba(107, 158, 61, 0.1)';
+        elem.style.color = 'var(--grass-green)';
+        elem.style.borderColor = 'var(--grass-green)';
+      }
+      setTimeout(() => {
+        elem.classList.remove('show');
+      }, 5000);
+    }
+
+    window.completeMissionHandle = async function () {
+      try {
+        const btn = document.getElementById('missionBtn');
+        btn.disabled = true;
+
+        await completeMission();
+
+        // UI 업데이트
+        btn.innerHTML = '<span class="mission-completed"><span class="checkmark"></span>완료함</span>';
+      } catch (error) {
+        console.error('미션 완료 실패:', error);
+        alert('미션 완료에 실패했습니다: ' + error.message);
+      }
+    };
+
+    function escapeHtml(str) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+  </script>
+</body>
+</html>

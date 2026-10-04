@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 허용된 UID 2개 정의
+    function isAdmin() {
+      return request.auth.uid == 'DCRHAeMPIXUYoZBuJHuGqUUTn0b2';
+    }
+
+    function isAuthorized() {
+      return request.auth.uid == 'DCRHAeMPIXUYoZBuJHuGqUUTn0b2' || request.auth.uid == 'dAMJNZKCq8f9BGJAaVVqSuxxK942';
+    }
+
+    // cards: 두 UID 읽기, 관리자만 쓰기
+    match /cards/{document=**} {
+      allow read: if isAuthorized();
+      allow write: if isAdmin();
+    }
+
+    // missions: 두 UID 읽기, 관리자만 쓰기
+    match /missions/{document=**} {
+      allow read: if isAuthorized();
+      allow write: if isAdmin();
+    }
+
+    // state/shared: 두 UID 모두 읽기/쓰기
+    match /state/shared {
+      allow read, write: if isAuthorized();
+    }
+
+    // 그 외 모든 경로는 거부
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

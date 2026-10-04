@@ -50,22 +50,47 @@ main {
 }
 
 .card-back {
-  border-radius: 14px;
-  background: linear-gradient(145deg, #3a3560, #1f1d2e);
+  border-radius: 0;
+  background: linear-gradient(145deg, #b8956a, #8b6f47);
   display: grid;
   place-items: center;
-  color: #d9d3ff;
-  font-size: 48px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  color: #6b9e3d;
+  font-size: 0;
+  box-shadow:
+    inset 3px 3px 0 #d4a574,
+    inset -3px -3px 0 #5a3d24,
+    0 4px 0 #3d2817,
+    0 0 0 3px #8b5a3c;
   font-family: 'Galmuri';
+  position: relative;
 }
 
 .card-back::before {
   content: '';
-  position: absolute;
-  inset: 8px;
-  border: 1.5px solid rgba(217, 211, 255, 0.35);
-  border-radius: 9px;
+  position: static;
+  width: 2px;
+  height: 2px;
+  background: #6b9e3d;
+  box-shadow:
+    -4px -6px 0 #5a8e30,
+    -2px -6px 0 #6b9e3d,
+    0px -6px 0 #6b9e3d,
+    2px -6px 0 #5a8e30,
+    -6px -4px 0 #5a8e30,
+    -4px -4px 0 #6b9e3d,
+    -2px -4px 0 #6b9e3d,
+    0px -4px 0 #6b9e3d,
+    2px -4px 0 #6b9e3d,
+    4px -4px 0 #5a8e30,
+    -4px -2px 0 #6b9e3d,
+    -2px -2px 0 #6b9e3d,
+    0px -2px 0 #7aae47,
+    2px -2px 0 #6b9e3d,
+    4px -2px 0 #6b9e3d,
+    -2px 2px 0 #8b5a3c,
+    0px 2px 0 #8b5a3c,
+    -2px 4px 0 #8b5a3c,
+    0px 4px 0 #8b5a3c;
 }
 
 .card-front {

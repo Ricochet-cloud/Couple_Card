@@ -193,45 +193,47 @@
 
 .back {
   border-radius: 0;
-  background: linear-gradient(145deg, #b8956a, #8b6f47);
+  background: linear-gradient(135deg, #a0845a 0%, #8b6f47 50%, #6b5344 100%);
   display: grid;
   place-items: center;
-  color: #6b9e3d;
-  font-size: 0;
+  color: transparent;
+  font-size: 44px;
   box-shadow:
-    inset 3px 3px 0 #d4a574,
-    inset -3px -3px 0 #5a3d24,
-    0 4px 0 #3d2817,
-    0 0 0 3px #8b5a3c;
+    inset 4px 4px 0 #d4a574,
+    inset -4px -4px 0 #5a3d24,
+    inset -1px -1px 0 #3d2817,
+    0 6px 0 #3d2817,
+    0 0 0 4px #8b5a3c,
+    0 6px 12px rgba(0, 0, 0, 0.4);
   position: relative;
 }
 
 .back::before {
   content: '';
-  position: static;
-  width: 2px;
-  height: 2px;
-  background: #6b9e3d;
+  display: block;
+  width: 3px;
+  height: 3px;
+  background: #7aae47;
   box-shadow:
-    -4px -6px 0 #5a8e30,
-    -2px -6px 0 #6b9e3d,
-    0px -6px 0 #6b9e3d,
-    2px -6px 0 #5a8e30,
-    -6px -4px 0 #5a8e30,
-    -4px -4px 0 #6b9e3d,
-    -2px -4px 0 #6b9e3d,
-    0px -4px 0 #6b9e3d,
-    2px -4px 0 #6b9e3d,
-    4px -4px 0 #5a8e30,
-    -4px -2px 0 #6b9e3d,
-    -2px -2px 0 #6b9e3d,
-    0px -2px 0 #7aae47,
-    2px -2px 0 #6b9e3d,
-    4px -2px 0 #6b9e3d,
-    -2px 2px 0 #8b5a3c,
-    0px 2px 0 #8b5a3c,
-    -2px 4px 0 #8b5a3c,
-    0px 4px 0 #8b5a3c;
+    -6px -8px 0 #5a8e30,
+    -3px -8px 0 #6b9e3d,
+    0px -8px 0 #7aae47,
+    3px -8px 0 #5a8e30,
+    -9px -5px 0 #5a8e30,
+    -6px -5px 0 #6b9e3d,
+    -3px -5px 0 #7aae47,
+    0px -5px 0 #7aae47,
+    3px -5px 0 #6b9e3d,
+    6px -5px 0 #5a8e30,
+    -6px -2px 0 #7aae47,
+    -3px -2px 0 #7aae47,
+    0px -2px 0 #8bc34a,
+    3px -2px 0 #7aae47,
+    6px -2px 0 #6b9e3d,
+    -3px 3px 0 #a0654a,
+    0px 3px 0 #a0654a,
+    -3px 6px 0 #8b5a3c,
+    0px 6px 0 #8b5a3c;
 }
 
 @media (prefers-reduced-motion: reduce) {

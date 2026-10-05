@@ -193,15 +193,21 @@
 
 .back {
   border-radius: 0;
-  background: linear-gradient(135deg, #a0845a 0%, #8b6f47 50%, #6b5344 100%);
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(139, 90, 60, 0.08) 4px, rgba(139, 90, 60, 0.08) 8px),
+    repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(139, 90, 60, 0.08) 4px, rgba(139, 90, 60, 0.08) 8px),
+    linear-gradient(135deg, #a0845a 0%, #8b6f47 50%, #6b5344 100%);
   display: grid;
   place-items: center;
   color: transparent;
   font-size: 44px;
   box-shadow:
+    inset 2px 2px 0 #e5d4b5,
+    inset -2px -2px 0 #6b5344,
     inset 4px 4px 0 #d4a574,
     inset -4px -4px 0 #5a3d24,
-    inset -1px -1px 0 #3d2817,
     0 6px 0 #3d2817,
     0 0 0 4px #8b5a3c,
     0 6px 12px rgba(0, 0, 0, 0.4);
@@ -211,29 +217,136 @@
 .back::before {
   content: '';
   display: block;
-  width: 3px;
-  height: 3px;
+  width: 6px;
+  height: 6px;
   background: #7aae47;
   box-shadow:
-    -6px -8px 0 #5a8e30,
-    -3px -8px 0 #6b9e3d,
-    0px -8px 0 #7aae47,
-    3px -8px 0 #5a8e30,
-    -9px -5px 0 #5a8e30,
-    -6px -5px 0 #6b9e3d,
-    -3px -5px 0 #7aae47,
-    0px -5px 0 #7aae47,
-    3px -5px 0 #6b9e3d,
-    6px -5px 0 #5a8e30,
-    -6px -2px 0 #7aae47,
-    -3px -2px 0 #7aae47,
-    0px -2px 0 #8bc34a,
-    3px -2px 0 #7aae47,
-    6px -2px 0 #6b9e3d,
-    -3px 3px 0 #a0654a,
-    0px 3px 0 #a0654a,
-    -3px 6px 0 #8b5a3c,
-    0px 6px 0 #8b5a3c;
+    /* 후광 - 원형 도트 링 */
+    0px -22px 0 rgba(255, 215, 0, 0.3),
+    16px -16px 0 rgba(255, 215, 0, 0.3),
+    22px 0px 0 rgba(255, 215, 0, 0.3),
+    16px 16px 0 rgba(255, 215, 0, 0.3),
+    0px 22px 0 rgba(255, 215, 0, 0.3),
+    -16px 16px 0 rgba(255, 215, 0, 0.3),
+    -22px 0px 0 rgba(255, 215, 0, 0.3),
+    -16px -16px 0 rgba(255, 215, 0, 0.3),
+    /* 나무 잎 - 확대 */
+    -12px -16px 0 #5a8e30,
+    -6px -16px 0 #6b9e3d,
+    0px -16px 0 #7aae47,
+    6px -16px 0 #5a8e30,
+    -18px -10px 0 #5a8e30,
+    -12px -10px 0 #6b9e3d,
+    -6px -10px 0 #7aae47,
+    0px -10px 0 #7aae47,
+    6px -10px 0 #6b9e3d,
+    12px -10px 0 #5a8e30,
+    -12px -4px 0 #7aae47,
+    -6px -4px 0 #7aae47,
+    0px -4px 0 #8bc34a,
+    6px -4px 0 #7aae47,
+    12px -4px 0 #6b9e3d,
+    -6px 6px 0 #a0654a,
+    0px 6px 0 #a0654a,
+    -6px 12px 0 #8b5a3c,
+    0px 12px 0 #8b5a3c,
+    /* 좌우 별 - 깜빡임 */
+    -36px -20px 0 #ffd700,
+    -28px -26px 0 #f4d89a,
+    36px -18px 0 #f4d89a,
+    28px -24px 0 #ffd700,
+    /* 추가 별들 */
+    -42px 0px 0 rgba(255, 215, 0, 0.7),
+    42px 5px 0 rgba(255, 215, 0, 0.7),
+    -32px 32px 0 #ffd700,
+    32px 30px 0 #f4d89a,
+    /* 하트 */
+    0px -38px 0 rgba(255, 105, 180, 0.6),
+    /* 좌하단 풀 - 확대 */
+    -40px 32px 0 #6b9e3d,
+    -34px 36px 0 #5a8e30,
+    -28px 28px 0 #6b9e3d,
+    /* 우상단 꽃 - 확대 */
+    38px -35px 0 #d4a574,
+    44px -28px 0 #d4a574,
+    /* 추가 장식 - 잎사귀 */
+    -20px -32px 0 #5a8e30,
+    20px 32px 0 #7aae47,
+    26px -10px 0 #6b9e3d,
+    -26px 10px 0 #6b9e3d;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+.back::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  inset: 0;
+  box-shadow:
+    /* 안쪽 이중 테두리 - 직선 */
+    -54px -54px 0 #d4a574,
+    -52px -54px 0 #d4a574,
+    -50px -54px 0 #d4a574,
+    54px -54px 0 #d4a574,
+    52px -54px 0 #d4a574,
+    50px -54px 0 #d4a574,
+    -54px 54px 0 #d4a574,
+    -52px 54px 0 #d4a574,
+    -50px 54px 0 #d4a574,
+    54px 54px 0 #d4a574,
+    52px 54px 0 #d4a574,
+    50px 54px 0 #d4a574,
+    /* 모서리 코너 장식 */
+    -54px -54px 0 #e5d4b5,
+    54px -54px 0 #e5d4b5,
+    -54px 54px 0 #e5d4b5,
+    54px 54px 0 #e5d4b5,
+    /* 좌상단 모서리 */
+    -48px -50px 0 #7aae47,
+    -42px -48px 0 #6b9e3d,
+    -52px -46px 0 #ffd700,
+    -38px -52px 0 #f4d89a,
+    /* 우상단 모서리 */
+    48px -52px 0 #6b9e3d,
+    52px -48px 0 #d4a574,
+    44px -50px 0 #f4d89a,
+    38px -54px 0 #ffd700,
+    /* 좌하단 모서리 */
+    -50px 50px 0 #5a8e30,
+    -48px 48px 0 #d4a574,
+    -54px 44px 0 #6b9e3d,
+    -52px 38px 0 #f4d89a,
+    /* 우하단 모서리 */
+    50px 48px 0 #f4d89a,
+    52px 52px 0 #7aae47,
+    48px 50px 0 #ffd700,
+    54px 42px 0 #d4a574,
+    /* 위쪽 테두리 중앙 */
+    -18px -54px 0 #ffd700,
+    0px -54px 0 #d4a574,
+    18px -54px 0 #f4d89a,
+    /* 아래쪽 테두리 중앙 */
+    -20px 54px 0 #6b9e3d,
+    5px 54px 0 #ffd700,
+    20px 54px 0 #7aae47,
+    /* 좌측 테두리 */
+    -54px -36px 0 #d4a574,
+    -54px -10px 0 #6b9e3d,
+    -54px 24px 0 #ffd700,
+    /* 우측 테두리 */
+    54px -30px 0 #f4d89a,
+    54px 8px 0 #d4a574,
+    54px 32px 0 #7aae47;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -243,5 +356,9 @@
 
   .flipper {
     transition: none;
+  }
+
+  .back::before {
+    animation: none;
   }
 }

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/draw.css">
   <link rel="stylesheet" href="./css/admin.css">
 </head>
 <body>
@@ -22,6 +23,7 @@
         <button class="tab-btn active" data-tab="cards">카드</button>
         <button class="tab-btn" data-tab="missions">미션</button>
         <button class="tab-btn" data-tab="tickets">뽑기권</button>
+        <button class="tab-btn" data-tab="cardback">카드 뒷면</button>
       </div>
 
       <!-- 카드 탭 -->
@@ -134,6 +136,31 @@
             <input type="number" id="customTicketAmount" min="1" placeholder="수량" style="flex: 1; min-width: 80px;">
             <button type="button" class="btn-primary" id="addCustomTickets" style="flex: 0 0 auto;">직접 입력</button>
           </div>
+        </div>
+      </div>
+
+      <!-- 카드 뒷면 탭 -->
+      <div class="tab-content" id="cardback-tab">
+        <h2>카드 뒷면 디자인</h2>
+        <p style="color: var(--mute); margin-bottom: 24px;">현재 적용된 카드 뒷면 디자인을 미리보기합니다. 모든 등급에 동일한 뒷면이 적용됩니다.</p>
+
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; padding: 20px;">
+          <div class="card-stage" style="width: min(280px, 85vw);">
+            <div class="card-flipper" style="aspect-ratio: 5/7; position: relative; transform-style: preserve-3d;">
+              <div class="card-face card-back" style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+          <h3 style="margin-top: 0;">스타일 정보</h3>
+          <ul style="color: var(--mute); line-height: 1.8;">
+            <li>스타듀밸리 픽셀 스타일 나무 프레임</li>
+            <li>따뜻한 나무색 그라데이션 배경</li>
+            <li>CSS box-shadow로 만든 픽셀 나무 로고</li>
+            <li>모든 등급(희귀, 초희귀, 영웅, 신화, 전설, 울트라) 공통 적용</li>
+            <li>카드 크기: 가로·세로 비율 5:7 (뽑기 시 뒤집기 애니메이션과 동일)</li>
+          </ul>
         </div>
       </div>
     </main>

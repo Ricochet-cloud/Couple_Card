@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>재조합 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/recombine.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>🌾 추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <!-- 탭 선택 -->
+      <div class="recombine-tabs">
+        <button class="recombine-tab-btn active" data-tab="combine" data-rarity="">
+          <span class="tab-icon">✨</span>
+          <span class="tab-label">재조합</span>
+        </button>
+      </div>
+
+      <!-- 탭 컨텐츠 -->
+      <div class="recombine-tab-content">
+        <!-- 재조합 탭 -->
+        <div id="combine-tab" class="recombine-section active">
+          <!-- 등급 선택 -->
+          <div class="rarity-selector">
+            <div class="rarity-selector-title">등급 선택</div>
+            <div class="rarity-buttons">
+              <button class="rarity-btn" data-rarity="rare">희귀</button>
+              <button class="rarity-btn" data-rarity="superrare">초희귀</button>
+              <button class="rarity-btn" data-rarity="hero">영웅</button>
+              <button class="rarity-btn" data-rarity="myth">신화</button>
+              <button class="rarity-btn" data-rarity="legend">전설</button>
+              <button class="rarity-btn disabled" data-rarity="ultra" disabled>
+                <span class="rarity-btn-text">울트라</span>
+                <span class="rarity-btn-hint">최상위 등급</span>
+              </button>
+            </div>
+            <div class="rarity-hint" id="rarityHint" style="display: none;">
+              최상위 등급이라 재료로 쓸 수 없어요 🏆
+            </div>
+          </div>
+
+          <!-- 재료 목록 -->
+          <div class="materials-section">
+            <div class="materials-header">
+              <h2>재료로 쓸 수 있는 카드</h2>
+              <div class="materials-count" id="materialsCount">0장</div>
+            </div>
+            <div class="materials-list" id="materialsList">
+              <div class="loading">등급을 선택해주세요</div>
+            </div>
+          </div>
+
+          <!-- 재조합 슬롯 -->
+          <div class="combine-slots-section">
+            <div class="slots-header">
+              <h2>재료 슬롯</h2>
+              <div class="slots-progress" id="slotsProgress">0 / 3</div>
+            </div>
+            <div class="combine-slots" id="combineSlots">
+              <div class="slot empty" data-slot="0">
+                <div class="slot-placeholder">+</div>
+              </div>
+              <div class="slot empty" data-slot="1">
+                <div class="slot-placeholder">+</div>
+              </div>
+              <div class="slot empty" data-slot="2">
+                <div class="slot-placeholder">+</div>
+              </div>
+            </div>
+            <div class="slots-info" id="slotsInfo"></div>
+          </div>
+
+          <!-- 재조합 버튼 -->
+          <div class="recombine-button-section">
+            <button id="recombineBtn" class="recombine-button" disabled>
+              재조합하기
+            </button>
+            <div class="recombine-message" id="recombineMessage"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./recombine.html" class="nav-item active" data-page="recombine">
+      <span class="nav-icon">✨</span>
+      <span class="nav-label">재조합</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <!-- 확인 모달 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">재조합</h2>
+        <button class="modal-close" onclick="closeConfirmModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-message">
+          카드 3장이 사라집니다. 진행할까요?
+        </div>
+        <div class="confirm-cards" id="confirmCards"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">취소</button>
+        <button class="btn btn-primary" id="confirmRecombineBtn">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initAuth, logout, isAdmin } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import { getCollectionData } from './js/collection.js';
+    import { renderCard, RARITY } from './js/card.js';
+
+    let allCards = [];
+    let ownedCards = {};
+    let currentRarity = null;
+    let selectedMaterials = []; // [{cardId, card}, {cardId, card}, {cardId, card}]
+
+    // ========== 초기화 ==========
+    initAuth(async (user) => {
+      guardAuth();
+
+      if (isAdmin()) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      try {
+        await init();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+      }
+    });
+
+    async function init() {
+      allCards = await getCollectionData();
+      ownedCards = allCards.reduce((acc, card) => {
+        acc[card.id] = card;
+        return acc;
+      }, {});
+
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      // 등급 선택
+      document.querySelectorAll('.rarity-btn:not(.disabled)').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.rarity-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentRarity = btn.dataset.rarity;
+          selectedMaterials = [];
+          updateMaterialsList();
+          updateSlotsUI();
+        });
+      });
+
+      // 울트라 버튼
+      document.querySelector('[data-rarity="ultra"]').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('rarityHint').style.display = 'block';
+      });
+
+      // 슬롯 클릭 (카드 제거)
+      document.querySelectorAll('.slot').forEach((slot) => {
+        slot.addEventListener('click', () => {
+          const slotIdx = parseInt(slot.dataset.slot);
+          if (selectedMaterials[slotIdx]) {
+            selectedMaterials[slotIdx] = null;
+            updateSlotsUI();
+            updateRecombineButton();
+          }
+        });
+      });
+
+      // 재조합 버튼
+      document.getElementById('recombineBtn').addEventListener('click', () => {
+        if (selectedMaterials.filter(Boolean).length === 3) {
+          openConfirmModal();
+        }
+      });
+
+      // 확인 모달 버튼
+      document.getElementById('confirmRecombineBtn').addEventListener('click', async () => {
+        await performRecombine();
+      });
+
+      // 로그아웃
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+          await logout();
+          window.location.href = './login.html';
+        } catch (error) {
+          alert('로그아웃 실패: ' + error.message);
+        }
+      });
+    }
+
+    function getReusableCards() {
+      if (!currentRarity) return [];
+
+      return allCards.filter((card) => {
+        return card.rarity === currentRarity && card.count >= 2;
+      });
+    }
+
+    function updateMaterialsList() {
+      const materialsList = document.getElementById('materialsList');
+      const materialsCount = document.getElementById('materialsCount');
+
+      if (!currentRarity) {
+        materialsList.innerHTML = '<div class="loading">등급을 선택해주세요</div>';
+        materialsCount.textContent = '0장';
+        return;
+      }
+
+      const reusable = getReusableCards();
+
+      if (reusable.length === 0) {
+        materialsList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-text">재료로 쓸 수 있는 카드가 없어요</div>
+          </div>
+        `;
+        materialsCount.textContent = '0장';
+        return;
+      }
+
+      const totalAvailable = reusable.reduce((sum, card) => sum + (card.count - 1), 0);
+      materialsCount.textContent = `${totalAvailable}장`;
+
+      const html = reusable
+        .map((card) => {
+          const available = card.count - 1;
+          const usedCount = selectedMaterials.filter(
+            (m) => m && m.cardId === card.id
+          ).length;
+          const canUse = available - usedCount;
+          const disabled = canUse <= 0 ? 'disabled' : '';
+
+          return `
+            <div class="material-card-item ${disabled}" ${disabled} onclick="selectMaterial('${card.id}', '${disabled}')">
+              <div class="material-card-preview">
+                ${renderCard(card)}
+              </div>
+              <div class="material-card-info">
+                <div class="material-card-available">사용 가능: ${canUse}/${available}장</div>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      materialsList.innerHTML = `<div class="materials-grid">${html}</div>`;
+    }
+
+    function updateSlotsUI() {
+      const slots = document.querySelectorAll('.slot');
+      slots.forEach((slot, idx) => {
+        slot.className = 'slot';
+        const material = selectedMaterials[idx];
+        if (material) {
+          slot.classList.add('filled');
+          const card = material.card;
+          slot.innerHTML = `<div class="slot-card-preview">${renderCard(card)}</div>`;
+        } else {
+          slot.classList.add('empty');
+          slot.innerHTML = '<div class="slot-placeholder">+</div>';
+        }
+      });
+
+      updateSlotsProgress();
+      updateRecombineButton();
+      updateMaterialsList();
+    }
+
+    function updateSlotsProgress() {
+      const filled = selectedMaterials.filter(Boolean).length;
+      document.getElementById('slotsProgress').textContent = `${filled} / 3`;
+    }
+
+    function updateRecombineButton() {
+      const btn = document.getElementById('recombineBtn');
+      const message = document.getElementById('slotsInfo');
+      const filled = selectedMaterials.filter(Boolean).length;
+
+      if (filled === 3) {
+        btn.disabled = false;
+        message.textContent = '';
+      } else {
+        btn.disabled = true;
+        const needed = 3 - filled;
+        message.textContent = `카드 ${needed}장을 더 선택해주세요`;
+        message.className = 'slots-info hint';
+      }
+    }
+
+    window.selectMaterial = function (cardId, disabled) {
+      if (disabled === 'disabled') return;
+
+      const card = ownedCards[cardId];
+      if (!card) return;
+
+      const available = card.count - 1;
+      const usedCount = selectedMaterials.filter((m) => m && m.cardId === cardId).length;
+
+      if (usedCount >= available) {
+        showMessage('더 이상 이 카드를 선택할 수 없어요', 'error');
+        return;
+      }
+
+      for (let i = 0; i < 3; i++) {
+        if (!selectedMaterials[i]) {
+          selectedMaterials[i] = { cardId, card };
+          updateSlotsUI();
+          return;
+        }
+      }
+    };
+
+    function openConfirmModal() {
+      const confirmCards = document.getElementById('confirmCards');
+      const html = selectedMaterials
+        .map((m) => `<div class="confirm-card">${renderCard(m.card)}</div>`)
+        .join('');
+      confirmCards.innerHTML = html;
+      document.getElementById('confirmModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    window.closeConfirmModal = function () {
+      document.getElementById('confirmModal').classList.remove('show');
+      document.body.style.overflow = '';
+    };
+
+    async function performRecombine() {
+      closeConfirmModal();
+
+      // TODO: 2단계에서 실제 처리 구현
+      // - 재료 3장 제거
+      // - 상위 등급 카드 중 랜덤 지급
+      // - 재조합 기록 저장
+
+      showMessage('재조합 기능은 준비 중이에요 🚧', 'info');
+    }
+
+    function showMessage(text, type) {
+      const elem = document.getElementById('recombineMessage');
+      elem.textContent = text;
+      elem.className = `recombine-message show ${type}`;
+      setTimeout(() => {
+        elem.classList.remove('show');
+      }, 5000);
+    }
+
+    function escapeHtml(str) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "Couple-Card",
+  "short_name": "Couple-Card",
+  "description": "Our own Couple Card Collection",
+  "start_url": "./login.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f3e8",
+  "theme_color": "#f8f3e8",
+  "icons": [
+    {
+      "src": "./images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

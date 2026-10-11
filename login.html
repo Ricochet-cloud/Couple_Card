@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <link rel="manifest" href="./manifest.json">
+
+  <meta name="theme-color" content="#f8f3e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Couple-Card">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="apple-touch-icon" href="./images/icon-192.png">
+
   <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
@@ -74,5 +84,20 @@
       }
     });
   </script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js")
+        .then(() => {
+          console.log("PWA 서비스 워커 등록 완료");
+        })
+        .catch((error) => {
+          console.error("서비스 워커 등록 실패:", error);
+        });
+    });
+  }
+</script>
+
 </body>
 </html>

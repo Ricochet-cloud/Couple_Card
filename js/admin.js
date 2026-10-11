@@ -134,77 +134,104 @@ export async function deleteCard(cardId) {
 // ========== 사진 처리 ==========
 
 /**
- * 이미지를 WebP로 변환 (긴 변 640px 이하, 품질 0.75)
+ * 이미지를 변환 (긴 변 640px 이하, 최대 400KB)
+ * - WebP를 지원하면 WebP, 지원하지 않으면(아이폰 Safari) JPEG로 저장
+ * - 용량이 크면 품질을 낮추고, 그래도 크면 해상도를 조금씩 줄임
  * @param {File} file - 선택한 이미지 파일
  * @returns {Promise<{base64: string, size: number}>}
  */
 export async function convertImageToWebP(file) {
+  const MAX_SIZE = 400 * 1024;    // 최종 제한
+  const TARGET_SIZE = 380 * 1024; // 목표 (여유분)
+  const MAX_DIMENSION = 640;
+
+  const image = await loadImage(file);
+  let { width, height } = calculateSize(image.naturalWidth, image.naturalHeight, MAX_DIMENSION);
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas를 사용할 수 없습니다.');
+
+  function draw() {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.fillStyle = '#fff'; // JPEG로 저장될 때 투명 부분이 검게 나오는 것 방지
+    ctx.fillRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, 0, 0, width, height);
+  }
+
+  draw();
+
+  // 품질을 낮춰가며 목표 용량에 맞추기
+  let quality = 0.85;
+  let blob = await canvasToBlob(canvas, quality);
+  while (blob.size > TARGET_SIZE && quality > 0.4) {
+    quality -= 0.1;
+    blob = await canvasToBlob(canvas, quality);
+  }
+
+  // 그래도 크면 해상도를 조금씩 줄이기
+  while (blob.size > MAX_SIZE && width > 200 && height > 200) {
+    width = Math.round(width * 0.9);
+    height = Math.round(height * 0.9);
+    draw();
+    blob = await canvasToBlob(canvas, 0.6);
+  }
+
+  if (blob.size > MAX_SIZE) {
+    throw new Error('사진을 400KB 이하로 압축하지 못했습니다.');
+  }
+
+  const base64 = await blobToBase64(blob);
+  return { base64, size: blob.size };
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('이미지를 읽을 수 없습니다.'));
+    };
+    img.src = url;
+  });
+}
+
+function calculateSize(width, height, maxSize) {
+  const longSide = Math.max(width, height);
+  if (longSide <= maxSize) return { width, height };
+  const scale = maxSize / longSide;
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
+
+// WebP를 지원하지 않는 브라우저(아이폰 Safari)에서는 PNG로 저장되므로 JPEG로 다시 시도
+function canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) return reject(new Error('이미지 변환에 실패했습니다.'));
+      if (blob.type === 'image/webp') return resolve(blob);
+
+      canvas.toBlob((jpeg) => {
+        if (!jpeg) return reject(new Error('이미지 변환에 실패했습니다.'));
+        resolve(jpeg);
+      }, 'image/jpeg', quality);
+    }, 'image/webp', quality);
+  });
+}
+
+function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const img = new Image();
-
-      img.onload = () => {
-        // 긴 변 640px 이하로 스케일
-        let { width, height } = img;
-        const maxSize = 640;
-
-        if (width > height) {
-          if (width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // WebP로 변환 (품질 0.75)
-        canvas.toBlob(
-          (blob) => {
-            const sizeKB = blob.size / 1024;
-
-            if (sizeKB > 400) {
-              reject(new Error(`사진이 너무 큽니다 (${sizeKB.toFixed(1)}KB, 최대 400KB)`));
-              return;
-            }
-
-            const blobReader = new FileReader();
-            blobReader.onload = () => {
-              resolve({
-                base64: blobReader.result,
-                size: blob.size,
-              });
-            };
-            blobReader.readAsDataURL(blob);
-          },
-          'image/webp',
-          0.75
-        );
-      };
-
-      img.onerror = () => {
-        reject(new Error('이미지를 읽을 수 없습니다.'));
-      };
-
-      img.src = event.target.result;
-    };
-
-    reader.onerror = () => {
-      reject(new Error('파일을 읽을 수 없습니다.'));
-    };
-
-    reader.readAsDataURL(file);
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('이미지 데이터를 읽을 수 없습니다.'));
+    reader.readAsDataURL(blob);
   });
 }
 

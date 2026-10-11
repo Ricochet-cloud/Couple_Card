@@ -133,11 +133,32 @@
     </div>
   </div>
 
+  <!-- 결과 모달 -->
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">재조합 완료!</h2>
+        <button class="modal-close" onclick="closeResultModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="result-card-container" id="resultCardContainer"></div>
+        <div class="result-badge" id="resultBadge"></div>
+        <div class="result-info" id="resultInfo"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeResultModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initAuth, logout, isAdmin } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
     import { getCollectionData } from './js/collection.js';
+    import { getActiveCards } from './js/gacha.js';
     import { renderCard, RARITY } from './js/card.js';
+    import { db } from './js/firebase.js';
+    import { doc, runTransaction } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 
     let allCards = [];
     let ownedCards = {};
@@ -361,16 +382,179 @@
       document.body.style.overflow = '';
     };
 
+    function getTodayKST() {
+      const now = new Date();
+      const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      return kstDate.toISOString().split('T')[0];
+    }
+
+    function getNextRarity(currentRarity) {
+      const rarityOrder = ['rare', 'superrare', 'hero', 'myth', 'legend', 'ultra'];
+      const idx = rarityOrder.indexOf(currentRarity);
+      return idx >= 0 && idx < rarityOrder.length - 1 ? rarityOrder[idx + 1] : null;
+    }
+
     async function performRecombine() {
       closeConfirmModal();
 
-      // TODO: 2단계에서 실제 처리 구현
-      // - 재료 3장 제거
-      // - 상위 등급 카드 중 랜덤 지급
-      // - 재조합 기록 저장
+      // 재료 카드별 사용 횟수 집계
+      const materialCounts = {};
+      selectedMaterials.forEach((m) => {
+        if (m) {
+          materialCounts[m.cardId] = (materialCounts[m.cardId] || 0) + 1;
+        }
+      });
 
-      showMessage('재조합 기능은 준비 중이에요 🚧', 'info');
+      // 버튼 비활성화 (중복 클릭 방지)
+      const recombineBtn = document.getElementById('recombineBtn');
+      const originalBtnText = recombineBtn.textContent;
+      recombineBtn.disabled = true;
+      recombineBtn.textContent = '처리 중...';
+
+      try {
+        const stateRef = doc(db, 'state', 'shared');
+        const today = getTodayKST();
+
+        const result = await runTransaction(db, async (transaction) => {
+          // 1. state/shared 읽기
+          const stateDoc = await transaction.get(stateRef);
+          if (!stateDoc.exists()) {
+            throw new Error('게임 상태를 초기화해주세요.');
+          }
+
+          const state = stateDoc.data();
+          const owned = state.owned || {};
+
+          // 2. 재료 카드 검증 및 집계
+          for (const [cardId, useCount] of Object.entries(materialCounts)) {
+            const cardOwned = owned[cardId];
+            if (!cardOwned || cardOwned.count - useCount < 1) {
+              throw new Error(`재료 카드의 보유 수가 부족합니다. (${cardId})`);
+            }
+          }
+
+          // 3. 결과 등급 결정 (첫 번째 재료의 등급을 기준으로)
+          const firstMaterialCardId = selectedMaterials[0].cardId;
+          const firstMaterialCard = ownedCards[firstMaterialCardId];
+          const resultRarity = getNextRarity(firstMaterialCard.rarity);
+
+          if (!resultRarity) {
+            throw new Error('한 단계 위 등급이 없습니다.');
+          }
+
+          // 4. 결과 카드 선택 (active: true, rarity: resultRarity)
+          const allCards = await getActiveCards();
+          const resultCandidates = allCards.filter(
+            (c) => c.active === true && c.rarity === resultRarity
+          );
+
+          if (resultCandidates.length === 0) {
+            throw new Error(`${RARITY[resultRarity]?.label || '?'} 등급 카드가 없습니다.`);
+          }
+
+          const resultCard = resultCandidates[Math.floor(Math.random() * resultCandidates.length)];
+          const isFirstTime = !owned[resultCard.id] || owned[resultCard.id].count === 0;
+
+          // 5. 재료 차감
+          for (const [cardId, useCount] of Object.entries(materialCounts)) {
+            owned[cardId] = {
+              ...owned[cardId],
+              count: owned[cardId].count - useCount,
+            };
+          }
+
+          // 6. 결과 카드 지급
+          owned[resultCard.id] = {
+            count: (owned[resultCard.id]?.count || 0) + 1,
+            firstAt: owned[resultCard.id]?.firstAt || today,
+          };
+
+          // 7. 재조합 기록 추가
+          const history = state.recombineHistory || [];
+          history.unshift({
+            timestamp: new Date().toISOString(),
+            materials: selectedMaterials.map((m) => ({
+              cardId: m.cardId,
+              title: m.card.title,
+              rarity: m.card.rarity,
+            })),
+            result: {
+              cardId: resultCard.id,
+              title: resultCard.title,
+              rarity: resultCard.rarity,
+            },
+            isFirstTime: isFirstTime,
+          });
+
+          // 최근 50개만 유지
+          if (history.length > 50) {
+            history.splice(50);
+          }
+
+          // 8. 트랜잭션 업데이트
+          transaction.update(stateRef, {
+            owned: owned,
+            recombineHistory: history,
+          });
+
+          return {
+            card: resultCard,
+            isFirstTime: isFirstTime,
+          };
+        });
+
+        // 9. 화면 업데이트
+        allCards = await getCollectionData();
+        ownedCards = allCards.reduce((acc, card) => {
+          acc[card.id] = card;
+          return acc;
+        }, {});
+
+        // 10. 결과 화면 표시
+        showResultModal(result);
+
+        // 11. 재료 슬롯 초기화
+        selectedMaterials = [];
+        updateSlotsUI();
+        updateRecombineButton();
+      } catch (error) {
+        console.error('재조합 실패:', error);
+        showMessage('재조합 실패: ' + error.message, 'error');
+      } finally {
+        // 버튼 복원
+        recombineBtn.disabled = false;
+        recombineBtn.textContent = originalBtnText;
+      }
     }
+
+    function showResultModal(result) {
+      const card = result.card;
+      const isFirstTime = result.isFirstTime;
+      const padNo = (n) => String(n).padStart(3, '0');
+
+      const badgeHtml = isFirstTime
+        ? '<div class="result-badge-new">NEW</div>'
+        : `<div class="result-badge-duplicate">×${ownedCards[card.id]?.count || 1}</div>`;
+
+      document.getElementById('resultCardContainer').innerHTML = `<div style="position: relative; width: 100%; height: 100%;">${renderCard(card)}</div>`;
+      document.getElementById('resultBadge').innerHTML = badgeHtml;
+      document.getElementById('resultInfo').innerHTML = `
+        <div style="text-align: center; font-size: 13px; font-weight: bold; margin-bottom: var(--spacing-md);">
+          ${RARITY[card.rarity]?.label || '?'} · No.${padNo(card.dexNo)} ${escapeHtml(card.title)} 획득!
+        </div>
+        <div style="text-align: center; font-size: 11px; color: var(--text-muted);">
+          ${isFirstTime ? '처음 획득!' : `보유 ${ownedCards[card.id]?.count || 1}장`}
+        </div>
+      `;
+
+      document.getElementById('resultModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    window.closeResultModal = function () {
+      document.getElementById('resultModal').classList.remove('show');
+      document.body.style.overflow = '';
+    };
 
     function showMessage(text, type) {
       const elem = document.getElementById('recombineMessage');

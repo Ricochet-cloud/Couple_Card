@@ -41,6 +41,15 @@
         </div>
       </div>
 
+      <!-- 미니게임 -->
+      <div class="home-section">
+        <h2>🎮 미니게임</h2>
+        <button class="minigame-button" onclick="goMinigame()">미니게임 시작</button>
+        <div class="minigame-message" style="font-size: 11px; color: var(--text-muted); margin-top: 8px; font-family: 'Galmuri';">
+          클리어하고 뽄기권 받기
+        </div>
+      </div>
+
       <!-- 오늘의 미션 -->
       <div class="home-section">
         <h2>📝 오늘의 미션</h2>
@@ -241,6 +250,10 @@
         console.error('미션 완료 실패:', error);
         alert('미션 완료에 실패했습니다: ' + error.message);
       }
+    };
+
+    window.goMinigame = function () {
+      window.location.href = './minigame.html';
     };
 
     function escapeHtml(str) {

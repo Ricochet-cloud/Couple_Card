@@ -17,6 +17,7 @@ export async function initState() {
         owned: {},
         daily: null,
         usedMissionIds: [],
+        minigameRewardDate: null,
       });
     }
   } catch (error) {

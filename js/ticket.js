@@ -31,6 +31,7 @@ export async function grantDailyTicketIfNeeded() {
           owned: {},
           daily: null,
           usedMissionIds: [],
+          minigameRewardDate: null,
         });
         return { granted: true, today };
       }

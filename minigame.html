@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>미니게임 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/minigame.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <div class="minigame-container">
+        <div class="minigame-title">🎮 미니게임</div>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <!-- 게임 목록 영역 (나중에 게임 추가) -->
+        <div class="games-section">
+          <div class="games-list" id="gamesList">
+            <!-- 게임 항목들이 여기에 추가됨 -->
+          </div>
+          <div class="games-empty" style="text-align: center; color: var(--text-secondary); padding: 40px 20px;">
+            🔨 게임 준비 중...
+          </div>
+        </div>
+
+        <!-- 테스트 버튼 -->
+        <div class="test-section">
+          <button class="btn-action btn-primary" id="testClearBtn" onclick="handleTestClear()">
+            테스트 클리어
+          </button>
+        </div>
+
+        <!-- 보상 결과 -->
+        <div id="rewardResult" class="reward-result" style="display: none;">
+          <div class="reward-content">
+            <div class="reward-icon" id="rewardIcon"></div>
+            <div class="reward-message" id="rewardMessage"></div>
+            <div class="reward-tickets" id="rewardTickets" style="display: none;"></div>
+            <button class="btn-action btn-secondary" onclick="handleBackHome()">
+              홈으로
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./recombine.html" class="nav-item" data-page="recombine">
+      <span class="nav-icon">✨</span>
+      <span class="nav-label">재조합</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout } from './js/auth.js';
+    import { guardAuth } from './js/auth.js';
+    import { grantMinigameReward } from './js/minigame.js';
+    import { getTickets } from './js/ticket.js';
+
+    let isProcessing = false;
+
+    // ========== 초기화 ==========
+    initAuth(async (user) => {
+      guardAuth();
+
+      if (isAdmin()) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      try {
+        await init();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+      }
+    });
+
+    async function init() {
+      try {
+        // 게임 목록 초기화 (현재는 비어있음)
+        initGames();
+      } catch (error) {
+        showError('오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    function initGames() {
+      const gamesList = document.getElementById('gamesList');
+      // 현재는 게임이 없으므로 비어있음
+      gamesList.innerHTML = '';
+    }
+
+    window.handleTestClear = async function () {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const btn = document.getElementById('testClearBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '처리 중...';
+
+      try {
+        // 테스트 게임 ID
+        const result = await grantMinigameReward('test-game');
+
+        // 결과 표시
+        showRewardResult(result);
+      } catch (error) {
+        console.error('보상 지급 실패:', error);
+        showError('보상 지급에 실패했습니다: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        isProcessing = false;
+      }
+    };
+
+    function showRewardResult(result) {
+      const resultDiv = document.getElementById('rewardResult');
+      const icon = document.getElementById('rewardIcon');
+      const message = document.getElementById('rewardMessage');
+      const tickets = document.getElementById('rewardTickets');
+
+      if (result.granted) {
+        icon.textContent = '🎉';
+        message.textContent = result.message;
+        tickets.textContent = `보유 뽑기권: ${result.tickets}`;
+        tickets.style.display = 'block';
+      } else {
+        icon.textContent = '😅';
+        message.textContent = result.message;
+        tickets.style.display = 'none';
+      }
+
+      resultDiv.style.display = 'block';
+    }
+
+    window.handleBackHome = function () {
+      window.location.href = './index.html';
+    };
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await logout();
+        window.location.href = './login.html';
+      } catch (error) {
+        alert('로그아웃 실패: ' + error.message);
+      }
+    });
+
+    function showError(message) {
+      const errorElem = document.getElementById('errorMessage');
+      errorElem.textContent = message;
+      errorElem.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

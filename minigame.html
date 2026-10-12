@@ -13,43 +13,50 @@
 <body>
   <div class="main-container">
     <header class="header">
-      <h1>추억카드뽑기</h1>
+      <h1>추억카드뽄기</h1>
       <button id="logoutBtn" class="logout-btn">로그아웃</button>
     </header>
 
     <main>
       <div class="minigame-container">
-        <div class="minigame-title">🎮 미니게임</div>
+        <div class="minigame-title">🎮 사천성</div>
 
         <!-- 에러 메시지 -->
         <div id="errorMessage" class="error-message" style="display: none;"></div>
 
-        <!-- 게임 목록 영역 (나중에 게임 추가) -->
-        <div class="games-section">
-          <div class="games-list" id="gamesList">
-            <!-- 게임 항목들이 여기에 추가됨 -->
+        <!-- 사천성 게임 -->
+        <div class="sichuan-game">
+          <div class="sichuan-hud">
+            <div class="sichuan-box">남은 쌍<b id="sichuan-pairsLeft">24</b></div>
+            <div class="sichuan-box">시간<b id="sichuan-timeText">00:00</b></div>
+            <div class="sichuan-box">시도<b id="sichuan-movesText">0</b></div>
           </div>
-          <div class="games-empty" style="text-align: center; color: var(--text-secondary); padding: 40px 20px;">
-            🔨 게임 준비 중...
-          </div>
-        </div>
 
-        <!-- 테스트 버튼 -->
-        <div class="test-section">
-          <button class="btn-action btn-primary" id="testClearBtn" onclick="handleTestClear()">
-            테스트 클리어
+          <div class="sichuan-board-wrap">
+            <div class="sichuan-board" id="sichuan-board"></div>
+            <svg id="sichuan-lines"></svg>
+          </div>
+
+          <div class="sichuan-controls">
+            <button class="sichuan-btn" id="sichuan-hintBtn">💡 힌트</button>
+            <button class="sichuan-btn" id="sichuan-shuffleBtn">🔀 섞기</button>
+            <button class="sichuan-btn sichuan-btn-sub" id="sichuan-restartBtn">↻ 다시</button>
+          </div>
+          <button class="sichuan-btn sichuan-btn-sub" id="devClearBtn" style="display: none;">
+            (개발) 즉시 클리어
           </button>
         </div>
 
-        <!-- 보상 결과 -->
-        <div id="rewardResult" class="reward-result" style="display: none;">
-          <div class="reward-content">
-            <div class="reward-icon" id="rewardIcon"></div>
-            <div class="reward-message" id="rewardMessage"></div>
-            <div class="reward-tickets" id="rewardTickets" style="display: none;"></div>
-            <button class="btn-action btn-secondary" onclick="handleBackHome()">
-              홈으로
-            </button>
+        <!-- 토스트 -->
+        <div id="sichuan-toast" class="sichuan-toast"></div>
+
+        <!-- 클리어 모달 -->
+        <div class="sichuan-modal" id="sichuan-modal">
+          <div class="sichuan-card">
+            <h2>🎉 클리어!</h2>
+            <p class="sichuan-stats" id="sichuan-stats"></p>
+            <p class="sichuan-reward" id="sichuan-rewardMsg"></p>
+            <button class="sichuan-btn" id="sichuan-againBtn">한 판 더</button>
           </div>
         </div>
       </div>
@@ -79,10 +86,7 @@
   <script type="module">
     import { initAuth, isAdmin, logout } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
-    import { grantMinigameReward } from './js/minigame.js';
-    import { getTickets } from './js/ticket.js';
-
-    let isProcessing = false;
+    import { grantMinigameReward, SichuanGame } from './js/minigame.js';
 
     // ========== 초기화 ==========
     initAuth(async (user) => {
@@ -101,67 +105,46 @@
 
     async function init() {
       try {
-        // 게임 목록 초기화 (현재는 비어있음)
-        initGames();
+        // 게임 시작
+        SichuanGame.startGame(SichuanGame.defaultCards());
+
+        // 클리어 시 보상 처리
+        SichuanGame.setOnClear(async (result) => {
+          try {
+            const rewardResult = await grantMinigameReward('sichuan');
+            return rewardResult.message;
+          } catch (error) {
+            console.error('보상 지급 오류:', error);
+            return '보상 처리 중 오류가 났어요. 다시 시도해 주세요.';
+          }
+        });
+
+        // 이벤트 리스너 추가
+        SichuanGame.attachEventListeners();
+
+        // 개발 모드: ?dev=1 일 때 즉시 클리어 버튼 표시
+        if (/[?&]dev=1/.test(location.search)) {
+          const devBtn = document.getElementById('devClearBtn');
+          if (devBtn) {
+            devBtn.style.display = 'block';
+            devBtn.addEventListener('click', () => {
+              // 게임 상태를 클리어 상태로 변경하려면 게임 내부 로직을 호출해야 함
+              // 현재는 간단한 구현으로 모달을 직접 열기
+              const modal = document.getElementById('sichuan-modal');
+              const stats = document.getElementById('sichuan-stats');
+              const rewardMsg = document.getElementById('sichuan-rewardMsg');
+              if (modal && stats && rewardMsg) {
+                stats.innerHTML = '걸린 시간 <b>00:00</b><br>시도 <b>0</b>번 · 힌트 <b>0</b>번 · 섞기 <b>0</b>번';
+                rewardMsg.textContent = '(개발 테스트)';
+                modal.classList.add('show');
+              }
+            });
+          }
+        }
       } catch (error) {
         showError('오류가 발생했습니다: ' + error.message);
       }
     }
-
-    function initGames() {
-      const gamesList = document.getElementById('gamesList');
-      // 현재는 게임이 없으므로 비어있음
-      gamesList.innerHTML = '';
-    }
-
-    window.handleTestClear = async function () {
-      if (isProcessing) return;
-      isProcessing = true;
-
-      const btn = document.getElementById('testClearBtn');
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = '처리 중...';
-
-      try {
-        // 테스트 게임 ID
-        const result = await grantMinigameReward('test-game');
-
-        // 결과 표시
-        showRewardResult(result);
-      } catch (error) {
-        console.error('보상 지급 실패:', error);
-        showError('보상 지급에 실패했습니다: ' + error.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-        isProcessing = false;
-      }
-    };
-
-    function showRewardResult(result) {
-      const resultDiv = document.getElementById('rewardResult');
-      const icon = document.getElementById('rewardIcon');
-      const message = document.getElementById('rewardMessage');
-      const tickets = document.getElementById('rewardTickets');
-
-      if (result.granted) {
-        icon.textContent = '🎉';
-        message.textContent = result.message;
-        tickets.textContent = `보유 뽑기권: ${result.tickets}`;
-        tickets.style.display = 'block';
-      } else {
-        icon.textContent = '😅';
-        message.textContent = result.message;
-        tickets.style.display = 'none';
-      }
-
-      resultDiv.style.display = 'block';
-    }
-
-    window.handleBackHome = function () {
-      window.location.href = './index.html';
-    };
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       try {

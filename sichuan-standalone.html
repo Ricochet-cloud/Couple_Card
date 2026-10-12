@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>사천성</title>
+<!--
+  사천성 (독립 실행 버전)
+  - 이 파일 하나만 열어도 동작합니다. (Firebase / 로그인 필요 없음)
+  - 이미지를 쓰려면 아래 스크립트의 IMAGE_FILES 목록에 경로를 적으세요.
+    비어 있으면 임시 이모지 타일로 동작합니다.
+
+  [사이트에 연결할 때]
+  1) 카드 넣기:  SichuanGame.startGame([{ id: '카드id', img: '이미지주소' }, ...])
+  2) 클리어 받기: SichuanGame.hooks.onClear = async (result) => {
+       // result = { time(초), moves, hints, shuffles }
+       const r = await grantMinigameReward('sichuan');
+       return r.message;   // 문자열을 반환하면 클리어 창에 표시됨
+     };
+  3) 테스트: 주소 뒤에 ?dev=1 을 붙이면 "즉시 클리어" 버튼이 보임
+-->
+<style>
+:root{
+  --bg:#f5e6b8; --panel:#fff8e1; --wood:#8a5a2b; --wood-dark:#5e3b17;
+  --green:#5b8c3a; --tile:#fffdf3; --select:#ffb703; --hint:#2f9bff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--wood-dark);
+  font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  min-height:100vh;display:flex;justify-content:center;touch-action:manipulation;
+}
+.app{width:100%;max-width:440px;padding:12px 12px 28px}
+h1{margin:4px 0 10px;font-size:20px;text-align:center;letter-spacing:1px}
+.hud{display:flex;gap:8px;margin-bottom:10px}
+.hud .box{
+  flex:1;background:var(--panel);border:3px solid var(--wood);border-radius:8px;
+  padding:6px 4px;text-align:center;font-size:12px;
+}
+.hud .box b{display:block;font-size:18px;margin-top:2px}
+.board-wrap{position:relative;background:var(--wood);padding:6px;border-radius:10px}
+.board{
+  position:relative;width:100%;display:grid;background:#ead7a0;border-radius:6px;
+  user-select:none;-webkit-user-select:none;
+}
+.cell{padding:2px;min-width:0;min-height:0}
+.cell.ring{padding:0}
+.tile{
+  width:100%;height:100%;background:var(--tile);
+  border:2px solid var(--wood);border-bottom-width:4px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-size:var(--emoji-size,24px);line-height:1;cursor:pointer;
+  transition:transform .12s, box-shadow .12s, opacity .25s;
+}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.tile.selected{border-color:var(--select);box-shadow:0 0 0 3px var(--select);transform:translateY(-2px)}
+.tile.hint{border-color:var(--hint);box-shadow:0 0 0 3px var(--hint)}
+.tile.shake{animation:shake .28s}
+.tile.removing{opacity:0;transform:scale(.6)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#lines{position:absolute;left:6px;top:6px;width:calc(100% - 12px);height:calc(100% - 12px);pointer-events:none}
+#lines polyline{fill:none;stroke:var(--select);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.controls{display:flex;gap:8px;margin-top:12px}
+.btn{
+  flex:1;padding:12px 6px;font-size:15px;font-weight:700;color:#fff;
+  background:var(--green);border:3px solid #3f6628;border-bottom-width:5px;border-radius:8px;
+  font-family:inherit;cursor:pointer;
+}
+.btn:active{transform:translateY(2px);border-bottom-width:3px}
+.btn.sub{background:var(--wood);border-color:var(--wood-dark)}
+#toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
+  background:rgba(60,35,10,.92);color:#fff;padding:10px 16px;border-radius:20px;
+  font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90%;text-align:center;
+}
+#toast.show{opacity:1}
+.modal{
+  position:fixed;inset:0;background:rgba(40,25,5,.55);display:none;
+  align-items:center;justify-content:center;padding:20px;z-index:10;
+}
+.modal.show{display:flex}
+.modal .card{
+  background:var(--panel);border:4px solid var(--wood);border-radius:12px;
+  padding:22px 20px;width:100%;max-width:320px;text-align:center;
+}
+.modal h2{margin:0 0 12px;font-size:22px}
+.modal .stats{margin:0 0 12px;font-size:15px;line-height:1.7}
+.modal .reward{min-height:20px;margin:0 0 14px;font-size:14px;color:var(--green);font-weight:700;word-break:keep-all}
+#devClear{display:none;margin-top:8px;width:100%}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🀄 사천성</h1>
+
+  <div class="hud">
+    <div class="box">남은 쌍<b id="pairsLeft">24</b></div>
+    <div class="box">시간<b id="timeText">00:00</b></div>
+    <div class="box">시도<b id="movesText">0</b></div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+    <svg id="lines"></svg>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="hintBtn">💡 힌트</button>
+    <button class="btn" id="shuffleBtn">🔀 섞기</button>
+    <button class="btn sub" id="restartBtn">↻ 다시</button>
+  </div>
+  <button class="btn sub" id="devClear">(개발) 즉시 클리어</button>
+</div>
+
+<div id="toast"></div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <h2>🎉 클리어!</h2>
+    <p class="stats" id="stats"></p>
+    <p class="reward" id="rewardMsg"></p>
+    <button class="btn" id="againBtn">한 판 더</button>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ============ 설정 ============
+// 이미지를 쓰려면 경로를 적으세요. (예: 'images/sichuan/01.webp')
+// 비어 있으면 이모지 타일로 동작합니다. 24개 이상이면 판마다 24종이 랜덤으로 뽑힙니다.
+const IMAGE_FILES = Array.from({ length: 30 }, (_, i) =>
+  'images/tile_' + String(i + 1).padStart(2, '0') + '.webp'
+);
+  // 'images/sichuan/01.webp',
+  // 'images/sichuan/02.webp',
+
+
+// ===== LOGIC START (DOM을 쓰지 않는 부분) =====
+const ROWS = 8, COLS = 6, PAIRS = ROWS * COLS / 2;
+const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑','🍉','🥕','🌽','🍄',
+                '🐶','🐱','🐰','🐻','🐼','🐸','🦊','🐧','🌸','🌻','⭐','🌙',
+                '🍀','🎈','🎀','🔔','🍪','🧸'];
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// 바깥에 빈 칸 한 줄을 더 둔 격자 (테두리를 돌아가는 경로를 위해)
+function makeGrid() {
+  return Array.from({ length: ROWS + 2 }, () => Array(COLS + 2).fill(null));
+}
+
+function createBoard(cards) {
+  const pool = shuffleArray(cards.slice());
+  const tiles = [];
+  for (let i = 0; i < PAIRS; i++) {
+    const card = pool[i % pool.length];
+    tiles.push({ id: card.id, card: card }, { id: card.id, card: card });
+  }
+  shuffleArray(tiles);
+  const grid = makeGrid();
+  let k = 0;
+  for (let r = 1; r <= ROWS; r++)
+    for (let c = 1; c <= COLS; c++) grid[r][c] = tiles[k++];
+  return grid;
+}
+
+// p, q 사이(양 끝 제외)가 모두 비어 있는지 (같은 행 또는 같은 열일 때만)
+function isBetweenClear(grid, p, q) {
+  if (p.r === q.r) {
+    const lo = Math.min(p.c, q.c), hi = Math.max(p.c, q.c);
+    for (let c = lo + 1; c < hi; c++) if (grid[p.r][c]) return false;
+    return true;
+  }
+  if (p.c === q.c) {
+    const lo = Math.min(p.r, q.r), hi = Math.max(p.r, q.r);
+    for (let r = lo + 1; r < hi; r++) if (grid[r][p.c]) return false;
+    return true;
+  }
+  return false;
+}
+
+// 꺾임 2번 이하로 이어지는 경로를 찾는다. 없으면 null, 있으면 꺾이는 지점들의 배열
+function findPath(grid, a, b) {
+  if (a.r === b.r && a.c === b.c) return null;
+  const free = p => !grid[p.r][p.c] ||
+    (p.r === a.r && p.c === a.c) || (p.r === b.r && p.c === b.c);
+  const ok = (...pts) => {
+    for (let i = 0; i < pts.length - 1; i++)
+      if (!isBetweenClear(grid, pts[i], pts[i + 1])) return false;
+    return true;
+  };
+  const clean = pts => pts.filter((p, i) =>
+    i === 0 || p.r !== pts[i - 1].r || p.c !== pts[i - 1].c);
+
+  // 직선
+  if ((a.r === b.r || a.c === b.c) && ok(a, b)) return [a, b];
+  // 꺾임 1번
+  for (const p of [{ r: a.r, c: b.c }, { r: b.r, c: a.c }])
+    if (free(p) && ok(a, p, b)) return clean([a, p, b]);
+  // 꺾임 2번 (세로선을 지나는 경우)
+  for (let c = 0; c <= COLS + 1; c++) {
+    const p = { r: a.r, c: c }, q = { r: b.r, c: c };
+    if (free(p) && free(q) && ok(a, p, q, b)) return clean([a, p, q, b]);
+  }
+  // 꺾임 2번 (가로선을 지나는 경우)
+  for (let r = 0; r <= ROWS + 1; r++) {
+    const p = { r: r, c: a.c }, q = { r: r, c: b.c };
+    if (free(p) && free(q) && ok(a, p, q, b)) return clean([a, p, q, b]);
+  }
+  return null;
+}
+
+function listTiles(grid) {
+  const list = [];
+  for (let r = 1; r <= ROWS; r++)
+    for (let c = 1; c <= COLS; c++)
+      if (grid[r][c]) list.push({ r: r, c: c });
+  return list;
+}
+
+// 지금 이어질 수 있는 짝이 있으면 { a, b, path }, 없으면 null
+function findHint(grid) {
+  const list = listTiles(grid);
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      if (grid[a.r][a.c].id !== grid[b.r][b.c].id) continue;
+      const path = findPath(grid, a, b);
+      if (path) return { a: a, b: b, path: path };
+    }
+  }
+  return null;
+}
+
+// 남은 타일의 위치만 섞는다. 이어질 짝이 생길 때까지 시도.
+function shuffleRemaining(grid) {
+  const pos = listTiles(grid);
+  const tiles = pos.map(p => grid[p.r][p.c]);
+  for (let t = 0; t < 300; t++) {
+    shuffleArray(tiles);
+    pos.forEach((p, i) => { grid[p.r][p.c] = tiles[i]; });
+    if (findHint(grid)) return true;
+  }
+  return false;
+}
+// ===== LOGIC END =====
+
+// ============ 화면 ============
+const $ = id => document.getElementById(id);
+const boardEl = $('board'), svgEl = $('lines');
+const hooks = {
+  // 사이트에 연결할 때 이 함수를 바꿔 끼우세요. 문자열을 반환하면 클리어 창에 표시됩니다.
+  onClear: function (result) {
+    return '독립 실행 모드예요. 사이트에 연결하면 여기서 뽑기권이 지급돼요.';
+  }
+};
+
+let grid, cellEls = [], selected = null, locked = false, cleared = false;
+let moves = 0, hints = 0, shuffles = 0;
+let startTime = 0, elapsedMs = 0, timerId = null, hintTimer = null, toastTimer = null;
+let currentCards = null;
+
+function defaultCards() {
+  if (IMAGE_FILES.length > 0)
+    return IMAGE_FILES.map((src, i) => ({ id: 'img' + i, img: src }));
+  return EMOJIS.map((e, i) => ({ id: 'emo' + i, emoji: e }));
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+function updateHud() {
+  $('pairsLeft').textContent = listTiles(grid).length / 2;
+  $('movesText').textContent = moves;
+  $('timeText').textContent = fmtTime(elapsedMs);
+}
+
+function stopTimer() { clearInterval(timerId); timerId = null; }
+function startTimer() {
+  if (timerId || cleared) return;
+  startTime = Date.now() - elapsedMs;
+  timerId = setInterval(() => {
+    elapsedMs = Date.now() - startTime;
+    $('timeText').textContent = fmtTime(elapsedMs);
+  }, 250);
+}
+
+function fit() {
+  const unit = boardEl.clientWidth / (COLS + 1);
+  boardEl.style.setProperty('--emoji-size', Math.round(unit * 0.55) + 'px');
+}
+
+function buildBoardDom() {
+  boardEl.innerHTML = '';
+  boardEl.style.gridTemplateColumns = '0.5fr repeat(' + COLS + ', 1fr) 0.5fr';
+  boardEl.style.gridTemplateRows = '0.5fr repeat(' + ROWS + ', 1fr) 0.5fr';
+  boardEl.style.aspectRatio = (COLS + 1) + ' / ' + (ROWS + 1);
+  cellEls = [];
+  for (let r = 0; r < ROWS + 2; r++) {
+    const row = [];
+    for (let c = 0; c < COLS + 2; c++) {
+      const cell = document.createElement('div');
+      const ring = r === 0 || c === 0 || r === ROWS + 1 || c === COLS + 1;
+      cell.className = 'cell' + (ring ? ' ring' : '');
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      boardEl.appendChild(cell);
+      row.push(cell);
+    }
+    cellEls.push(row);
+  }
+  fit();
+}
+
+function makeTileEl(tile) {
+  const el = document.createElement('div');
+  el.className = 'tile';
+  if (tile.card.img) {
+    const img = document.createElement('img');
+    img.src = tile.card.img;
+    img.alt = '';
+    img.draggable = false;
+    el.appendChild(img);
+  } else {
+    el.textContent = tile.card.emoji || '❓';
+  }
+  return el;
+}
+
+function renderTiles() {
+  for (let r = 1; r <= ROWS; r++) {
+    for (let c = 1; c <= COLS; c++) {
+      const cell = cellEls[r][c];
+      cell.innerHTML = '';
+      if (grid[r][c]) cell.appendChild(makeTileEl(grid[r][c]));
+    }
+  }
+}
+
+function tileEl(p) { return cellEls[p.r][p.c].firstElementChild; }
+
+function clearHint() {
+  clearTimeout(hintTimer);
+  boardEl.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint'));
+}
+
+function select(p) {
+  selected = p;
+  const el = tileEl(p);
+  if (el) el.classList.add('selected');
+}
+function unselect() {
+  if (selected) {
+    const el = tileEl(selected);
+    if (el) el.classList.remove('selected');
+  }
+  selected = null;
+}
+function shake(p) {
+  const el = tileEl(p);
+  if (!el) return;
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+}
+
+function centerOf(p) {
+  const br = boardEl.getBoundingClientRect();
+  const r = cellEls[p.r][p.c].getBoundingClientRect();
+  return { x: r.left - br.left + r.width / 2, y: r.top - br.top + r.height / 2 };
+}
+function drawPath(path) {
+  const pts = path.map(p => { const c = centerOf(p); return c.x + ',' + c.y; }).join(' ');
+  svgEl.innerHTML = '<polyline points="' + pts + '"></polyline>';
+}
+function clearPath() { svgEl.innerHTML = ''; }
+
+function onTileClick(r, c) {
+  if (locked || cleared || !grid[r][c]) return;
+  startTimer();
+  clearHint();
+  const p = { r: r, c: c };
+
+  if (!selected) { select(p); return; }
+  if (selected.r === r && selected.c === c) { unselect(); return; }
+
+  const a = selected;
+  moves++;
+  $('movesText').textContent = moves;
+
+  if (grid[a.r][a.c].id !== grid[r][c].id) {
+    shake(a); shake(p);
+    unselect(); select(p);
+    return;
+  }
+  const path = findPath(grid, a, p);
+  if (!path) {
+    shake(a); shake(p);
+    unselect(); select(p);
+    return;
+  }
+
+  // 연결 성공
+  locked = true;
+  select(p);
+  drawPath(path);
+  setTimeout(() => {
+    tileEl(a).classList.add('removing');
+    tileEl(p).classList.add('removing');
+  }, 180);
+  setTimeout(() => {
+    grid[a.r][a.c] = null;
+    grid[p.r][p.c] = null;
+    cellEls[a.r][a.c].innerHTML = '';
+    cellEls[p.r][p.c].innerHTML = '';
+    clearPath();
+    selected = null;
+    locked = false;
+    updateHud();
+    afterRemove();
+  }, 380);
+}
+
+function afterRemove() {
+  if (listTiles(grid).length === 0) { win(); return; }
+  if (!findHint(grid)) {
+    shuffleRemaining(grid);
+    renderTiles();
+    toast('이어질 짝이 없어서 자동으로 섞었어요');
+  }
+}
+
+function win() {
+  stopTimer();
+  cleared = true;
+  const result = {
+    time: Math.round(elapsedMs / 1000), moves: moves, hints: hints, shuffles: shuffles
+  };
+  $('stats').innerHTML =
+    '걸린 시간 <b>' + fmtTime(elapsedMs) + '</b><br>시도 <b>' + moves + '</b>번 · ' +
+    '힌트 <b>' + hints + '</b>번 · 섞기 <b>' + shuffles + '</b>번';
+  $('rewardMsg').textContent = '';
+  $('modal').classList.add('show');
+  Promise.resolve()
+    .then(() => hooks.onClear(result))
+    .then(msg => { if (typeof msg === 'string') $('rewardMsg').textContent = msg; })
+    .catch(() => { $('rewardMsg').textContent = '보상 처리 중 오류가 났어요. 다시 시도해 주세요.'; });
+}
+
+function startGame(cards) {
+  currentCards = (cards && cards.length) ? cards : defaultCards();
+  stopTimer();
+  clearHint();
+  clearPath();
+  $('modal').classList.remove('show');
+  selected = null; locked = false; cleared = false;
+  moves = 0; hints = 0; shuffles = 0; elapsedMs = 0;
+  for (let i = 0; i < 50; i++) {
+    grid = createBoard(currentCards);
+    if (findHint(grid)) break;
+  }
+  buildBoardDom();
+  renderTiles();
+  updateHud();
+}
+
+// ============ 이벤트 ============
+boardEl.addEventListener('click', function (e) {
+  const tile = e.target.closest('.tile');
+  if (!tile) return;
+  const cell = tile.parentNode;
+  onTileClick(+cell.dataset.r, +cell.dataset.c);
+});
+
+$('hintBtn').addEventListener('click', function () {
+  if (locked || cleared) return;
+  clearHint();
+  const h = findHint(grid);
+  if (!h) { toast('이어질 짝이 없어요. 섞기를 눌러 보세요'); return; }
+  startTimer();
+  hints++;
+  tileEl(h.a).classList.add('hint');
+  tileEl(h.b).classList.add('hint');
+  hintTimer = setTimeout(clearHint, 1800);
+});
+
+$('shuffleBtn').addEventListener('click', function () {
+  if (locked || cleared) return;
+  clearHint();
+  unselect();
+  startTimer();
+  shuffleRemaining(grid);
+  shuffles++;
+  renderTiles();
+  toast('남은 카드를 섞었어요');
+});
+
+$('restartBtn').addEventListener('click', () => startGame(currentCards));
+$('againBtn').addEventListener('click', () => startGame(currentCards));
+window.addEventListener('resize', fit);
+
+if (/[?&]dev=1/.test(location.search)) {
+  const d = $('devClear');
+  d.style.display = 'block';
+  d.addEventListener('click', function () { if (!cleared) win(); });
+}
+
+// 사이트 연결용으로 바깥에 공개
+window.SichuanGame = { startGame: startGame, hooks: hooks, defaultCards: defaultCards };
+
+startGame(defaultCards());
+})();
+</script>
+</body>
+</html>

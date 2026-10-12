@@ -1,4 +1,4 @@
-/* 미니게임 페이지 */
+/* 미니게임 페이지 - 사천성 */
 
 main {
   max-width: 960px;
@@ -23,101 +23,6 @@ main {
   font-family: 'Galmuri';
 }
 
-/* 게임 목록 섹션 */
-.games-section {
-  margin-bottom: var(--spacing-xl);
-  min-height: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.games-list {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.games-empty {
-  background: var(--white);
-  border: 2px solid var(--wood-light);
-  border-radius: 0;
-  padding: var(--spacing-lg);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-family: 'Galmuri';
-}
-
-/* 테스트 섹션 */
-.test-section {
-  margin-bottom: var(--spacing-xl);
-  padding: var(--spacing-md);
-  background: rgba(127, 184, 73, 0.05);
-  border: 2px dashed var(--grass-green);
-  border-radius: 0;
-}
-
-.test-section .btn-action {
-  width: 100%;
-}
-
-/* 보상 결과 */
-.reward-result {
-  margin-top: var(--spacing-lg);
-}
-
-.reward-content {
-  background: var(--white);
-  border: 2px solid var(--wood-dark);
-  border-radius: 0;
-  padding: var(--spacing-lg);
-  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.05);
-  animation: slideUp 0.5s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.reward-icon {
-  font-size: 48px;
-  margin-bottom: var(--spacing-md);
-}
-
-.reward-message {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin-bottom: var(--spacing-md);
-  font-family: 'Galmuri';
-  line-height: 1.5;
-}
-
-.reward-tickets {
-  background: rgba(127, 184, 73, 0.1);
-  border: 1px solid var(--grass-green);
-  border-radius: 0;
-  padding: var(--spacing-md);
-  font-size: 12px;
-  color: var(--text-dark);
-  margin-bottom: var(--spacing-lg);
-  font-family: 'Galmuri';
-  font-weight: 600;
-}
-
-.reward-content .btn-action {
-  width: 100%;
-}
-
 /* 에러 메시지 */
 .error-message {
   background: rgba(214, 48, 49, 0.1);
@@ -131,46 +36,269 @@ main {
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* 액션 버튼 */
-.btn-action {
-  min-height: 44px;
-  padding: 12px 24px;
+/* 사천성 게임 */
+.sichuan-game {
+  background: var(--white);
   border: 2px solid var(--wood-dark);
   border-radius: 0;
+  padding: var(--spacing-lg);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+}
+
+/* HUD (시간, 시도, 남은 쌍) */
+.sichuan-hud {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sichuan-box {
+  flex: 1;
+  background: var(--wood-light);
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
+  padding: 8px 4px;
+  text-align: center;
   font-size: 11px;
+  font-family: 'Galmuri';
+  color: var(--text-dark);
+}
+
+.sichuan-box b {
+  display: block;
+  font-size: 18px;
+  margin-top: 4px;
   font-weight: 700;
+}
+
+/* 보드 래퍼 */
+.sichuan-board-wrap {
+  position: relative;
+  background: var(--wood-dark);
+  padding: 6px;
+  border-radius: 0;
+  margin: 12px 0;
+}
+
+.sichuan-board {
+  position: relative;
+  width: 100%;
+  display: grid;
+  background: #ead7a0;
+  border-radius: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  --emoji-size: 24px;
+}
+
+.sichuan-cell {
+  padding: 2px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sichuan-cell.ring {
+  padding: 0;
+}
+
+.sichuan-tile {
+  width: 100%;
+  height: 100%;
+  background: #fffdf3;
+  border: 2px solid var(--wood-dark);
+  border-bottom-width: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: var(--emoji-size);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.25s;
+}
+
+.sichuan-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.sichuan-tile.selected {
+  border-color: #ffb703;
+  box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.5);
+  transform: translateY(-2px);
+}
+
+.sichuan-tile.hint {
+  border-color: #2f9bff;
+  box-shadow: 0 0 0 3px rgba(47, 155, 255, 0.5);
+}
+
+.sichuan-tile.shake {
+  animation: sichuan-shake 0.28s;
+}
+
+.sichuan-tile.removing {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+@keyframes sichuan-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+#sichuan-lines {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  pointer-events: none;
+}
+
+#sichuan-lines polyline {
+  fill: none;
+  stroke: #ffb703;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 컨트롤 버튼들 */
+.sichuan-controls {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.sichuan-btn {
+  flex: 1;
+  padding: 12px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--grass-green);
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
   font-family: 'Galmuri';
   cursor: pointer;
+  min-height: 44px;
   transition: all 0.1s steps(2);
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
 }
 
-.btn-action:active:not(:disabled) {
+.sichuan-btn:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
 
-.btn-action:disabled {
+.sichuan-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-primary {
-  background: var(--grass-green);
-  color: var(--white);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #7fb849;
-}
-
-.btn-secondary {
+.sichuan-btn-sub {
   background: var(--wood-light);
   color: var(--text-dark);
 }
 
-.btn-secondary:hover:not(:disabled) {
+.sichuan-btn-sub:hover:not(:disabled) {
   background: #ddb476;
+}
+
+.sichuan-btn:hover:not(:disabled) {
+  background: #7fb849;
+}
+
+/* 토스트 */
+#sichuan-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  transform: translateX(-50%);
+  background: rgba(60, 35, 10, 0.92);
+  color: var(--white);
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: 'Galmuri';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  max-width: 90%;
+  text-align: center;
+  z-index: 5;
+}
+
+#sichuan-toast.show {
+  opacity: 1;
+}
+
+/* 모달 */
+.sichuan-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 25, 5, 0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.sichuan-modal.show {
+  display: flex;
+}
+
+.sichuan-card {
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
+  padding: 22px 20px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.sichuan-card h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-family: 'Galmuri';
+}
+
+.sichuan-stats {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-dark);
+  font-family: 'Galmuri';
+}
+
+.sichuan-stats b {
+  font-weight: 700;
+  color: var(--grass-green);
+}
+
+.sichuan-reward {
+  min-height: 20px;
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--grass-green);
+  font-weight: 700;
+  word-break: keep-all;
+  font-family: 'Galmuri';
+}
+
+.sichuan-card .sichuan-btn {
+  width: 100%;
 }
 
 /* 반응형 */
@@ -184,39 +312,73 @@ main {
     margin-bottom: var(--spacing-lg);
   }
 
-  .games-section {
-    min-height: 80px;
-  }
-
-  .reward-content {
+  .sichuan-game {
     padding: var(--spacing-md);
   }
 
-  .reward-icon {
-    font-size: 40px;
-    margin-bottom: var(--spacing-sm);
+  .sichuan-hud {
+    gap: 6px;
+    margin-bottom: 10px;
   }
 
-  .reward-message {
-    font-size: 12px;
-    margin-bottom: var(--spacing-sm);
-  }
-
-  .reward-tickets {
-    font-size: 11px;
-    padding: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-  }
-
-  .btn-action {
-    padding: 10px 16px;
+  .sichuan-box {
+    padding: 6px 2px;
     font-size: 10px;
+  }
+
+  .sichuan-box b {
+    font-size: 16px;
+    margin-top: 2px;
+  }
+
+  .sichuan-controls {
+    gap: 6px;
+    margin: 10px 0;
+  }
+
+  .sichuan-btn {
+    padding: 10px 4px;
+    font-size: 11px;
+    min-height: 40px;
+  }
+
+  .sichuan-card {
+    padding: 16px 14px;
+    max-width: 100%;
+  }
+
+  .sichuan-card h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .sichuan-stats {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .sichuan-reward {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  #sichuan-toast {
+    bottom: 80px;
+    font-size: 11px;
   }
 }
 
 /* 감소 모션 모드 */
 @media (prefers-reduced-motion: reduce) {
-  .reward-content {
+  .sichuan-tile {
+    transition: none;
+  }
+
+  .sichuan-tile.shake {
     animation: none;
+  }
+
+  #sichuan-toast {
+    transition: none;
   }
 }

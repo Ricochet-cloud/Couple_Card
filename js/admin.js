@@ -307,3 +307,73 @@ export async function deleteMission(missionId) {
     throw error;
   }
 }
+
+// ========== 퀴즈 관리 ==========
+
+/**
+ * 모든 퀴즈 조회 (등록순)
+ */
+export async function getAllQuizzes() {
+  try {
+    const snapshot = await getDocs(collection(db, 'quizzes'));
+    return snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+  } catch (error) {
+    console.error('퀴즈 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 퀴즈 추가
+ * @param {{question: string, choices: string[], answerIndex: number, explanation?: string}} data
+ */
+export async function addQuiz(data) {
+  try {
+    const choices = data.choices.map((c) => c.trim()).filter((c) => c);
+    if (!data.question.trim()) throw new Error('질문을 입력하세요.');
+    if (choices.length < 2) throw new Error('보기는 2개 이상 입력하세요.');
+    if (data.answerIndex < 0 || data.answerIndex >= choices.length) {
+      throw new Error('정답 번호가 보기 범위를 벗어났습니다.');
+    }
+
+    const newQuiz = {
+      question: data.question.trim(),
+      choices,
+      answerIndex: data.answerIndex,
+      explanation: (data.explanation || '').trim(),
+      active: true,
+      createdAt: Timestamp.now(),
+    };
+    const docRef = await addDoc(collection(db, 'quizzes'), newQuiz);
+    return { id: docRef.id, ...newQuiz };
+  } catch (error) {
+    console.error('퀴즈 추가 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 퀴즈 활성/비활성 토글
+ */
+export async function toggleQuizActive(quizId, currentActive) {
+  try {
+    await updateDoc(doc(db, 'quizzes', quizId), { active: !currentActive });
+  } catch (error) {
+    console.error('퀴즈 상태 변경 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 퀴즈 삭제
+ */
+export async function deleteQuiz(quizId) {
+  try {
+    await deleteDoc(doc(db, 'quizzes', quizId));
+  } catch (error) {
+    console.error('퀴즈 삭제 실패:', error);
+    throw error;
+  }
+}

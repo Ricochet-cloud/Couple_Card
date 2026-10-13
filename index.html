@@ -57,6 +57,14 @@
           <div class="loading">로딩 중...</div>
         </div>
       </div>
+
+      <!-- 오늘의 퀴즈 -->
+      <div class="home-section">
+        <h2>❓ 오늘의 퀴즈</h2>
+        <div class="quiz-section" id="quizSection">
+          <div class="loading">로딩 중...</div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -88,6 +96,7 @@
     import { renderCard } from './js/card.js';
     import { getCollectionData } from './js/collection.js';
     import { assignOrGetDailyMission, completeMission } from './js/mission.js';
+    import { assignOrGetDailyQuiz, submitQuizAnswer } from './js/quiz.js';
 
     // ========== 초기화 ==========
     initAuth(async (user) => {
@@ -155,6 +164,73 @@
 
       // 오늘의 미션
       await updateMissionUI();
+
+      // 오늘의 퀴즈
+      await updateQuizUI();
+    }
+
+    async function updateQuizUI() {
+      const quizSection = document.getElementById('quizSection');
+      try {
+        const result = await assignOrGetDailyQuiz();
+
+        if (result.noQuizzes) {
+          quizSection.innerHTML = '<div class="mission-empty">등록된 퀴즈가 없어요</div>';
+          return;
+        }
+
+        renderQuiz(result.quiz, result.answered, result.selected);
+      } catch (error) {
+        console.error('퀴즈 로드 실패:', error);
+        quizSection.innerHTML = '<div class="mission-empty">퀴즈를 불러올 수 없습니다</div>';
+      }
+    }
+
+    function renderQuiz(quiz, answered, selected) {
+      const quizSection = document.getElementById('quizSection');
+      const choicesHtml = quiz.choices
+        .map((choice, i) => {
+          let cls = 'quiz-choice-btn';
+          if (answered) {
+            if (i === quiz.answerIndex) cls += ' correct';
+            else if (i === selected) cls += ' wrong';
+          }
+          return `<button class="${cls}" data-index="${i}" ${answered ? 'disabled' : ''}>${i + 1}. ${escapeHtml(choice)}</button>`;
+        })
+        .join('');
+
+      let resultHtml = '';
+      if (answered) {
+        const isCorrect = selected === quiz.answerIndex;
+        resultHtml = `
+          <div class="quiz-result">
+            <strong class="${isCorrect ? 'ok' : 'no'}">${isCorrect ? '정답이에요! 🎉' : '아쉬워요, 오답이에요'}</strong>
+            ${quiz.explanation ? `<div>${escapeHtml(quiz.explanation)}</div>` : ''}
+          </div>`;
+      }
+
+      quizSection.innerHTML = `
+        <div class="quiz-question">${escapeHtml(quiz.question)}</div>
+        <div class="quiz-choices">${choicesHtml}</div>
+        ${resultHtml}
+      `;
+
+      if (!answered) {
+        quizSection.querySelectorAll('.quiz-choice-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const index = parseInt(btn.dataset.index);
+            quizSection.querySelectorAll('.quiz-choice-btn').forEach((b) => (b.disabled = true));
+            try {
+              await submitQuizAnswer(index);
+              renderQuiz(quiz, true, index);
+            } catch (error) {
+              console.error('퀴즈 제출 실패:', error);
+              alert('답 제출에 실패했습니다: ' + error.message);
+              quizSection.querySelectorAll('.quiz-choice-btn').forEach((b) => (b.disabled = false));
+            }
+          });
+        });
+      }
     }
 
     async function updateMissionUI() {

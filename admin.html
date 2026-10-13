@@ -23,6 +23,7 @@
       <div class="admin-tabs">
         <button class="tab-btn active" data-tab="cards">카드</button>
         <button class="tab-btn" data-tab="missions">미션</button>
+        <button class="tab-btn" data-tab="quizzes">퀴즈</button>
         <button class="tab-btn" data-tab="tickets">뽑기권</button>
         <button class="tab-btn" data-tab="cardback">카드 뒷면</button>
       </div>
@@ -116,6 +117,54 @@
         <div id="missionsList" class="loading">로딩 중...</div>
       </div>
 
+      <!-- 퀴즈 탭 -->
+      <div class="tab-content" id="quizzes-tab">
+        <div id="quizMessage"></div>
+
+        <div class="form-section">
+          <h2>퀴즈 추가</h2>
+          <form id="quizForm">
+            <div class="form-group">
+              <label for="quizQuestion">질문 *</label>
+              <textarea id="quizQuestion" required placeholder="예: 우리가 처음 만난 날은 무슨 요일이었을까?"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="quizChoice0">보기 * (정답에 체크, 최소 2개)</label>
+              <div class="quiz-choice-row">
+                <input type="radio" name="quizAnswer" value="0" checked aria-label="1번을 정답으로">
+                <input type="text" id="quizChoice0" placeholder="1번 보기" required>
+              </div>
+              <div class="quiz-choice-row">
+                <input type="radio" name="quizAnswer" value="1" aria-label="2번을 정답으로">
+                <input type="text" id="quizChoice1" placeholder="2번 보기" required>
+              </div>
+              <div class="quiz-choice-row">
+                <input type="radio" name="quizAnswer" value="2" aria-label="3번을 정답으로">
+                <input type="text" id="quizChoice2" placeholder="3번 보기 (선택)">
+              </div>
+              <div class="quiz-choice-row">
+                <input type="radio" name="quizAnswer" value="3" aria-label="4번을 정답으로">
+                <input type="text" id="quizChoice3" placeholder="4번 보기 (선택)">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="quizExplanation">해설 (선택)</label>
+              <textarea id="quizExplanation" placeholder="정답을 맞힌 뒤 보여줄 한마디"></textarea>
+            </div>
+
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary">퀴즈 추가</button>
+              <button type="button" class="btn-secondary" id="quizFormReset">초기화</button>
+            </div>
+          </form>
+        </div>
+
+        <h2>등록된 퀴즈</h2>
+        <div id="quizzesList" class="loading">로딩 중...</div>
+      </div>
+
       <!-- 뽑기권 탭 -->
       <div class="tab-content" id="tickets-tab">
         <div id="ticketMessage"></div>
@@ -204,6 +253,10 @@
       updateMission,
       toggleMissionActive,
       deleteMission,
+      getAllQuizzes,
+      addQuiz,
+      toggleQuizActive,
+      deleteQuiz,
     } from './js/admin.js';
     import { initState, getTickets, addTickets } from './js/state.js';
     import { renderCard } from './js/card.js';
@@ -225,6 +278,7 @@
         await initState();
         await loadCards();
         await loadMissions();
+        await loadQuizzes();
         await loadTickets();
         suggestNextDexNo();
       } catch (error) {
@@ -463,6 +517,103 @@
         showMessage('missionMessage', '미션이 삭제되었습니다.', 'success');
       } catch (error) {
         showMessage('missionMessage', `미션 삭제 실패: ${error.message}`, 'error');
+      }
+    }
+
+    // ========== 퀴즈 관리 ==========
+    async function loadQuizzes() {
+      try {
+        const quizzes = await getAllQuizzes();
+        const html = quizzes.length === 0
+          ? '<p style="color: var(--mute);">등록된 퀴즈가 없습니다.</p>'
+          : `<div class="quizzes-list">${quizzes
+              .map((quiz) => `
+                <div class="quiz-item ${!quiz.active ? 'inactive' : ''}">
+                  <div class="quiz-body">
+                    <div class="quiz-question">${escapeHtml(quiz.question)}</div>
+                    <ol class="quiz-choices">
+                      ${quiz.choices
+                        .map((c, i) => `<li class="${i === quiz.answerIndex ? 'correct' : ''}">${escapeHtml(c)}${i === quiz.answerIndex ? ' ✓' : ''}</li>`)
+                        .join('')}
+                    </ol>
+                    ${quiz.explanation ? `<div class="quiz-explanation">해설: ${escapeHtml(quiz.explanation)}</div>` : ''}
+                  </div>
+                  <div class="mission-actions">
+                    <button class="btn-sm" onclick="toggleQuizActiveHandle('${quiz.id}', ${quiz.active})" style="background: ${quiz.active ? '#ffc107' : '#28a745'}; color: white; border: 0;">
+                      ${quiz.active ? '비활성' : '활성'}
+                    </button>
+                    <button class="btn-sm btn-danger" onclick="deleteQuizConfirm('${quiz.id}')">삭제</button>
+                  </div>
+                </div>
+              `)
+              .join('')}</div>`;
+        document.getElementById('quizzesList').innerHTML = html;
+      } catch (error) {
+        document.getElementById('quizzesList').innerHTML = `<div class="message error">퀴즈 로드 실패: ${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    document.getElementById('quizForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const question = document.getElementById('quizQuestion').value;
+      const explanation = document.getElementById('quizExplanation').value;
+      const rawChoices = [0, 1, 2, 3].map((i) => document.getElementById(`quizChoice${i}`).value.trim());
+      const checked = parseInt(document.querySelector('input[name="quizAnswer"]:checked').value);
+
+      // 빈 보기를 빼도 정답 번호가 맞도록 변환
+      if (!rawChoices[checked]) {
+        showMessage('quizMessage', '정답으로 체크한 보기가 비어 있습니다.', 'error');
+        return;
+      }
+      const choices = [];
+      let answerIndex = 0;
+      rawChoices.forEach((c, i) => {
+        if (!c) return;
+        if (i === checked) answerIndex = choices.length;
+        choices.push(c);
+      });
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      try {
+        btn.disabled = true;
+        await addQuiz({ question, choices, answerIndex, explanation });
+        showMessage('quizMessage', '퀴즈가 추가되었습니다!', 'success');
+        document.getElementById('quizForm').reset();
+        await loadQuizzes();
+      } catch (error) {
+        showMessage('quizMessage', `퀴즈 추가 실패: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('quizFormReset').addEventListener('click', () => {
+      document.getElementById('quizForm').reset();
+    });
+
+    window.toggleQuizActiveHandle = async function (quizId, currentActive) {
+      try {
+        await toggleQuizActive(quizId, currentActive);
+        await loadQuizzes();
+        showMessage('quizMessage', '퀴즈 상태가 변경되었습니다.', 'success');
+      } catch (error) {
+        showMessage('quizMessage', `상태 변경 실패: ${error.message}`, 'error');
+      }
+    };
+
+    window.deleteQuizConfirm = function (quizId) {
+      if (!confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) return;
+      deleteQuizHandle(quizId);
+    };
+
+    async function deleteQuizHandle(quizId) {
+      try {
+        await deleteQuiz(quizId);
+        await loadQuizzes();
+        showMessage('quizMessage', '퀴즈가 삭제되었습니다.', 'success');
+      } catch (error) {
+        showMessage('quizMessage', `퀴즈 삭제 실패: ${error.message}`, 'error');
       }
     }
 

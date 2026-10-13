@@ -311,3 +311,79 @@ main {
     animation: none;
   }
 }
+
+/* 오늘의 퀴즈 */
+.quiz-section {
+  padding: var(--spacing-md);
+}
+
+.quiz-question {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
+  font-family: 'Galmuri';
+  word-break: break-word;
+}
+
+.quiz-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quiz-choice-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--white);
+  color: var(--text-dark);
+  border: 2px solid var(--wood-dark);
+  border-radius: 0;
+  font-size: 11px;
+  font-family: 'Galmuri';
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.quiz-choice-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.quiz-choice-btn:disabled {
+  cursor: default;
+}
+
+.quiz-choice-btn.correct {
+  background: rgba(107, 158, 61, 0.2);
+  border-color: var(--grass-green);
+}
+
+.quiz-choice-btn.wrong {
+  background: rgba(214, 48, 49, 0.12);
+  border-color: var(--error);
+}
+
+.quiz-result {
+  margin-top: var(--spacing-md);
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+  font-family: 'Galmuri';
+  border: 2px dashed var(--wood-light);
+  background: var(--bg-cream);
+  color: var(--text-dark);
+}
+
+.quiz-result strong.ok {
+  color: var(--grass-green);
+}
+
+.quiz-result strong.no {
+  color: var(--error);
+}

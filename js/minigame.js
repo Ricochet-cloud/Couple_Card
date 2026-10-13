@@ -15,8 +15,8 @@ const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑','🍉','
                 '🐶','🐱','🐰','🐻','🐼','🐸','🦊','🐧','🌸','🌻','⭐','🌙',
                 '🍀','🎈','🎀','🔔','🍪','🧸'];
 
-// 이미지 파일 (30장: tile_01.webp ~ tile_30.webp)
-const IMAGE_FILES = Array.from({ length: 30 }, (_, i) =>
+// 이미지 파일 (29장: tile_01.webp ~ tile_29.webp)
+const IMAGE_FILES = Array.from({ length: 29 }, (_, i) =>
   './images/sichuan/tile_' + String(i + 1).padStart(2, '0') + '.webp'
 );
 

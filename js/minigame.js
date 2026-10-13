@@ -1,6 +1,11 @@
-// 사천성 게임 + 보상 시스템
+// 사천성 게임 + 보상 시스템 + 콤보/점수/최고기록
 import { db } from './firebase.js';
-import { doc, runTransaction, collection, addDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+import * as firebaseModule from './firebase.js';
+import * as authModule from './auth.js';
+import {
+  doc, runTransaction, collection, addDoc, getDoc, Timestamp
+} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 
 // ============ 상수 ============
 const MINIGAME_REWARD_AMOUNT = 1;
@@ -14,6 +19,46 @@ const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑','🍉','
 const IMAGE_FILES = Array.from({ length: 30 }, (_, i) =>
   './images/sichuan/tile_' + String(i + 1).padStart(2, '0') + '.webp'
 );
+
+// ============ 점수 규칙 (숫자는 여기서만 바꾸면 돼요) ============
+const SCORE = {
+  BASE: 100,                 // 짝 하나 제거 기본 점수
+  COMBO_STEP: 20,            // 콤보가 이어질 때마다 늘어나는 점수
+  COMBO_MAX_BONUS: 200,      // 콤보 보너스 상한
+  COMBO_WINDOW_MS: 3000,     // 이 시간 안에 다음 짝을 지우면 콤보 이어짐
+  HINT_PENALTY: 50,          // 힌트 1회 감점
+  SHUFFLE_PENALTY: 100,      // 섞기(수동) 1회 감점. 자동 섞기는 감점 없음
+  TIME_BONUSES: [            // 클리어 시간(초) 이하일 때 보너스. 위에서부터 먼저 맞는 것 적용
+    { limit: 180, bonus: 1000 },
+    { limit: 300, bonus: 500 },
+  ],
+};
+
+const BEST_COLLECTION = 'minigameScores';
+const BEST_DOC = 'sichuan';
+const IS_DEV = /[?&]dev=1/.test(location.search);
+
+// ===== SCORE LOGIC START (화면과 상관없는 계산 부분) =====
+function calcComboBonus(chain) {
+  // chain = 연속으로 지운 횟수 (첫 제거 = 1). 2번째부터 콤보 보너스가 붙는다.
+  return Math.min(Math.max(chain - 1, 0) * SCORE.COMBO_STEP, SCORE.COMBO_MAX_BONUS);
+}
+
+function calcTimeBonus(sec) {
+  for (const t of SCORE.TIME_BONUSES) if (sec <= t.limit) return t.bonus;
+  return 0;
+}
+
+function calcTotal(s) {
+  return Math.max(0, s.base + s.combo + s.timeBonus - s.penalty);
+}
+
+// 지금 제거 성공 시 콤보를 이어갈지 판단해서 새 chain을 돌려준다.
+function nextChain(chain, lastRemoveAt, now) {
+  if (chain > 0 && lastRemoveAt && now - lastRemoveAt <= SCORE.COMBO_WINDOW_MS) return chain + 1;
+  return 1;
+}
+// ===== SCORE LOGIC END =====
 
 // ============ 게임 로직 (sichuan-standalone.html에서 가져옴) ============
 
@@ -153,7 +198,7 @@ export async function grantMinigameReward(gameId) {
 
       return {
         granted: true,
-        message: `뽄기권 +${MINIGAME_REWARD_AMOUNT}`,
+        message: `뽑기권 +${MINIGAME_REWARD_AMOUNT}`,
         tickets: newTickets,
         gameId,
         today,
@@ -184,6 +229,59 @@ export async function grantMinigameReward(gameId) {
   }
 }
 
+// ============ 최고기록 (Firebase) ============
+// 문서 하나(minigameScores/sichuan)에 계정별 기록을 담는다.
+// { records: { [계정 uid]: { score, time, date } } }
+
+function getPlayerId() {
+  try {
+    const auth = firebaseModule.auth || getAuth();
+    if (auth && auth.currentUser && auth.currentUser.uid) return auth.currentUser.uid;
+  } catch (e) {
+    console.warn('계정 확인 실패:', e);
+  }
+  // uid를 못 얻으면 관리자 여부로라도 두 계정을 구분한다.
+  try {
+    if (typeof authModule.isAdmin === 'function') return authModule.isAdmin() ? 'admin' : 'shared';
+  } catch (e) {
+    console.warn('관리자 여부 확인 실패:', e);
+  }
+  return 'shared';
+}
+
+async function loadRecords() {
+  const snap = await getDoc(doc(db, BEST_COLLECTION, BEST_DOC));
+  return snap.exists() ? (snap.data().records || {}) : {};
+}
+
+// 내 기록(mine)과 상대 기록 중 가장 높은 것(other)으로 나눈다.
+function splitRecords(records, myId) {
+  const mine = records[myId] || null;
+  let other = null;
+  Object.keys(records).forEach((k) => {
+    if (k === myId) return;
+    if (!other || (records[k].score || 0) > (other.score || 0)) other = records[k];
+  });
+  return { mine, other };
+}
+
+// 기존 최고 점수보다 높을 때만 갱신한다.
+async function saveBestIfHigher(myId, score, timeSec) {
+  const ref = doc(db, BEST_COLLECTION, BEST_DOC);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const records = snap.exists() ? (snap.data().records || {}) : {};
+    const prev = records[myId] || null;
+    if (prev && (prev.score || 0) >= score) {
+      return { updated: false, prevScore: prev.score, best: prev.score };
+    }
+    tx.set(ref, {
+      records: { [myId]: { score: score, time: timeSec, date: getTodayKST() } },
+    }, { merge: true });
+    return { updated: true, prevScore: prev ? prev.score : null, best: score };
+  });
+}
+
 // ============ 게임 상태 관리 ============
 
 export const SichuanGame = (function () {
@@ -192,8 +290,148 @@ export const SichuanGame = (function () {
   let startTime = 0, elapsedMs = 0, timerId = null, hintTimer = null, toastTimer = null;
   let currentCards = null;
 
+  // 점수/콤보 상태
+  let scoreBase = 0, scoreCombo = 0, scorePenalty = 0;
+  let chain = 0, maxChain = 0, lastRemoveAt = 0, comboDeadline = 0, comboTimerId = null;
+  let extraUiReady = false;
+  let recordsCache = {};
+  let runId = 0; // 판이 바뀌었을 때 늦게 도착한 기록 응답을 무시하기 위한 번호
+
   const getEl = (id) => document.getElementById(id);
 
+  function currentScore() {
+    return calcTotal({ base: scoreBase, combo: scoreCombo, timeBonus: 0, penalty: scorePenalty });
+  }
+
+  // ---------- 점수/콤보 화면 (HTML/CSS를 건드리지 않고 JS가 직접 붙임) ----------
+  function ensureExtraUi() {
+    if (extraUiReady) return;
+    const pairsEl = getEl('sichuan-pairsLeft');
+    const boardEl = getEl('sichuan-board');
+    if (!pairsEl || !boardEl) return;
+
+    const box = pairsEl.parentElement;
+    const hud = box && box.parentElement;
+    if (box && hud) {
+      const row = document.createElement('div');
+      row.className = hud.className;
+      row.id = 'sichuan-scoreRow';
+      const mk = (label, id) => {
+        const c = box.cloneNode(true);
+        const b = c.querySelector('b');
+        if (b) { b.id = id; b.textContent = '0'; }
+        if (c.firstChild && c.firstChild.nodeType === 3) c.firstChild.textContent = label;
+        return c;
+      };
+      row.appendChild(mk('점수', 'sichuan-scoreText'));
+      row.appendChild(mk('콤보', 'sichuan-comboText'));
+      row.appendChild(mk('내 최고', 'sichuan-bestMine'));
+      row.appendChild(mk('상대 최고', 'sichuan-bestOther'));
+      hud.parentNode.insertBefore(row, hud.nextSibling);
+
+      // 콤보 게이지
+      const gauge = document.createElement('div');
+      gauge.id = 'sichuan-comboGauge';
+      gauge.style.cssText = 'height:6px;margin:-4px 0 10px;border-radius:3px;background:rgba(0,0,0,.12);overflow:hidden;';
+      const bar = document.createElement('div');
+      bar.id = 'sichuan-comboBar';
+      bar.style.cssText = 'height:100%;width:0%;background:#ffb703;transition:width .1s linear;';
+      gauge.appendChild(bar);
+      row.parentNode.insertBefore(gauge, row.nextSibling);
+    }
+
+    // 점수가 떠오르는 연출을 놓을 자리
+    const wrap = boardEl.parentElement;
+    if (wrap && getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+
+    // 클리어 창의 점수 메시지 자리
+    const rewardEl = getEl('sichuan-rewardMsg');
+    if (rewardEl && !getEl('sichuan-scoreMsg')) {
+      const m = document.createElement('p');
+      m.id = 'sichuan-scoreMsg';
+      m.style.cssText = 'margin:0 0 10px;font-size:14px;font-weight:700;color:#c2410c;word-break:keep-all;';
+      rewardEl.parentNode.insertBefore(m, rewardEl);
+    }
+    extraUiReady = true;
+  }
+
+  function updateScoreUi() {
+    const s = getEl('sichuan-scoreText');
+    if (s) s.textContent = currentScore();
+    const c = getEl('sichuan-comboText');
+    if (c) c.textContent = chain >= 2 ? chain : '-';
+    const bar = getEl('sichuan-comboBar');
+    if (bar) {
+      if (chain > 0) {
+        const left = Math.max(0, comboDeadline - Date.now());
+        bar.style.width = Math.round(left / SCORE.COMBO_WINDOW_MS * 100) + '%';
+      } else {
+        bar.style.width = '0%';
+      }
+    }
+  }
+
+  function refreshBestUi() {
+    const { mine, other } = splitRecords(recordsCache, getPlayerId());
+    const m = getEl('sichuan-bestMine');
+    const o = getEl('sichuan-bestOther');
+    if (m) m.textContent = mine ? mine.score : '-';
+    if (o) o.textContent = other ? other.score : '-';
+  }
+
+  async function loadBestUi() {
+    const myRun = runId;
+    try {
+      const records = await loadRecords();
+      if (myRun !== runId) return;
+      recordsCache = records;
+    } catch (e) {
+      console.warn('최고기록 불러오기 실패:', e);
+    }
+    refreshBestUi();
+  }
+
+  function popup(p, text, big) {
+    const boardEl = getEl('sichuan-board');
+    const wrap = boardEl && boardEl.parentElement;
+    if (!wrap || !cellEls[p.r] || !cellEls[p.r][p.c]) return;
+    const wr = wrap.getBoundingClientRect();
+    const cr = cellEls[p.r][p.c].getBoundingClientRect();
+    const el = document.createElement('div');
+    el.textContent = text;
+    el.style.cssText =
+      'position:absolute;pointer-events:none;z-index:5;font-weight:800;white-space:nowrap;' +
+      'transform:translate(-50%,0);transition:transform .7s ease-out,opacity .7s ease-out;' +
+      'text-shadow:0 1px 0 #fff,0 0 4px #fff;color:' + (big ? '#e11d48' : '#7c3a00') + ';' +
+      'font-size:' + (big ? '20px' : '16px') + ';' +
+      'left:' + (cr.left - wr.left + cr.width / 2) + 'px;top:' + (cr.top - wr.top) + 'px;';
+    wrap.appendChild(el);
+    void el.offsetWidth;
+    el.style.transform = 'translate(-50%,-34px)';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 800);
+  }
+
+  // 콤보 시간이 끝나면 콤보를 끊는다
+  function tickCombo() {
+    if (chain > 0 && Date.now() > comboDeadline) chain = 0;
+    updateScoreUi();
+  }
+  function startComboTimer() {
+    clearInterval(comboTimerId);
+    comboTimerId = setInterval(tickCombo, 100);
+  }
+  function stopComboTimer() {
+    clearInterval(comboTimerId);
+    comboTimerId = null;
+  }
+
+  function breakCombo() {
+    chain = 0;
+    updateScoreUi();
+  }
+
+  // ---------- 기존 화면 ----------
   function defaultCards() {
     if (IMAGE_FILES.length > 0)
       return IMAGE_FILES.map((src, i) => ({ id: 'img' + i, img: src }));
@@ -220,6 +458,7 @@ export const SichuanGame = (function () {
     getEl('sichuan-pairsLeft').textContent = listTiles(grid).length / 2;
     getEl('sichuan-movesText').textContent = moves;
     getEl('sichuan-timeText').textContent = fmtTime(elapsedMs);
+    updateScoreUi();
   }
 
   function stopTimer() {
@@ -369,6 +608,7 @@ export const SichuanGame = (function () {
     if (grid[a.r][a.c].id !== grid[r][c].id) {
       shake(a);
       shake(p);
+      breakCombo();
       unselect();
       select(p);
       return;
@@ -378,10 +618,24 @@ export const SichuanGame = (function () {
     if (!path) {
       shake(a);
       shake(p);
+      breakCombo();
       unselect();
       select(p);
       return;
     }
+
+    // 연결 성공: 점수/콤보 계산 (클릭한 시점 기준)
+    const now = Date.now();
+    chain = nextChain(chain, lastRemoveAt, now);
+    lastRemoveAt = now;
+    comboDeadline = now + SCORE.COMBO_WINDOW_MS;
+    if (chain > maxChain) maxChain = chain;
+    const comboBonus = calcComboBonus(chain);
+    scoreBase += SCORE.BASE;
+    scoreCombo += comboBonus;
+    popup(p, '+' + (SCORE.BASE + comboBonus), false);
+    if (chain >= 2) popup(a, chain + ' COMBO!', true);
+    updateScoreUi();
 
     locked = true;
     select(p);
@@ -416,20 +670,38 @@ export const SichuanGame = (function () {
   }
 
   function win() {
+    if (cleared) return;
     stopTimer();
+    stopComboTimer();
     cleared = true;
+
+    const timeSec = Math.round(elapsedMs / 1000);
+    const timeBonus = calcTimeBonus(timeSec);
+    const finalScore = calcTotal({
+      base: scoreBase, combo: scoreCombo, timeBonus: timeBonus, penalty: scorePenalty,
+    });
     const result = {
-      time: Math.round(elapsedMs / 1000),
+      time: timeSec,
       moves: moves,
       hints: hints,
       shuffles: shuffles,
+      score: finalScore,
+      maxCombo: maxChain,
     };
+
     getEl('sichuan-stats').innerHTML =
       '걸린 시간 <b>' + fmtTime(elapsedMs) + '</b><br>시도 <b>' + moves + '</b>번 · ' +
-      '힌트 <b>' + hints + '</b>번 · 섞기 <b>' + shuffles + '</b>번';
+      '힌트 <b>' + hints + '</b>번 · 섞기 <b>' + shuffles + '</b>번<br>' +
+      '최고 콤보 <b>' + maxChain + '</b><br>' +
+      '기본 ' + scoreBase + ' + 콤보 ' + scoreCombo + ' + 시간 ' + timeBonus +
+      ' - 감점 ' + scorePenalty + '<br>' +
+      '<span style="font-size:20px">최종 점수 <b>' + finalScore + '</b>점</span>';
     getEl('sichuan-rewardMsg').textContent = '';
+    const scoreMsgEl = getEl('sichuan-scoreMsg');
+    if (scoreMsgEl) scoreMsgEl.textContent = '';
     getEl('sichuan-modal').classList.add('show');
 
+    // 보상 지급 (기존 흐름 그대로)
     if (typeof window.onSichuanClear === 'function') {
       Promise.resolve()
         .then(() => window.onSichuanClear(result))
@@ -443,13 +715,46 @@ export const SichuanGame = (function () {
           getEl('sichuan-rewardMsg').textContent = '보상 처리 중 오류가 났어요. 다시 시도해 주세요.';
         });
     }
+
+    // 최고기록 저장 (실패해도 게임과 보상에는 영향 없음)
+    const myRun = runId;
+    const setScoreMsg = (text) => {
+      const el = getEl('sichuan-scoreMsg');
+      if (el && myRun === runId) el.textContent = text;
+    };
+    if (IS_DEV) {
+      setScoreMsg('개발 모드라서 점수는 저장하지 않았어요.');
+      return;
+    }
+    const myId = getPlayerId();
+    saveBestIfHigher(myId, finalScore, timeSec)
+      .then((res) => {
+        recordsCache = Object.assign({}, recordsCache, {
+          [myId]: { score: res.best, time: res.updated ? timeSec : (recordsCache[myId] || {}).time, date: getTodayKST() },
+        });
+        refreshBestUi();
+        if (res.updated) {
+          setScoreMsg(res.prevScore == null
+            ? '🏆 첫 기록이에요!'
+            : '🏆 최고기록 갱신! (이전 ' + res.prevScore + '점)');
+        } else {
+          setScoreMsg('내 최고 기록은 ' + res.best + '점이에요.');
+        }
+      })
+      .catch((err) => {
+        console.error('최고기록 저장 실패:', err);
+        setScoreMsg('점수 기록 저장에 실패했어요. (게임과 보상은 정상이에요)');
+      });
   }
 
   function startGame(cards) {
     currentCards = (cards && cards.length) ? cards : defaultCards();
+    runId++;
     stopTimer();
+    stopComboTimer();
     clearHint();
     clearPath();
+    ensureExtraUi();
     const modalEl = getEl('sichuan-modal');
     if (modalEl) modalEl.classList.remove('show');
     selected = null;
@@ -459,6 +764,13 @@ export const SichuanGame = (function () {
     hints = 0;
     shuffles = 0;
     elapsedMs = 0;
+    scoreBase = 0;
+    scoreCombo = 0;
+    scorePenalty = 0;
+    chain = 0;
+    maxChain = 0;
+    lastRemoveAt = 0;
+    comboDeadline = 0;
 
     for (let i = 0; i < 50; i++) {
       grid = createBoard(currentCards);
@@ -467,12 +779,17 @@ export const SichuanGame = (function () {
     buildBoardDom();
     renderTiles();
     updateHud();
+    startComboTimer();
+    refreshBestUi();
+    loadBestUi();
   }
 
   return {
     startGame: startGame,
     defaultCards: defaultCards,
     setOnClear: (fn) => { window.onSichuanClear = fn; },
+    // ?dev=1 테스트용: 바로 클리어 처리 (점수는 현재까지 쌓인 값 + 시간 보너스)
+    devClear: function () { if (!cleared) win(); },
     attachEventListeners: function () {
       const boardEl = getEl('sichuan-board');
       if (boardEl) {
@@ -496,6 +813,8 @@ export const SichuanGame = (function () {
           }
           startTimer();
           hints++;
+          scorePenalty += SCORE.HINT_PENALTY;
+          updateScoreUi();
           const el_a = tileEl(h.a);
           const el_b = tileEl(h.b);
           if (el_a) el_a.classList.add('hint');
@@ -513,6 +832,8 @@ export const SichuanGame = (function () {
           startTimer();
           shuffleRemaining(grid);
           shuffles++;
+          scorePenalty += SCORE.SHUFFLE_PENALTY;
+          updateScoreUi();
           renderTiles();
           toast('남은 카드를 섞었어요');
         });

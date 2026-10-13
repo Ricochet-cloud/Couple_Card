@@ -13,7 +13,7 @@
 <body>
   <div class="main-container">
     <header class="header">
-      <h1>추억카드뽄기</h1>
+      <h1>추억카드뽑기</h1>
       <button id="logoutBtn" class="logout-btn">로그아웃</button>
     </header>
 
@@ -128,16 +128,8 @@
           if (devBtn) {
             devBtn.style.display = 'block';
             devBtn.addEventListener('click', () => {
-              // 게임 상태를 클리어 상태로 변경하려면 게임 내부 로직을 호출해야 함
-              // 현재는 간단한 구현으로 모달을 직접 열기
-              const modal = document.getElementById('sichuan-modal');
-              const stats = document.getElementById('sichuan-stats');
-              const rewardMsg = document.getElementById('sichuan-rewardMsg');
-              if (modal && stats && rewardMsg) {
-                stats.innerHTML = '걸린 시간 <b>00:00</b><br>시도 <b>0</b>번 · 힌트 <b>0</b>번 · 섞기 <b>0</b>번';
-                rewardMsg.textContent = '(개발 테스트)';
-                modal.classList.add('show');
-              }
+              // 실제 클리어 처리: 점수 계산 + 보상 지급까지 진행 (점수 기록만 dev 모드라 저장 안 함)
+              SichuanGame.devClear();
             });
           }
         }

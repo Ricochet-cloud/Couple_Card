@@ -1,0 +1,83 @@
+
+/* Couple-Card Retro Music Player */
+
+.cc-music-player {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  font-family: "Courier New", monospace;
+}
+
+.cc-music-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-height: 46px;
+  padding: 9px 13px;
+
+  color: #f8f3e8;
+  background: #58784b;
+
+  border: 3px solid #354b30;
+  border-radius: 3px;
+  box-shadow:
+    inset -3px -3px 0 #3f5e37,
+    inset 3px 3px 0 #86a36b,
+    3px 3px 0 rgba(42, 49, 32, 0.3);
+
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+
+  cursor: pointer;
+  image-rendering: pixelated;
+  transition: transform 0.08s ease;
+}
+
+.cc-music-button:hover {
+  background: #668958;
+}
+
+.cc-music-button:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset -2px -2px 0 #3f5e37,
+    inset 2px 2px 0 #86a36b;
+}
+
+.cc-music-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  font-size: 15px;
+}
+
+.cc-music-label {
+  white-space: nowrap;
+}
+
+.cc-music-button:focus-visible {
+  outline: 3px solid #e9c96b;
+  outline-offset: 3px;
+}
+
+.cc-music-button.is-playing {
+  color: #fff3c4;
+}
+
+/* 모바일 화면 */
+@media (max-width: 600px) {
+  .cc-music-player {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .cc-music-button {
+    min-height: 42px;
+    padding: 8px 10px;
+    gap: 7px;
+    font-size: 11px;
+  }
+}

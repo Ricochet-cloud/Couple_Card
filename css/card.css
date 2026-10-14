@@ -12,26 +12,67 @@
   }
 }
 
+/* ===== 카드 앞면: 뒷면(금색 앤티크 픽셀 프레임)과 어울리는 디자인 ===== */
+ 
 .card {
+  /* 프레임 색 팔레트 (등급마다 이 값만 바꿔요) */
+  --f-dark: #3a2606;
+  --f-shade: #7a561a;
+  --f-mid: #b8892e;
+  --f-base: #d4a940;
+  --f-light: #f0d27a;
+  --f-hi: #fff1b8;
+  --gem: #ff5964;
+ 
   display: block;
-  aspect-ratio: 5/7;
-  padding: 5px;
-  border-radius: 14px;
-  background: var(--frame);
+  aspect-ratio: 5 / 7;
+  padding: clamp(5px, 4%, 9px);   /* 카드가 작아지면 테두리도 얇아져요 */
+  border: 0;                      /* base.css 의 갈색 테두리/안쪽 선은 끄고 새 프레임만 쓰기 */
+  outline: none;
+  border-radius: 0;
   position: relative;
-  box-shadow: var(--glow, 0 2px 8px rgba(0, 0, 0, 0.14));
   text-align: left;
+  background: var(--f-base);
+  box-shadow:
+    inset 0 0 0 2px var(--f-dark),
+    inset 0 0 0 4px var(--f-light),
+    inset 0 0 0 6px var(--f-mid),
+    0 4px 0 var(--f-dark),
+    var(--glow, 0 6px 10px rgba(0, 0, 0, 0.25));
 }
-
+ 
+/* 네 모서리 보석 장식 */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--gem), var(--gem)) left 3px top 3px / 4px 4px no-repeat,
+    linear-gradient(var(--f-light), var(--f-light)) left 2px top 2px / 6px 6px no-repeat,
+    linear-gradient(var(--f-dark), var(--f-dark)) left 0 top 0 / 10px 10px no-repeat,
+    linear-gradient(var(--gem), var(--gem)) right 3px top 3px / 4px 4px no-repeat,
+    linear-gradient(var(--f-light), var(--f-light)) right 2px top 2px / 6px 6px no-repeat,
+    linear-gradient(var(--f-dark), var(--f-dark)) right 0 top 0 / 10px 10px no-repeat,
+    linear-gradient(var(--gem), var(--gem)) left 3px bottom 3px / 4px 4px no-repeat,
+    linear-gradient(var(--f-light), var(--f-light)) left 2px bottom 2px / 6px 6px no-repeat,
+    linear-gradient(var(--f-dark), var(--f-dark)) left 0 bottom 0 / 10px 10px no-repeat,
+    linear-gradient(var(--gem), var(--gem)) right 3px bottom 3px / 4px 4px no-repeat,
+    linear-gradient(var(--f-light), var(--f-light)) right 2px bottom 2px / 6px 6px no-repeat,
+    linear-gradient(var(--f-dark), var(--f-dark)) right 0 bottom 0 / 10px 10px no-repeat;
+}
+ 
 .card__in {
   height: 100%;
-  border-radius: 10px;
-  background: var(--surf);
+  border-radius: 0;
+  background: #fbf3e0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 0 0 2px var(--f-dark);
 }
-
+ 
 .card__photo {
   flex: 0 0 54%;
   position: relative;
@@ -40,7 +81,19 @@
   min-height: 0;
   overflow: hidden;
 }
-
+ 
+/* 사진 아래 금색 구분띠 */
+.card__photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 -2px 0 var(--f-dark),
+    inset 0 -5px 0 var(--f-base),
+    inset 0 -6px 0 var(--f-light);
+}
+ 
 .card__photo img {
   position: absolute;
   inset: 0;
@@ -48,19 +101,21 @@
   height: 100%;
   object-fit: cover;
 }
-
+ 
 .card__no {
   position: absolute;
   left: 8px;
   top: 8px;
-  font-size: 11px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  padding: 1px 8px;
-  border-radius: 99px;
-  font-weight: 600;
+  z-index: 1;
+  font-family: 'Galmuri', monospace;
+  font-size: 10px;
+  background: var(--f-dark);
+  color: var(--f-hi);
+  padding: 2px 7px;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--f-mid), 2px 2px 0 rgba(0, 0, 0, 0.3);
 }
-
+ 
 .card__body {
   padding: 8px 10px 9px;
   display: flex;
@@ -69,29 +124,45 @@
   min-height: 0;
   overflow: hidden;
   flex: 1;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(122, 86, 26, 0.05) 3px 4px), #fbf3e0;
 }
-
+ 
 .card__badge {
   align-self: flex-start;
-  font-size: 11px;
-  color: #fff;
-  background: var(--frame);
-  padding: 0 8px;
-  border-radius: 99px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Galmuri', sans-serif;
+  font-size: 10px;
+  color: var(--f-hi);
+  background: var(--f-dark);
+  padding: 1px 8px 1px 6px;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--f-mid);
+  text-shadow: none;
+  white-space: nowrap;   /* 작은 카드에서 글자가 세로로 쪼개지지 않게 */
 }
-
+ 
+.card__badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--gem);
+  box-shadow: 0 0 0 1px var(--f-light);
+}
+ 
 .card__title {
   font-family: "Gowun Batang", serif;
   font-weight: 700;
   font-size: 15px;
   line-height: 1.3;
   margin: 2px 0 0;
+  color: #3a2606;
 }
-
+ 
 .card__desc {
   font-size: 12px;
-  color: var(--mute);
+  color: #7a6a4a;
   margin: 0;
   line-height: 1.45;
   display: -webkit-box;
@@ -99,68 +170,84 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
+ 
 .card__meta {
   margin-top: auto;
+  padding-top: 4px;
+  border-top: 2px dotted rgba(122, 86, 26, 0.35);
   font-size: 11px;
-  color: var(--mute);
+  color: #7a6a4a;
 }
-
-/* 등급별 스타일 (data-rarity 속성) */
-
-.card[data-rarity="rare"] {
-  --frame: linear-gradient(145deg, #8fb0d0, #5a7ea3);
+ 
+/* ---- 등급별 색 (프레임 모양은 같고 색만 달라요) ---- */
+ 
+.card[data-rarity="rare"] {          /* 희귀: 강철빛 파랑 */
+  --f-dark: #1d2f45; --f-shade: #3d5f86; --f-mid: #5a80a8; --f-base: #7fa3c8; --f-light: #b9d2ea; --f-hi: #e8f2fb;
+  --gem: #6ec8ff;
 }
-
-.card[data-rarity="superrare"] {
-  --frame: linear-gradient(145deg, #5cc4bb, #23847e);
+ 
+.card[data-rarity="superrare"] {     /* 초희귀: 청록 */
+  --f-dark: #0e3b38; --f-shade: #1b6a64; --f-mid: #2c8f88; --f-base: #4fb5ac; --f-light: #9ae0d8; --f-hi: #d8f6f2;
+  --gem: #7dffb0;
 }
-
-.card[data-rarity="hero"] {
-  --frame: linear-gradient(145deg, #b48ae6, #6a3fb0);
+ 
+.card[data-rarity="hero"] {          /* 영웅: 보라 */
+  --f-dark: #2c1650; --f-shade: #55329a; --f-mid: #7a52c4; --f-base: #9b74e0; --f-light: #c9b0f5; --f-hi: #ece2ff;
+  --gem: #ff9be0;
 }
-
-.card[data-rarity="myth"] {
-  --frame: linear-gradient(145deg, #f27a9a, #b32a52 55%, #f27a9a);
+ 
+.card[data-rarity="myth"] {          /* 신화: 진홍 + 은은한 빛 */
+  --f-dark: #4d0f24; --f-shade: #8c1f45; --f-mid: #b32a52; --f-base: #d9577d; --f-light: #f5a0b8; --f-hi: #ffe0e8;
+  --gem: #ffd84d;
   --glow: 0 0 16px rgba(220, 70, 110, 0.4);
 }
-
-.card[data-rarity="legend"] {
-  --frame: linear-gradient(135deg, #f6d878, #c18a1c 40%, #fff2b0 55%, #c18a1c 70%, #f0cf6a);
+ 
+.card[data-rarity="legend"] {        /* 전설: 뒷면과 같은 금색 + 빛 */
+  --gem: #ff5964;
   --glow: 0 0 18px rgba(230, 180, 60, 0.5);
 }
-
-.card[data-rarity="ultra"] {
-  --frame: conic-gradient(from var(--a), #ff6ec7, #ffd36e, #7dffb0, #6ec8ff, #b46eff, #ff6ec7);
-  --glow: 0 0 22px rgba(180, 110, 255, 0.55);
+ 
+.card[data-rarity="ultra"] {         /* 울트라: 뒷면 배경 같은 무지개 테두리가 빙글빙글 */
+  --gem: #ffffff;
+  background: conic-gradient(from var(--a), #ff5964, #ff9f43, #ffd84d, #7bd36b, #3fa7e8, #5b5fd6, #b066e0, #ff5964);
+  box-shadow:
+    inset 0 0 0 2px var(--f-dark),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.55),
+    0 4px 0 var(--f-dark),
+    0 0 22px rgba(180, 110, 255, 0.55);
   animation: spin 6s linear infinite;
 }
-
-/* 도감 미보유 상태 */
-
+ 
+/* ---- 도감 미보유 상태 (회색 프레임) ---- */
+ 
 .card--locked {
-  --frame: linear-gradient(145deg, var(--line), var(--line));
-  box-shadow: none;
+  --f-dark: #5b564c; --f-shade: #7d776a; --f-mid: #9a9486; --f-base: #b8b2a3; --f-light: #d6d1c4; --f-hi: #ece8dc;
+  --gem: #9a9486;
+  --glow: none;
 }
-
+ 
+.card--locked .card__in,
+.card--locked .card__body {
+  background: #e9e4d6;
+}
+ 
 .card--locked .card__photo {
-  background: var(--line);
+  background: #cfc9ba;
 }
-
+ 
 .card--locked .card__no {
-  background: transparent;
-  color: var(--mute);
+  background: var(--f-dark);
+  color: var(--f-hi);
 }
-
+ 
 .card--locked .card__title,
 .card--locked .card__meta {
-  color: var(--mute);
+  color: #7d776a;
 }
-
+ 
 .card--locked .card__badge {
   display: none;
 }
-
 /* 뽑기 연출 */
 
 .stage {

@@ -20,6 +20,9 @@
     <main>
       <div class="minigame-container">
         <div class="minigame-title">🎮 사천성</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-align: center; font-family: 'Galmuri';">
+          첫 카드를 누르면 2분이 시작돼요. 다 없애면 새 판이 채워져요!
+        </div>
 
         <!-- 에러 메시지 -->
         <div id="errorMessage" class="error-message" style="display: none;"></div>
@@ -28,7 +31,7 @@
         <div class="sichuan-game">
           <div class="sichuan-hud">
             <div class="sichuan-box">남은 쌍<b id="sichuan-pairsLeft">24</b></div>
-            <div class="sichuan-box">시간<b id="sichuan-timeText">00:00</b></div>
+            <div class="sichuan-box">시간<b id="sichuan-timeText">02:00</b></div>
             <div class="sichuan-box">시도<b id="sichuan-movesText">0</b></div>
           </div>
 
@@ -43,7 +46,7 @@
             <button class="sichuan-btn sichuan-btn-sub" id="sichuan-restartBtn">↻ 다시</button>
           </div>
           <button class="sichuan-btn sichuan-btn-sub" id="devClearBtn" style="display: none;">
-            (개발) 즉시 클리어
+            (개발) 즉시 종료
           </button>
         </div>
 
@@ -53,7 +56,7 @@
         <!-- 클리어 모달 -->
         <div class="sichuan-modal" id="sichuan-modal">
           <div class="sichuan-card">
-            <h2>🎉 클리어!</h2>
+            <h2>⏰ 시간 종료!</h2>
             <p class="sichuan-stats" id="sichuan-stats"></p>
             <p class="sichuan-reward" id="sichuan-rewardMsg"></p>
             <button class="sichuan-btn" id="sichuan-againBtn">한 판 더</button>
@@ -108,7 +111,7 @@
         // 게임 시작
         SichuanGame.startGame(SichuanGame.defaultCards());
 
-        // 클리어 시 보상 처리
+        // 시간 종료 시 보상 처리 (기준 점수 이상일 때만 호출됨)
         SichuanGame.setOnClear(async (result) => {
           try {
             const rewardResult = await grantMinigameReward('sichuan');
@@ -128,7 +131,7 @@
           if (devBtn) {
             devBtn.style.display = 'block';
             devBtn.addEventListener('click', () => {
-              // 실제 클리어 처리: 점수 계산 + 보상 지급까지 진행 (점수 기록만 dev 모드라 저장 안 함)
+              // 실제 종료 처리: 점수 계산 + 보상 지급까지 진행 (점수 기록만 dev 모드라 저장 안 함)
               SichuanGame.devClear();
             });
           }

@@ -1,4 +1,4 @@
-// 사천성 게임 + 보상 시스템 + 콤보/점수/최고기록
+// 사천성 게임 (2분 타임어택) + 보상 시스템 + 콤보/점수/최고기록
 import { db } from './firebase.js';
 import * as firebaseModule from './firebase.js';
 import * as authModule from './auth.js';
@@ -11,11 +11,18 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth
 const MINIGAME_REWARD_AMOUNT = 1;
 const MINIGAME_REWARD_LIMIT_PER_DAY = 1;
 const ROWS = 8, COLS = 6, PAIRS = ROWS * COLS / 2;
+
+// ============ 2분 타임어택 설정 (숫자는 여기서만 바꾸면 돼요) ============
+const TIME_LIMIT_SEC = 120;        // 제한 시간(초). 첫 클릭 때 카운트다운 시작
+const TIME_LIMIT_MS = TIME_LIMIT_SEC * 1000;
+const WARN_SEC = 10;               // 남은 시간이 이 이하면 시간 표시를 빨갛게
+const REFILL_DELAY_MS = 700;       // 판을 다 지운 뒤 새 판이 채워지기까지 잠깐 멈추는 시간
+const REWARD_MIN_SCORE = 500;      // 이 점수 이상이어야 뽑기권 지급 (하루 1번 제한은 그대로)
 const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑','🍉','🥕','🌽','🍄',
                 '🐶','🐱','🐰','🐻','🐼','🐸','🦊','🐧','🌸','🌻','⭐','🌙',
                 '🍀','🎈','🎀','🔔','🍪','🧸'];
 
-// 이미지 파일 (29장: tile_01.webp ~ tile_29.webp)
+// 이미지 파일 (30장: tile_01.webp ~ tile_29.webp)
 const IMAGE_FILES = Array.from({ length: 29 }, (_, i) =>
   './images/sichuan/tile_' + String(i + 1).padStart(2, '0') + '.webp'
 );
@@ -28,14 +35,12 @@ const SCORE = {
   COMBO_WINDOW_MS: 3000,     // 이 시간 안에 다음 짝을 지우면 콤보 이어짐
   HINT_PENALTY: 50,          // 힌트 1회 감점
   SHUFFLE_PENALTY: 100,      // 섞기(수동) 1회 감점. 자동 섞기는 감점 없음
-  TIME_BONUSES: [            // 클리어 시간(초) 이하일 때 보너스. 위에서부터 먼저 맞는 것 적용
-    { limit: 180, bonus: 1000 },
-    { limit: 300, bonus: 500 },
-  ],
 };
 
 const BEST_COLLECTION = 'minigameScores';
-const BEST_DOC = 'sichuan';
+// 2분 타임어택은 점수 규모가 기존(한 판 클리어 방식)과 달라서 기록 문서를 새로 쓴다.
+// 예전 기록은 minigameScores/sichuan 에 그대로 남아 있다.
+const BEST_DOC = 'sichuan-2min';
 const IS_DEV = /[?&]dev=1/.test(location.search);
 
 // ===== SCORE LOGIC START (화면과 상관없는 계산 부분) =====
@@ -44,13 +49,8 @@ function calcComboBonus(chain) {
   return Math.min(Math.max(chain - 1, 0) * SCORE.COMBO_STEP, SCORE.COMBO_MAX_BONUS);
 }
 
-function calcTimeBonus(sec) {
-  for (const t of SCORE.TIME_BONUSES) if (sec <= t.limit) return t.bonus;
-  return 0;
-}
-
 function calcTotal(s) {
-  return Math.max(0, s.base + s.combo + s.timeBonus - s.penalty);
+  return Math.max(0, s.base + s.combo - s.penalty);
 }
 
 // 지금 제거 성공 시 콤보를 이어갈지 판단해서 새 chain을 돌려준다.
@@ -285,8 +285,9 @@ async function saveBestIfHigher(myId, score, timeSec) {
 // ============ 게임 상태 관리 ============
 
 export const SichuanGame = (function () {
-  let grid, cellEls = [], selected = null, locked = false, cleared = false;
+  let grid, cellEls = [], selected = null, locked = false, gameOver = false;
   let moves = 0, hints = 0, shuffles = 0;
+  let pairsRemoved = 0, boardsCleared = 0; // 지운 쌍 수, 판을 전부 지워서 새로 채운 횟수
   let startTime = 0, elapsedMs = 0, timerId = null, hintTimer = null, toastTimer = null;
   let currentCards = null;
 
@@ -300,7 +301,7 @@ export const SichuanGame = (function () {
   const getEl = (id) => document.getElementById(id);
 
   function currentScore() {
-    return calcTotal({ base: scoreBase, combo: scoreCombo, timeBonus: 0, penalty: scorePenalty });
+    return calcTotal({ base: scoreBase, combo: scoreCombo, penalty: scorePenalty });
   }
 
   // ---------- 점수/콤보 화면 (HTML/CSS를 건드리지 않고 JS가 직접 붙임) ----------
@@ -452,12 +453,21 @@ export const SichuanGame = (function () {
     return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
   }
 
+  // 남은 시간을 보여준다 (올림해서 0초가 되는 순간에만 00:00)
+  function showTime() {
+    const el = getEl('sichuan-timeText');
+    if (!el) return;
+    const leftMs = Math.max(0, TIME_LIMIT_MS - elapsedMs);
+    el.textContent = fmtTime(Math.ceil(leftMs / 1000) * 1000);
+    el.style.color = leftMs <= WARN_SEC * 1000 ? '#e11d48' : '';
+  }
+
   function updateHud() {
     const boardEl = getEl('sichuan-board');
     if (!boardEl) return;
     getEl('sichuan-pairsLeft').textContent = listTiles(grid).length / 2;
     getEl('sichuan-movesText').textContent = moves;
-    getEl('sichuan-timeText').textContent = fmtTime(elapsedMs);
+    showTime();
     updateScoreUi();
   }
 
@@ -467,12 +477,13 @@ export const SichuanGame = (function () {
   }
 
   function startTimer() {
-    if (timerId || cleared) return;
+    if (timerId || gameOver) return;
     startTime = Date.now() - elapsedMs;
     timerId = setInterval(() => {
       elapsedMs = Date.now() - startTime;
-      getEl('sichuan-timeText').textContent = fmtTime(elapsedMs);
-    }, 250);
+      showTime();
+      if (elapsedMs >= TIME_LIMIT_MS) endGame();
+    }, 100);
   }
 
   function fit() {
@@ -587,7 +598,7 @@ export const SichuanGame = (function () {
   }
 
   function onTileClick(r, c) {
-    if (locked || cleared || !grid[r][c]) return;
+    if (locked || gameOver || !grid[r][c]) return;
     startTimer();
     clearHint();
     const p = { r: r, c: c };
@@ -633,6 +644,7 @@ export const SichuanGame = (function () {
     const comboBonus = calcComboBonus(chain);
     scoreBase += SCORE.BASE;
     scoreCombo += comboBonus;
+    pairsRemoved++;
     popup(p, '+' + (SCORE.BASE + comboBonus), false);
     if (chain >= 2) popup(a, chain + ' COMBO!', true);
     updateScoreUi();
@@ -657,9 +669,35 @@ export const SichuanGame = (function () {
     }, 380);
   }
 
+  // 새 판을 만든다. 처음부터 이어질 짝이 하나는 있도록 여러 번 시도한다.
+  function makeSolvableGrid() {
+    let g;
+    for (let i = 0; i < 50; i++) {
+      g = createBoard(currentCards);
+      if (findHint(g)) break;
+    }
+    return g;
+  }
+
+  // 판을 전부 지웠을 때: 잠깐 멈췄다가 새 판을 채우고 계속 진행 (시간은 계속 흐른다)
+  function refillBoard() {
+    boardsCleared++;
+    locked = true;
+    toast('🎉 전부 제거! 새 판이 채워져요');
+    const myRun = runId;
+    setTimeout(() => {
+      if (myRun !== runId || gameOver) return; // 그 사이 다시 시작했거나 시간이 끝났으면 무시
+      grid = makeSolvableGrid();
+      renderTiles();
+      locked = false;
+      updateHud();
+    }, REFILL_DELAY_MS);
+  }
+
   function afterRemove() {
+    if (gameOver) return;
     if (listTiles(grid).length === 0) {
-      win();
+      refillBoard();
       return;
     }
     if (!findHint(grid)) {
@@ -669,16 +707,21 @@ export const SichuanGame = (function () {
     }
   }
 
-  function win() {
-    if (cleared) return;
+  // 시간 종료: 점수를 확정하고 결과 창을 띄운다 (뽑기권/최고기록 처리 포함)
+  function endGame() {
+    if (gameOver) return;
     stopTimer();
     stopComboTimer();
-    cleared = true;
+    gameOver = true;
+    elapsedMs = Math.min(elapsedMs, TIME_LIMIT_MS);
+    showTime();
+    unselect();
+    clearHint();
+    clearPath();
 
     const timeSec = Math.round(elapsedMs / 1000);
-    const timeBonus = calcTimeBonus(timeSec);
     const finalScore = calcTotal({
-      base: scoreBase, combo: scoreCombo, timeBonus: timeBonus, penalty: scorePenalty,
+      base: scoreBase, combo: scoreCombo, penalty: scorePenalty,
     });
     const result = {
       time: timeSec,
@@ -687,13 +730,16 @@ export const SichuanGame = (function () {
       shuffles: shuffles,
       score: finalScore,
       maxCombo: maxChain,
+      pairs: pairsRemoved,
+      boards: boardsCleared,
     };
 
     getEl('sichuan-stats').innerHTML =
-      '걸린 시간 <b>' + fmtTime(elapsedMs) + '</b><br>시도 <b>' + moves + '</b>번 · ' +
+      '제거한 짝 <b>' + pairsRemoved + '</b>쌍 · 새로 채운 판 <b>' + boardsCleared + '</b>번<br>' +
+      '시도 <b>' + moves + '</b>번 · ' +
       '힌트 <b>' + hints + '</b>번 · 섞기 <b>' + shuffles + '</b>번<br>' +
       '최고 콤보 <b>' + maxChain + '</b><br>' +
-      '기본 ' + scoreBase + ' + 콤보 ' + scoreCombo + ' + 시간 ' + timeBonus +
+      '기본 ' + scoreBase + ' + 콤보 ' + scoreCombo +
       ' - 감점 ' + scorePenalty + '<br>' +
       '<span style="font-size:20px">최종 점수 <b>' + finalScore + '</b>점</span>';
     getEl('sichuan-rewardMsg').textContent = '';
@@ -701,8 +747,11 @@ export const SichuanGame = (function () {
     if (scoreMsgEl) scoreMsgEl.textContent = '';
     getEl('sichuan-modal').classList.add('show');
 
-    // 보상 지급 (기존 흐름 그대로)
-    if (typeof window.onSichuanClear === 'function') {
+    // 보상 지급: 기준 점수 이상일 때만 (하루 1번 제한은 grantMinigameReward 안에서 처리)
+    if (finalScore < REWARD_MIN_SCORE) {
+      getEl('sichuan-rewardMsg').textContent =
+        REWARD_MIN_SCORE + '점 이상이면 뽑기권을 받아요. 한 판 더 해볼까요?';
+    } else if (typeof window.onSichuanClear === 'function') {
       Promise.resolve()
         .then(() => window.onSichuanClear(result))
         .then(msg => {
@@ -711,7 +760,7 @@ export const SichuanGame = (function () {
           }
         })
         .catch(err => {
-          console.error('클리어 콜백 오류:', err);
+          console.error('보상 콜백 오류:', err);
           getEl('sichuan-rewardMsg').textContent = '보상 처리 중 오류가 났어요. 다시 시도해 주세요.';
         });
     }
@@ -759,11 +808,13 @@ export const SichuanGame = (function () {
     if (modalEl) modalEl.classList.remove('show');
     selected = null;
     locked = false;
-    cleared = false;
+    gameOver = false;
     moves = 0;
     hints = 0;
     shuffles = 0;
     elapsedMs = 0;
+    pairsRemoved = 0;
+    boardsCleared = 0;
     scoreBase = 0;
     scoreCombo = 0;
     scorePenalty = 0;
@@ -772,10 +823,7 @@ export const SichuanGame = (function () {
     lastRemoveAt = 0;
     comboDeadline = 0;
 
-    for (let i = 0; i < 50; i++) {
-      grid = createBoard(currentCards);
-      if (findHint(grid)) break;
-    }
+    grid = makeSolvableGrid();
     buildBoardDom();
     renderTiles();
     updateHud();
@@ -788,8 +836,8 @@ export const SichuanGame = (function () {
     startGame: startGame,
     defaultCards: defaultCards,
     setOnClear: (fn) => { window.onSichuanClear = fn; },
-    // ?dev=1 테스트용: 바로 클리어 처리 (점수는 현재까지 쌓인 값 + 시간 보너스)
-    devClear: function () { if (!cleared) win(); },
+    // ?dev=1 테스트용: 시간이 다 된 것처럼 바로 종료 (점수는 현재까지 쌓인 값)
+    devClear: function () { if (!gameOver) endGame(); },
     attachEventListeners: function () {
       const boardEl = getEl('sichuan-board');
       if (boardEl) {
@@ -804,7 +852,7 @@ export const SichuanGame = (function () {
       const hintBtn = getEl('sichuan-hintBtn');
       if (hintBtn) {
         hintBtn.addEventListener('click', () => {
-          if (locked || cleared) return;
+          if (locked || gameOver) return;
           clearHint();
           const h = findHint(grid);
           if (!h) {
@@ -826,7 +874,7 @@ export const SichuanGame = (function () {
       const shuffleBtn = getEl('sichuan-shuffleBtn');
       if (shuffleBtn) {
         shuffleBtn.addEventListener('click', () => {
-          if (locked || cleared) return;
+          if (locked || gameOver) return;
           clearHint();
           unselect();
           startTimer();

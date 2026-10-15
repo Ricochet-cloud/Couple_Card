@@ -104,16 +104,17 @@
  
 .card__no {
   position: absolute;
-  left: 8px;
-  top: 8px;
+  left: 5px;
+  top: 5px;
   z-index: 1;
   font-family: 'Galmuri', monospace;
-  font-size: 10px;
+  font-size: 8px;
+  line-height: 1.35;
   background: var(--f-dark);
   color: var(--f-hi);
-  padding: 2px 7px;
+  padding: 0 4px;
   border-radius: 0;
-  box-shadow: inset 0 0 0 1px var(--f-mid), 2px 2px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px var(--f-mid), 1px 1px 0 rgba(0, 0, 0, 0.3);
 }
  
 .card__body {
@@ -198,24 +199,56 @@
  
 .card[data-rarity="myth"] {          /* 신화: 진홍 + 은은한 빛 */
   --f-dark: #4d0f24; --f-shade: #8c1f45; --f-mid: #b32a52; --f-base: #d9577d; --f-light: #f5a0b8; --f-hi: #ffe0e8;
-  --gem: #ffd84d;
+  --gem: #ffc2d4;
   --glow: 0 0 16px rgba(220, 70, 110, 0.4);
 }
  
 .card[data-rarity="legend"] {        /* 전설: 뒷면과 같은 금색 + 빛 */
-  --gem: #ff5964;
+  --gem: #fff6c8;
   --glow: 0 0 18px rgba(230, 180, 60, 0.5);
 }
  
-.card[data-rarity="ultra"] {         /* 울트라: 뒷면 배경 같은 무지개 테두리가 빙글빙글 */
+.card[data-rarity="ultra"] {         /* 울트라: 굵은 무지개 테두리가 빠르게 돌고, 홀로그램 빛이 훑고 지나가요 */
   --gem: #ffffff;
-  background: conic-gradient(from var(--a), #ff5964, #ff9f43, #ffd84d, #7bd36b, #3fa7e8, #5b5fd6, #b066e0, #ff5964);
+  padding: clamp(6px, 5%, 11px);
+  background: conic-gradient(from var(--a), #ff3b6b, #ff9f1c, #ffe14d, #4be37a, #28b8ff, #5a5cff, #c04bff, #ff3b6b);
   box-shadow:
     inset 0 0 0 2px var(--f-dark),
-    inset 0 0 0 3px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.75),
     0 4px 0 var(--f-dark),
-    0 0 22px rgba(180, 110, 255, 0.55);
-  animation: spin 6s linear infinite;
+    0 0 14px rgba(255, 255, 255, 0.5),
+    0 0 26px rgba(180, 110, 255, 0.7);
+  animation: spin 3s linear infinite, ultraGlow 3s linear infinite;
+}
+ 
+/* 카드 전체를 비스듬히 훑고 지나가는 무지개 빛 */
+.card[data-rarity="ultra"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(115deg,
+    transparent 30%, rgba(255, 90, 180, 0.28) 38%, rgba(255, 240, 120, 0.38) 45%,
+    rgba(90, 255, 190, 0.3) 52%, rgba(90, 160, 255, 0.28) 59%, transparent 67%) 0 0 / 300% 100%;
+  mix-blend-mode: color-dodge;
+  animation: holo 3.2s ease-in-out infinite;
+}
+ 
+@keyframes holo {
+  0%   { background-position: 100% 0; }
+  60%, 100% { background-position: 0 0; }
+}
+ 
+@keyframes ultraGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px #ff6ec7); }
+  33%      { filter: drop-shadow(0 0 6px #ffe14d); }
+  66%      { filter: drop-shadow(0 0 6px #3fd0ff); }
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  .card[data-rarity="ultra"],
+  .card[data-rarity="ultra"]::after { animation: none; }
 }
  
 /* ---- 도감 미보유 상태 (회색 프레임) ---- */
@@ -248,6 +281,7 @@
 .card--locked .card__badge {
   display: none;
 }
+ 
 /* 뽑기 연출 */
 
 .stage {

@@ -387,3 +387,100 @@ main {
 .quiz-result strong.no {
   color: var(--error);
 }
+
+/* 방명록 */
+.guestbook-section {
+  padding: var(--spacing-md);
+}
+
+.guestbook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.guestbook-form input,
+.guestbook-form textarea {
+  width: 100%;
+  font-size: 12px;
+}
+
+.guestbook-form textarea {
+  min-height: 60px;
+  resize: none;
+}
+
+.guestbook-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guestbook-form-row .guestbook-nick {
+  flex: 1;
+  min-width: 0;
+}
+
+.guestbook-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'Galmuri';
+  white-space: nowrap;
+}
+
+.guestbook-submit {
+  min-height: 44px;
+  background: var(--grass-green);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.guestbook-submit:hover:not(:disabled) {
+  background: #7fb849;
+}
+
+.guestbook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.guestbook-item {
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  padding: 8px 10px;
+  font-family: 'Galmuri';
+}
+
+.guestbook-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.guestbook-nickname {
+  font-weight: 700;
+  color: var(--text-dark);
+  word-break: break-all;
+}
+
+.guestbook-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.guestbook-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-family: 'Galmuri';
+}

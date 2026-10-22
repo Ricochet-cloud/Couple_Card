@@ -1,0 +1,296 @@
+diff --git a/css/index.css b/css/index.css
+index cfc7eaa..6042224 100644
+--- a/css/index.css
++++ b/css/index.css
+@@ -387,3 +387,100 @@ main {
+ .quiz-result strong.no {
+   color: var(--error);
+ }
++
++/* 방명록 */
++.guestbook-section {
++  padding: var(--spacing-md);
++}
++
++.guestbook-form {
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++  margin-bottom: var(--spacing-md);
++}
++
++.guestbook-form input,
++.guestbook-form textarea {
++  width: 100%;
++  font-size: 12px;
++}
++
++.guestbook-form textarea {
++  min-height: 60px;
++  resize: none;
++}
++
++.guestbook-form-row {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++}
++
++.guestbook-form-row .guestbook-nick {
++  flex: 1;
++  min-width: 0;
++}
++
++.guestbook-count {
++  font-size: 10px;
++  color: var(--text-muted);
++  font-family: 'Galmuri';
++  white-space: nowrap;
++}
++
++.guestbook-submit {
++  min-height: 44px;
++  background: var(--grass-green);
++  color: var(--white);
++  font-weight: 700;
++}
++
++.guestbook-submit:hover:not(:disabled) {
++  background: #7fb849;
++}
++
++.guestbook-list {
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++  max-height: 260px;
++  overflow-y: auto;
++}
++
++.guestbook-item {
++  background: var(--white);
++  border: 2px solid var(--wood-dark);
++  padding: 8px 10px;
++  font-family: 'Galmuri';
++}
++
++.guestbook-meta {
++  display: flex;
++  justify-content: space-between;
++  gap: 8px;
++  font-size: 10px;
++  color: var(--text-muted);
++  margin-bottom: 4px;
++}
++
++.guestbook-nickname {
++  font-weight: 700;
++  color: var(--text-dark);
++  word-break: break-all;
++}
++
++.guestbook-text {
++  font-size: 12px;
++  line-height: 1.5;
++  color: var(--text-dark);
++  word-break: break-word;
++  white-space: pre-wrap;
++}
++
++.guestbook-hint {
++  font-size: 10px;
++  color: var(--text-muted);
++  margin-top: 8px;
++  font-family: 'Galmuri';
++}
+diff --git a/firestore.rules b/firestore.rules
+index 4d4d043..079e936 100644
+--- a/firestore.rules
++++ b/firestore.rules
+@@ -28,6 +28,21 @@ service cloud.firestore {
+       allow write: if isAdmin();
+     }
+ 
++    // guestbook: 두 UID 읽기, 글 작성(create)만 가능 (수정·삭제는 콘솔에서 직접)
++    match /guestbook/{docId} {
++      allow read: if isAuthorized();
++      allow create: if isAuthorized()
++        && request.resource.data.keys().hasOnly(['nickname', 'text', 'date', 'createdAt', 'uid'])
++        && request.resource.data.uid == request.auth.uid
++        && request.resource.data.nickname is string
++        && request.resource.data.nickname.size() > 0
++        && request.resource.data.nickname.size() <= 10
++        && request.resource.data.text is string
++        && request.resource.data.text.size() > 0
++        && request.resource.data.text.size() <= 100
++        && request.resource.data.createdAt == request.time;
++    }
++
+     // minigameScores : 둘다 읽고쓰기
+     match /minigameScores/{docId} {
+       allow read, write: if request.auth != null;
+diff --git a/index.html b/index.html
+index b409494..8bd62df 100644
+--- a/index.html
++++ b/index.html
+@@ -33,6 +33,25 @@
+         <div class="draw-message" id="drawMessage"></div>
+       </div>
+ 
++      <!-- 방명록 -->
++      <div class="home-section">
++        <h2>💌 오늘의 방명록</h2>
++        <div class="guestbook-section">
++          <form class="guestbook-form" id="guestbookForm">
++            <div class="guestbook-form-row">
++              <input type="text" class="guestbook-nick" id="guestbookNick" maxlength="10" placeholder="닉네임" autocomplete="off">
++              <span class="guestbook-count" id="guestbookCount">0/100</span>
++            </div>
++            <textarea id="guestbookText" maxlength="100" placeholder="오늘의 한마디를 남겨요 (100자)"></textarea>
++            <button type="submit" class="guestbook-submit" id="guestbookSubmit">남기기</button>
++          </form>
++          <div class="guestbook-list" id="guestbookList">
++            <div class="loading">로딩 중...</div>
++          </div>
++          <div class="guestbook-hint">방명록은 하루가 지나면 사라져요</div>
++        </div>
++      </div>
++
+       <!-- 최근 획득 -->
+       <div class="home-section">
+         <h2>✨ 최근 획득</h2>
+@@ -97,6 +116,7 @@
+     import { getCollectionData } from './js/collection.js';
+     import { assignOrGetDailyMission, completeMission } from './js/mission.js';
+     import { assignOrGetDailyQuiz, submitQuizAnswer } from './js/quiz.js';
++    import { getTodayEntries, addEntry } from './js/guestbook.js';
+ 
+     // ========== 초기화 ==========
+     initAuth(async (user) => {
+@@ -167,6 +187,65 @@
+ 
+       // 오늘의 퀴즈
+       await updateQuizUI();
++
++      // 방명록
++      await updateGuestbookUI();
++    }
++
++    // ========== 방명록 ==========
++    async function updateGuestbookUI() {
++      const list = document.getElementById('guestbookList');
++      try {
++        const entries = await getTodayEntries();
++        if (entries.length === 0) {
++          list.innerHTML = '<div class="mission-empty">아직 오늘 남긴 글이 없어요</div>';
++          return;
++        }
++        list.innerHTML = entries.map((e) => {
++          const time = e.createdAt?.toDate
++            ? e.createdAt.toDate().toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false })
++            : '';
++          return `<div class="guestbook-item">
++            <div class="guestbook-meta"><span class="guestbook-nickname">${escapeHtml(e.nickname)}</span><span>${time}</span></div>
++            <div class="guestbook-text">${escapeHtml(e.text)}</div>
++          </div>`;
++        }).join('');
++        list.scrollTop = list.scrollHeight;
++      } catch (error) {
++        console.error('방명록 로드 실패:', error);
++        list.innerHTML = '<div class="mission-empty">방명록을 불러올 수 없습니다</div>';
++      }
++    }
++
++    function setupGuestbook() {
++      const form = document.getElementById('guestbookForm');
++      const nick = document.getElementById('guestbookNick');
++      const text = document.getElementById('guestbookText');
++      const count = document.getElementById('guestbookCount');
++      const submit = document.getElementById('guestbookSubmit');
++
++      try { nick.value = localStorage.getItem('guestbookNick') || ''; } catch (e) { /* 저장소 사용 불가 */ }
++
++      text.addEventListener('input', () => {
++        count.textContent = `${text.value.length}/100`;
++      });
++
++      form.addEventListener('submit', async (ev) => {
++        ev.preventDefault();
++        submit.disabled = true;
++        try {
++          await addEntry(nick.value, text.value);
++          try { localStorage.setItem('guestbookNick', nick.value.trim()); } catch (e) { /* 무시 */ }
++          text.value = '';
++          count.textContent = '0/100';
++          await updateGuestbookUI();
++        } catch (error) {
++          console.error('방명록 작성 실패:', error);
++          alert(error.message || '글을 남기지 못했어요.');
++        } finally {
++          submit.disabled = false;
++        }
++      });
+     }
+ 
+     async function updateQuizUI() {
+@@ -277,6 +356,8 @@
+     }
+ 
+     function setupEventListeners() {
++      setupGuestbook();
++
+       document.getElementById('drawBtn').addEventListener('click', async () => {
+         try {
+           window.location.href = './draw.html';
+diff --git a/js/guestbook.js b/js/guestbook.js
+new file mode 100644
+index 0000000..6f83a67
+--- /dev/null
++++ b/js/guestbook.js
+@@ -0,0 +1,46 @@
++// 방명록 (오늘 글만 보여줌, 하루 지나면 목록에서 사라짐)
++import { db } from './firebase.js';
++import { getCurrentUser } from './auth.js';
++import {
++  collection,
++  getDocs,
++  addDoc,
++  query,
++  where,
++  serverTimestamp,
++} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
++
++export const MAX_TEXT = 100;
++export const MAX_NICK = 10;
++
++/** 오늘 날짜 (KST YYYY-MM-DD) */
++function getTodayKST() {
++  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
++  return kst.toISOString().split('T')[0];
++}
++
++/** 오늘 작성된 방명록 (오래된 글이 위, 최신 글이 아래) */
++export async function getTodayEntries() {
++  const snapshot = await getDocs(query(collection(db, 'guestbook'), where('date', '==', getTodayKST())));
++  return snapshot.docs
++    .map((d) => ({ id: d.id, ...d.data() }))
++    .sort((a, b) => (a.createdAt?.toMillis?.() ?? Date.now()) - (b.createdAt?.toMillis?.() ?? Date.now()));
++}
++
++/** 방명록 글 남기기 */
++export async function addEntry(nickname, text) {
++  const nick = nickname.trim();
++  const body = text.trim();
++  if (!nick) throw new Error('닉네임을 입력해주세요.');
++  if (nick.length > MAX_NICK) throw new Error(`닉네임은 ${MAX_NICK}자까지예요.`);
++  if (!body) throw new Error('내용을 입력해주세요.');
++  if (body.length > MAX_TEXT) throw new Error(`내용은 ${MAX_TEXT}자까지예요.`);
++
++  await addDoc(collection(db, 'guestbook'), {
++    nickname: nick,
++    text: body,
++    date: getTodayKST(),
++    createdAt: serverTimestamp(),
++    uid: getCurrentUser().uid,
++  });
++}

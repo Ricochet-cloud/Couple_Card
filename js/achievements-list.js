@@ -30,6 +30,37 @@ export const ACHIEVEMENTS = [
     description: '사천성 2분 타임어택에서 20,000점 달성',
     type: 'sichuanScore',
     target: 20000,
-    rewardDexNo: null, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
+    rewardDexNo: 1001, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
   },
+  //조하쿠텐
+  {
+    id: 'johakuten',
+    icon: '👹',
+    title: '희노애락',
+    description: '희노애락 전부 모으기',
+    type: 'collectset',
+    dexNos: [178, 179, 180, 181],
+    rewardDexNo: 1002, 
+  },
+  //퀴즈의신
+  {
+    id: 'QuizGod',
+    icon: '❓',
+    title: '퀴즈의 신',
+    description: '오늘의퀴즈를 50번 맞힘',
+    type: 'quizCorrect',
+    target: 50,
+    rewardDexNo: 1003, 
+  },
+  //기술의신
+  {
+    id: 'skillgod',
+    icon: '🧠',
+    title: '기술의 신',
+    description: '기술을 전부 모아라',
+    type: 'collectset',
+    dexNos: [60, 104, 120, 124, 131 , 154, 165, 170],
+    rewardDexNo: 1004, 
+  },
+  
 ];

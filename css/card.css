@@ -483,3 +483,52 @@
     animation: none;
   }
 }
+
+/* ===== 기울이기 + 반짝임 (js/tilt.js 가 .tilt 와 CSS 변수를 넣어줘요) ===== */
+
+.card.tilt {
+  touch-action: none;   /* 카드 위에서 손가락으로 문지를 때 화면이 같이 스크롤되지 않게 */
+  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s ease-out;   /* 손을 떼면 부드럽게 원위치 */
+  will-change: transform;
+}
+
+.card.tilt.is-active {
+  transition: transform 0.08s linear;    /* 움직이는 동안은 빠르게 따라가요 */
+}
+
+.tilt .card__in {
+  position: relative;
+}
+
+/* 빛 반사: 포인터 위치를 따라다니는 하이라이트 (모든 등급) */
+.tilt .card__in::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.6), transparent 55%);
+  mix-blend-mode: overlay;
+  opacity: var(--glare, 0);
+  transition: opacity 0.3s;
+}
+
+/* 홀로그램 포일: 신화·전설·울트라만 무지개빛이 포인터에 따라 흘러요 */
+.tilt[data-rarity="myth"] .card__in::before,
+.tilt[data-rarity="legend"] .card__in::before,
+.tilt[data-rarity="ultra"] .card__in::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(115deg,
+    #ff5ab4, #ffe15a, #5affc0, #5aa0ff, #c05aff, #ff5ab4) var(--mx, 50%) var(--my, 50%) / 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: calc(var(--glare, 0) * 0.28);
+  transition: opacity 0.3s;
+}
+
+.tilt[data-rarity="legend"] .card__in::before { opacity: calc(var(--glare, 0) * 0.35); }
+.tilt[data-rarity="ultra"] .card__in::before  { opacity: calc(var(--glare, 0) * 0.5); }

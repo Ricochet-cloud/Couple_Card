@@ -1,0 +1,190 @@
+From f3b43f754cc1da32d3808d9cf98932d9e788de3d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 29 Oct 2026 10:14:58 +0900
+Subject: [PATCH] =?UTF-8?q?=EC=B9=B4=EB=93=9C=20=EA=B8=B0=EC=9A=B8?=
+ =?UTF-8?q?=EC=9D=B4=EA=B8=B0=C2=B7=EB=B0=98=EC=A7=9D=EC=9E=84=20=ED=9A=A8?=
+ =?UTF-8?q?=EA=B3=BC=20=EC=B6=94=EA=B0=80=20(=EB=BD=91=EA=B8=B0=20?=
+ =?UTF-8?q?=EA=B2=B0=EA=B3=BC,=20=EB=8F=84=EA=B0=90=20=EC=83=81=EC=84=B8)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ collection.html    |  2 ++
+ css/card.css       | 49 ++++++++++++++++++++++++++++++++++++++++++++++
+ css/collection.css |  2 +-
+ draw.html          |  4 ++++
+ js/tilt.js         | 49 ++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 105 insertions(+), 1 deletion(-)
+ create mode 100644 js/tilt.js
+
+diff --git a/collection.html b/collection.html
+index 878564e..a787047 100644
+--- a/collection.html
++++ b/collection.html
+@@ -113,6 +113,7 @@
+     import { initAuth, isAdmin, logout } from './js/auth.js';
+     import { guardAuth } from './js/auth.js';
+     import { renderCard, renderLockedCard, RARITY } from './js/card.js';
++    import { initTilt } from './js/tilt.js';
+     import {
+       getCollectionData,
+       getCollectionStats,
+@@ -334,6 +335,7 @@
+ 
+       document.getElementById('modalTitle').textContent = modalTitle;
+       document.getElementById('modalBody').innerHTML = modalBody;
++      initTilt(document.querySelector('#modalBody .card'));
+       document.getElementById('cardModal').classList.add('show');
+       document.body.style.overflow = 'hidden';
+     };
+diff --git a/css/card.css b/css/card.css
+index fef198c..9d3e2c0 100644
+--- a/css/card.css
++++ b/css/card.css
+@@ -483,3 +483,52 @@
+     animation: none;
+   }
+ }
++
++/* ===== 기울이기 + 반짝임 (js/tilt.js 가 .tilt 와 CSS 변수를 넣어줘요) ===== */
++
++.card.tilt {
++  touch-action: none;   /* 카드 위에서 손가락으로 문지를 때 화면이 같이 스크롤되지 않게 */
++  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
++  transition: transform 0.5s ease-out;   /* 손을 떼면 부드럽게 원위치 */
++  will-change: transform;
++}
++
++.card.tilt.is-active {
++  transition: transform 0.08s linear;    /* 움직이는 동안은 빠르게 따라가요 */
++}
++
++.tilt .card__in {
++  position: relative;
++}
++
++/* 빛 반사: 포인터 위치를 따라다니는 하이라이트 (모든 등급) */
++.tilt .card__in::after {
++  content: '';
++  position: absolute;
++  inset: 0;
++  z-index: 4;
++  pointer-events: none;
++  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.6), transparent 55%);
++  mix-blend-mode: overlay;
++  opacity: var(--glare, 0);
++  transition: opacity 0.3s;
++}
++
++/* 홀로그램 포일: 신화·전설·울트라만 무지개빛이 포인터에 따라 흘러요 */
++.tilt[data-rarity="myth"] .card__in::before,
++.tilt[data-rarity="legend"] .card__in::before,
++.tilt[data-rarity="ultra"] .card__in::before {
++  content: '';
++  position: absolute;
++  inset: 0;
++  z-index: 3;
++  pointer-events: none;
++  background: linear-gradient(115deg,
++    #ff5ab4, #ffe15a, #5affc0, #5aa0ff, #c05aff, #ff5ab4) var(--mx, 50%) var(--my, 50%) / 300% 300%;
++  mix-blend-mode: color-dodge;
++  opacity: calc(var(--glare, 0) * 0.28);
++  transition: opacity 0.3s;
++}
++
++.tilt[data-rarity="legend"] .card__in::before { opacity: calc(var(--glare, 0) * 0.35); }
++.tilt[data-rarity="ultra"] .card__in::before  { opacity: calc(var(--glare, 0) * 0.5); }
+diff --git a/css/collection.css b/css/collection.css
+index ed1e9a3..19e0c29 100644
+--- a/css/collection.css
++++ b/css/collection.css
+@@ -300,7 +300,7 @@
+   aspect-ratio: 5/7;
+   margin-bottom: var(--spacing-md);
+   border-radius: 0;
+-  overflow: hidden;
++  overflow: visible;   /* 기울어진 카드 모서리가 잘리지 않게 */
+ }
+ 
+ .modal-card-preview .card {
+diff --git a/draw.html b/draw.html
+index 325d1e4..bbaf35d 100644
+--- a/draw.html
++++ b/draw.html
+@@ -79,6 +79,7 @@
+     import { guardAuth } from './js/auth.js';
+     import { drawCard, getActiveCards } from './js/gacha.js';
+     import { renderCard, RARITY } from './js/card.js';
++    import { initTilt } from './js/tilt.js';
+     import { getTickets } from './js/ticket.js';
+ 
+     let drawResult = null;
+@@ -160,6 +161,9 @@
+           await new Promise((resolve) => setTimeout(resolve, 700));
+         }
+ 
++        // 뒤집기가 끝난 카드에 기울이기 효과
++        initTilt(cardFront.querySelector('.card'));
++
+         // 결과 표시
+         showResult();
+ 
+diff --git a/js/tilt.js b/js/tilt.js
+new file mode 100644
+index 0000000..80495aa
+--- /dev/null
++++ b/js/tilt.js
+@@ -0,0 +1,49 @@
++// 카드 기울이기 + 반짝임 효과 (마우스/터치 공용)
++// 사용법: initTilt(document.querySelector('.card'))
++// 카드 위의 포인터 위치를 CSS 변수(--rx, --ry, --mx, --my, --glare)로 넘기면
++// 실제 모양은 css/card.css 의 .tilt 규칙이 그려요.
++
++const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
++
++/**
++ * @param {HTMLElement|null} card - .card 요소
++ * @param {number} [max=12] - 최대 기울기(도)
++ */
++export function initTilt(card, max = 12) {
++  if (!card || reduced || card.classList.contains('card--locked')) return;
++
++  card.classList.add('tilt');
++  let raf = 0;
++  let px = 0.5;
++  let py = 0.5;
++
++  const paint = () => {
++    raf = 0;
++    // 1차 함수: 위치(0~1) → 각도(-max ~ +max)
++    card.style.setProperty('--ry', `${((px - 0.5) * 2 * max).toFixed(2)}deg`);
++    card.style.setProperty('--rx', `${((0.5 - py) * 2 * max).toFixed(2)}deg`);
++    card.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
++    card.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
++    card.style.setProperty('--glare', '1');
++  };
++
++  const move = (e) => {
++    const r = card.getBoundingClientRect();
++    px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
++    py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
++    card.classList.add('is-active');
++    if (!raf) raf = requestAnimationFrame(paint); // 프레임당 1번만 갱신
++  };
++
++  const reset = () => {
++    if (raf) cancelAnimationFrame(raf);
++    raf = 0;
++    card.classList.remove('is-active');
++    for (const v of ['--rx', '--ry', '--mx', '--my', '--glare']) card.style.removeProperty(v);
++  };
++
++  card.addEventListener('pointermove', move);
++  card.addEventListener('pointerdown', move);
++  card.addEventListener('pointerleave', reset);
++  card.addEventListener('pointercancel', reset);
++}
+-- 
+2.43.0
+

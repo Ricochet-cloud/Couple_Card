@@ -300,7 +300,7 @@
   aspect-ratio: 5/7;
   margin-bottom: var(--spacing-md);
   border-radius: 0;
-  overflow: hidden;
+  overflow: visible;   /* 기울어진 카드 모서리가 잘리지 않게 */
 }
 
 .modal-card-preview .card {

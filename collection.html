@@ -113,6 +113,7 @@
     import { initAuth, isAdmin, logout } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
     import { renderCard, renderLockedCard, RARITY } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
     import {
       getCollectionData,
       getCollectionStats,
@@ -334,6 +335,7 @@
 
       document.getElementById('modalTitle').textContent = modalTitle;
       document.getElementById('modalBody').innerHTML = modalBody;
+      initTilt(document.querySelector('#modalBody .card'));
       document.getElementById('cardModal').classList.add('show');
       document.body.style.overflow = 'hidden';
     };

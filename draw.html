@@ -79,6 +79,7 @@
     import { guardAuth } from './js/auth.js';
     import { drawCard, getActiveCards } from './js/gacha.js';
     import { renderCard, RARITY } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
     import { getTickets } from './js/ticket.js';
 
     let drawResult = null;
@@ -159,6 +160,9 @@
         if (!reducedMotion) {
           await new Promise((resolve) => setTimeout(resolve, 700));
         }
+
+        // 뒤집기가 끝난 카드에 기울이기 효과
+        initTilt(cardFront.querySelector('.card'));
 
         // 결과 표시
         showResult();

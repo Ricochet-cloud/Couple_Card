@@ -13,6 +13,10 @@
 //   sichuanScore : 사천성 2분 타임어택 최고점 (두 계정 중 높은 쪽)   → target: 목표 점수
 //   collectSet   : 지정한 카드를 전부 보유                         → dexNos: [도감번호, ...]
 //   collectCount : 서로 다른 카드를 N장 보유 (히든 카드는 제외)       → target: 장수
+//   drawCount    : 카드뽑기를 N번 함 (재조합은 제외)                → target: 횟수
+//   quizCount    : 오늘의 퀴즈를 N번 풂 (맞든 틀리든)               → target: 횟수 (퀴즈는 하루 1문제예요)
+//   quizCorrect  : 오늘의 퀴즈를 N번 맞힘                          → target: 횟수
+//   ※ drawCount·quizCount·quizCorrect 는 이 기능을 적용한 날부터 세기 시작해요.
 //
 // 예시)
 //   { id: 'kimetsu-set', icon: '🗡️', title: '귀멸 컬렉터', description: '귀멸의 칼날 카드 3장 모으기',

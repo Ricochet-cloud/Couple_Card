@@ -104,8 +104,18 @@ export async function submitQuizAnswer(selectedIndex) {
       if (!daily.quizId) throw new Error('퀴즈가 배정되지 않았습니다.');
       if (daily.answered) throw new Error('이미 답을 제출했습니다.');
 
+      // 정답 여부 확인 (도전과제용 누적 횟수에 쓰여요)
+      const quizDoc = await transaction.get(doc(db, 'quizzes', daily.quizId));
+      const isCorrect = quizDoc.exists() && quizDoc.data().answerIndex === selectedIndex;
+      const stats = stateDoc.data().stats || {};
+
       transaction.update(stateRef, {
         dailyQuiz: { ...daily, answered: true, selected: selectedIndex },
+        stats: {
+          ...stats,
+          quizAnswered: (stats.quizAnswered || 0) + 1,
+          quizCorrect: (stats.quizCorrect || 0) + (isCorrect ? 1 : 0),
+        },
       });
     });
   } catch (error) {

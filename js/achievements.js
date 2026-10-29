@@ -39,6 +39,7 @@ export async function loadAchievementData() {
       firstAt: owned[c.id]?.firstAt || null,
     })),
     claimed: state.achievements || {},
+    stats: state.stats || {}, // { draws, quizAnswered, quizCorrect } 누적 횟수
     sichuanBest: Object.values(records).reduce((max, r) => Math.max(max, r.score || 0), 0),
   };
 }
@@ -57,6 +58,15 @@ export function evaluateAchievement(ach, data) {
   } else if (ach.type === 'collectSet') {
     target = ach.dexNos.length;
     current = ach.dexNos.filter((no) => data.cards.some((c) => c.dexNo === no && c.isOwned)).length;
+  } else if (ach.type === 'drawCount') {
+    current = data.stats.draws || 0;
+    target = ach.target;
+  } else if (ach.type === 'quizCount') {
+    current = data.stats.quizAnswered || 0;
+    target = ach.target;
+  } else if (ach.type === 'quizCorrect') {
+    current = data.stats.quizCorrect || 0;
+    target = ach.target;
   } else if (ach.type === 'collectCount') {
     current = data.cards.filter((c) => c.rarity !== 'hidden' && c.isOwned).length;
     target = ach.target;

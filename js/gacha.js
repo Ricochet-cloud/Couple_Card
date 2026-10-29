@@ -119,9 +119,13 @@ export async function drawCard() {
       };
 
       // 5. 트랜잭션 업데이트
+      // 도전과제용 누적 횟수 (뽑기와 같은 트랜잭션이라 뽑기가 성공했을 때만 늘어나요)
+      const stats = state.stats || {};
+
       transaction.update(stateRef, {
         tickets: tickets - 1,
         owned: owned,
+        stats: { ...stats, draws: (stats.draws || 0) + 1 },
       });
 
       return {

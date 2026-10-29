@@ -1,0 +1,220 @@
+/* 도전과제 페이지 */
+
+.ach-summary {
+  background: var(--bg-cream);
+  padding: var(--spacing-md);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  margin: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+  font-family: 'Galmuri';
+}
+
+.ach-summary__main {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.ach-summary__sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ach-summary__ready {
+  color: #b8651b;
+  font-weight: 700;
+}
+
+.ach-message {
+  margin: 0 var(--spacing-md) var(--spacing-md);
+  padding: 10px 12px;
+  background: #fde8e8;
+  border: 2px solid var(--error);
+  color: var(--error);
+  font-size: 12px;
+  font-family: 'Galmuri';
+}
+
+.ach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--spacing-md);
+}
+
+.ach-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-cream);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  font-family: 'Galmuri';
+}
+
+.ach-icon {
+  flex: 0 0 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  background: var(--white);
+  border: 2px solid var(--border);
+}
+
+.ach-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-title {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.ach-desc {
+  margin: 4px 0 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.ach-progress {
+  height: 12px;
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  overflow: hidden;
+}
+
+.ach-progress__fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--grass-green) 0 6px, #7aae47 6px 8px);
+}
+
+.ach-progress__text {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.ach-reward {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-dark);
+}
+
+.ach-claim {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  font-family: 'Galmuri';
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--btn);
+  color: var(--btn-ink);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 0 3px 0 var(--wood-dark);
+}
+
+.ach-claim:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--wood-dark);
+}
+
+.ach-claim:disabled {
+  background: #cfc9ba;
+  color: #7d776a;
+  cursor: default;
+  box-shadow: none;
+}
+
+.ach-claimed {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--grass-green);
+  font-weight: 700;
+}
+
+/* 달성했지만 아직 안 받은 도전과제는 금색으로 */
+.ach-item.is-ready {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--wood-dark), 0 0 14px rgba(255, 215, 0, 0.55);
+}
+
+.ach-item.is-claimed {
+  opacity: 0.85;
+}
+
+.ach-item.is-secret .ach-icon {
+  filter: grayscale(1);
+}
+
+.ach-empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Galmuri';
+}
+
+/* 보상 카드 공개 */
+.ach-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 6, 13, 0.85);
+}
+
+.ach-modal.show {
+  display: flex;
+}
+
+.ach-modal__box {
+  width: min(300px, 100%);
+  text-align: center;
+  font-family: 'Galmuri';
+  color: #eef4ff;
+}
+
+.ach-modal__title {
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+
+.ach-modal__card {
+  width: min(210px, 62vw);
+  aspect-ratio: 5 / 7;
+  margin: 0 auto 14px;
+}
+
+.ach-modal__card .card {
+  width: 100%;
+  height: 100%;
+}
+
+.ach-modal.show .ach-modal__card {
+  animation: achReveal 0.7s ease-out;
+}
+
+.ach-modal__info {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+@keyframes achReveal {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-modal.show .ach-modal__card { animation: none; }
+}

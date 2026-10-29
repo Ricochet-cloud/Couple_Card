@@ -11,7 +11,7 @@ import {
   where,
   Timestamp,
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-import { RARITY } from './card.js';
+import { RARITY, HIDDEN_DEX_BASE } from './card.js';
 import { initState, getTickets, addTickets } from './state.js';
 
 // ========== 카드 관리 ==========
@@ -53,11 +53,26 @@ export async function isDexNoDuplicate(dexNo, excludeId = null) {
  */
 export async function getNextDexNo() {
   try {
-    const cards = await getAllCards();
+    const cards = (await getAllCards()).filter((c) => c.dexNo <= HIDDEN_DEX_BASE);
     if (cards.length === 0) return 1;
     return Math.max(...cards.map((c) => c.dexNo)) + 1;
   } catch (error) {
     console.error('다음 번호 제안 실패:', error);
+    return 1;
+  }
+}
+
+/**
+ * 다음 히든 번호 제안 (1 → S01)
+ */
+export async function getNextHiddenNo() {
+  try {
+    const nos = (await getAllCards())
+      .filter((c) => c.dexNo > HIDDEN_DEX_BASE)
+      .map((c) => c.dexNo - HIDDEN_DEX_BASE);
+    return nos.length === 0 ? 1 : Math.max(...nos) + 1;
+  } catch (error) {
+    console.error('다음 히든 번호 제안 실패:', error);
     return 1;
   }
 }

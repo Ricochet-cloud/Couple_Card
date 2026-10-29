@@ -8,6 +8,7 @@ export const RARITY = {
   hero: { label: '영웅', weight: 15 },
   superrare: { label: '초희귀', weight: 30 },
   rare: { label: '희귀', weight: 40 },
+  hidden: { label: '히든', weight: 0 }, // 뽑기·재조합 대상이 아니에요 (도전과제 보상 전용)
 };
 
 // HTML 이스케이프 (XSS 방지)
@@ -25,6 +26,17 @@ function escapeHtml(str) {
 // 숫자를 0으로 패딩 (No.001 형식)
 function padNo(n) {
   return String(n).padStart(3, '0');
+}
+
+// 히든 카드는 도감번호를 1001부터 써요 (1001 → S01). 일반 카드는 1000 이하.
+export const HIDDEN_DEX_BASE = 1000;
+
+/**
+ * 도감번호 표시 문자열: 일반 카드는 No.001, 히든 카드는 S01
+ */
+export function formatDexNo(dexNo) {
+  if (dexNo > HIDDEN_DEX_BASE) return `S${String(dexNo - HIDDEN_DEX_BASE).padStart(2, '0')}`;
+  return `No.${padNo(dexNo)}`;
 }
 
 /**
@@ -58,7 +70,7 @@ export function renderCard(card) {
 
   return `<article class="card" data-rarity="${escapeHtml(rarity)}" style="--h:${hue}">
     <div class="card__in">
-      <div class="card__photo">${photoHtml}<span class="card__no">No.${padNo(dexNo)}</span></div>
+      <div class="card__photo">${photoHtml}<span class="card__no">${formatDexNo(dexNo)}</span></div>
       <div class="card__body">
         <span class="card__badge">${escapeHtml(RARITY[rarity]?.label || '?')}</span>
         <h3 class="card__title">${escapeHtml(title)}</h3>
@@ -77,7 +89,7 @@ export function renderCard(card) {
 export function renderLockedCard(dexNo) {
   return `<article class="card card--locked" style="--h:0" aria-label="미보유 카드">
     <div class="card__in">
-      <div class="card__photo"><span class="card__no">No.${padNo(dexNo)}</span></div>
+      <div class="card__photo"><span class="card__no">${formatDexNo(dexNo)}</span></div>
       <div class="card__body">
         <h3 class="card__title">???</h3>
         <div class="card__meta">아직 못 뽑았어요</div>

@@ -532,3 +532,104 @@
 
 .tilt[data-rarity="legend"] .card__in::before { opacity: calc(var(--glare, 0) * 0.35); }
 .tilt[data-rarity="ultra"] .card__in::before  { opacity: calc(var(--glare, 0) * 0.5); }
+
+/* ===== 히든 등급: 흑요석 + 별빛, 가끔 글리치 ===== */
+
+.card[data-rarity="hidden"] {
+  --f-dark: #05060d; --f-shade: #141830; --f-mid: #5d6a94; --f-base: #12162b; --f-light: #c3cde8; --f-hi: #f1f6ff;
+  --gem: #7df9ff;
+  --glow: 0 0 18px rgba(125, 249, 255, 0.35), 0 0 36px rgba(110, 80, 255, 0.25);
+  animation: hiddenGlitch 6s steps(1, end) infinite;
+}
+
+.card[data-rarity="hidden"] .card__in {
+  background: #0a0d1c;
+  animation: hiddenGlitchIn 6s steps(1, end) infinite;
+}
+
+/* 사진 자리(사진이 없을 때): 깊은 밤하늘 */
+.card[data-rarity="hidden"] .card__photo {
+  background: radial-gradient(circle at 72% 28%, rgba(200, 235, 255, 0.35) 0 9%, transparent 10%),
+    linear-gradient(165deg, #1a2150, #070914);
+}
+
+/* 별빛 2겹: 포인터에 따라 서로 다른 속도로 움직여요(시차) */
+.card[data-rarity="hidden"] .card__photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(1.5px 1.5px at 18% 22%, #fff 50%, transparent 60%),
+    radial-gradient(1px 1px at 63% 12%, #cfe9ff 50%, transparent 60%),
+    radial-gradient(1.5px 1.5px at 82% 58%, #fff 50%, transparent 60%),
+    radial-gradient(1px 1px at 35% 74%, #bfe8ff 50%, transparent 60%),
+    radial-gradient(1px 1px at 9% 88%, #fff 50%, transparent 60%) ;
+  background-size: 90px 90px;
+  background-position: calc(var(--mx, 50%) * 0.35) calc(var(--my, 50%) * 0.35);
+  mix-blend-mode: screen;
+  animation: hiddenTwinkle 3.4s ease-in-out infinite;
+}
+
+/* 보랏빛 안개: 포인터 반대쪽으로 천천히 흘러요 */
+.card[data-rarity="hidden"] .card__in::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at calc(100% - var(--mx, 50%)) calc(100% - var(--my, 50%)), rgba(125, 90, 255, 0.28), transparent 70%),
+    radial-gradient(1px 1px at 27% 41%, rgba(255,255,255,.9) 50%, transparent 60%),
+    radial-gradient(1px 1px at 71% 83%, rgba(190,235,255,.9) 50%, transparent 60%);
+  background-size: 100% 100%, 70px 70px, 110px 110px;
+  background-position: 0 0, calc(var(--mx, 50%) * 0.7) calc(var(--my, 50%) * 0.7), calc(var(--mx, 50%) * -0.2) calc(var(--my, 50%) * -0.2);
+  mix-blend-mode: screen;
+}
+
+/* 본문 영역도 어둡게 */
+.card[data-rarity="hidden"] .card__body {
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(125, 249, 255, 0.04) 3px 4px), #0a0d1c;
+}
+.card[data-rarity="hidden"] .card__title { color: var(--f-hi); text-shadow: 0 0 8px rgba(125, 249, 255, 0.45); }
+.card[data-rarity="hidden"] .card__desc,
+.card[data-rarity="hidden"] .card__meta { color: #9aa8cf; }
+.card[data-rarity="hidden"] .card__meta { border-top-color: rgba(125, 249, 255, 0.28); }
+.card[data-rarity="hidden"] .card__badge {
+  letter-spacing: 0.12em;
+  color: var(--gem);
+  background: #05060d;
+  box-shadow: inset 0 0 0 1px var(--f-mid), 0 0 6px rgba(125, 249, 255, 0.4);
+}
+
+/* 기울일 때 빛 반사는 하얀색 대신 청백색 */
+.tilt[data-rarity="hidden"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(170, 245, 255, 0.5), transparent 52%);
+  mix-blend-mode: screen;
+}
+
+@keyframes hiddenTwinkle {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* 약 6초에 한 번, 아주 잠깐만 RGB로 갈라져요 */
+@keyframes hiddenGlitch {
+  0%, 91%, 95%, 100% { filter: none; }
+  92% { filter: drop-shadow(-3px 0 #ff2d6f) drop-shadow(3px 0 #00e5ff); }
+  93% { filter: drop-shadow(3px 0 #ff2d6f) drop-shadow(-3px 0 #00e5ff); }
+  94% { filter: drop-shadow(-2px 0 #ff2d6f) drop-shadow(2px 0 #00e5ff); }
+}
+@keyframes hiddenGlitchIn {
+  0%, 91%, 95%, 100% { transform: none; }
+  92% { transform: translateX(-2px); }
+  93% { transform: translateX(2px) skewX(-1deg); }
+  94% { transform: translateX(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card[data-rarity="hidden"],
+  .card[data-rarity="hidden"] .card__in,
+  .card[data-rarity="hidden"] .card__photo::before { animation: none; }
+}

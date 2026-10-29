@@ -68,6 +68,10 @@
       <span class="nav-icon">✨</span>
       <span class="nav-label">재조합</span>
     </a>
+    <a href="./achievements.html" class="nav-item" data-page="achievements">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">도전과제</span>
+    </a>
     <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label">관리</span>
@@ -78,7 +82,7 @@
     import { initAuth, isAdmin, logout } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
     import { drawCard, getActiveCards } from './js/gacha.js';
-    import { renderCard, RARITY } from './js/card.js';
+    import { renderCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
     import { getTickets } from './js/ticket.js';
 
@@ -178,10 +182,9 @@
       const card = drawResult.card;
       const isFirstTime = drawResult.isFirstTime;
 
-      const padNo = (n) => String(n).padStart(3, '0');
       const rarity = RARITY[card.rarity]?.label || '?';
 
-      const resultText = `${rarity} · No.${padNo(card.dexNo)} ${escapeHtml(card.title)} 획득!`;
+      const resultText = `${rarity} · ${formatDexNo(card.dexNo)} ${escapeHtml(card.title)} 획득!`;
 
       const detailsHtml = `
         <strong>${rarity}</strong> |

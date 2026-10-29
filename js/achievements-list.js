@@ -1,0 +1,31 @@
+// 도전과제 목록 — 여기에 추가·수정하면 도전과제 탭에 바로 반영돼요.
+//
+// ── 공통 항목 ──────────────────────────────────────────────
+//   id          : 겹치지 않는 영어 이름. 한번 정하면 바꾸지 마세요! (수령 기록이 이 id로 저장돼요)
+//   icon        : 이모지
+//   title       : 도전과제 이름
+//   description : 설명
+//   rewardDexNo : 보상으로 줄 카드의 도감번호. 히든 S01 → 1001, S02 → 1002 …
+//                 아직 카드를 안 만들었으면 null (화면에 '보상 준비 중'으로 나와요)
+//   secret      : true 로 두면 달성하기 전까지 이름과 조건을 ???로 가려요 (선택)
+//
+// ── 조건 종류 (type) ───────────────────────────────────────
+//   sichuanScore : 사천성 2분 타임어택 최고점 (두 계정 중 높은 쪽)   → target: 목표 점수
+//   collectSet   : 지정한 카드를 전부 보유                         → dexNos: [도감번호, ...]
+//   collectCount : 서로 다른 카드를 N장 보유 (히든 카드는 제외)       → target: 장수
+//
+// 예시)
+//   { id: 'kimetsu-set', icon: '🗡️', title: '귀멸 컬렉터', description: '귀멸의 칼날 카드 3장 모으기',
+//     type: 'collectSet', dexNos: [12, 13, 14], rewardDexNo: 1002 },
+
+export const ACHIEVEMENTS = [
+  {
+    id: 'sichuan-20000',
+    icon: '🀄',
+    title: '사천성 달인',
+    description: '사천성 2분 타임어택에서 20,000점 달성',
+    type: 'sichuanScore',
+    target: 20000,
+    rewardDexNo: null, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
+  },
+];

@@ -38,7 +38,7 @@
           <form id="cardForm">
             <div class="form-row">
               <div class="form-group">
-                <label for="cardDexNo">도감번호 *</label>
+                <label for="cardDexNo" id="cardDexNoLabel">도감번호 *</label>
                 <input type="number" id="cardDexNo" min="1" required placeholder="자동 제안됨">
               </div>
               <div class="form-group">
@@ -51,6 +51,7 @@
                   <option value="hero">영웅</option>
                   <option value="superrare">초희귀</option>
                   <option value="rare">희귀</option>
+                  <option value="hidden">히든 (도전과제 보상)</option>
                 </select>
               </div>
             </div>
@@ -231,6 +232,10 @@
       <span class="nav-icon">✨</span>
       <span class="nav-label">재조합</span>
     </a>
+    <a href="./achievements.html" class="nav-item" data-page="achievements">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">도전과제</span>
+    </a>
     <a href="./admin.html" class="nav-item active" data-page="admin">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label">관리</span>
@@ -244,6 +249,7 @@
       getAllCards,
       isDexNoDuplicate,
       getNextDexNo,
+      getNextHiddenNo,
       addCard,
       updateCard,
       toggleCardActive,
@@ -260,7 +266,7 @@
       deleteQuiz,
     } from './js/admin.js';
     import { initState, getTickets, addTickets } from './js/state.js';
-    import { renderCard } from './js/card.js';
+    import { renderCard, HIDDEN_DEX_BASE } from './js/card.js';
 
     // 관리자 권한 확인
     initAuth((user) => {
@@ -339,12 +345,23 @@
     }
 
     async function suggestNextDexNo() {
-      const nextNo = await getNextDexNo();
-      document.getElementById('cardDexNo').placeholder = `다음 번호: ${nextNo}`;
+      // 히든 등급이면 S번호(1 → S01)를, 아니면 일반 도감번호를 제안해요
+      const isHidden = document.getElementById('cardRarity').value === 'hidden';
+      const nextNo = isHidden ? await getNextHiddenNo() : await getNextDexNo();
+      document.getElementById('cardDexNoLabel').textContent = isHidden ? '히든번호 * (1 입력 → S01)' : '도감번호 *';
+      document.getElementById('cardDexNo').placeholder = isHidden
+        ? `다음 번호: S${String(nextNo).padStart(2, '0')}`
+        : `다음 번호: ${nextNo}`;
       if (!document.getElementById('cardDexNo').value) {
         document.getElementById('cardDexNo').value = nextNo;
       }
     }
+
+    // 등급을 바꾸면 번호 칸도 그 등급에 맞게 다시 제안해요
+    document.getElementById('cardRarity').addEventListener('change', () => {
+      document.getElementById('cardDexNo').value = '';
+      suggestNextDexNo();
+    });
 
     // 사진 미리보기
     document.getElementById('cardPhoto').addEventListener('change', async (e) => {
@@ -390,8 +407,18 @@
           photoData = converted.base64;
         }
 
+        // 히든 카드는 입력한 번호(1~99)에 1000을 더해 저장해요 (1 → 1001 → S01)
+        const dexNoValue = parseInt(dexNo);
+        const isHiddenCard = rarity === 'hidden';
+        if (isHiddenCard && (dexNoValue < 1 || dexNoValue > 99)) {
+          throw new Error('히든번호는 1~99 사이로 입력해주세요. (S01~S99)');
+        }
+        if (!isHiddenCard && dexNoValue > HIDDEN_DEX_BASE) {
+          throw new Error(`일반 카드 도감번호는 ${HIDDEN_DEX_BASE} 이하로 입력해주세요.`);
+        }
+
         await addCard({
-          dexNo: parseInt(dexNo),
+          dexNo: isHiddenCard ? HIDDEN_DEX_BASE + dexNoValue : dexNoValue,
           title,
           description,
           photoData,

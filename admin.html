@@ -34,7 +34,8 @@
         <div id="cardMessage"></div>
 
         <div class="form-section">
-          <h2>카드 추가</h2>
+          <h2 id="cardFormTitle">카드 추가</h2>
+          <div id="cardEditBanner" class="message info" style="display: none;"></div>
           <form id="cardForm">
             <div class="form-row">
               <div class="form-group">
@@ -81,13 +82,17 @@
               <label for="cardPhoto">사진 (선택)</label>
               <input type="file" id="cardPhoto" accept="image/*">
               <div class="image-preview" id="cardPhotoPreview" style="display: none;"></div>
+              <div class="check-row" id="cardPhotoRemoveRow" style="display: none;">
+                <label><input type="checkbox" id="cardPhotoRemove"> 현재 사진 삭제 (새 사진을 고르면 그 사진으로 바뀌어요)</label>
+              </div>
               <div style="font-size: 12px; color: var(--mute); margin-top: 8px;">
                 최대 400KB, 긴 변 640px 이하로 자동 변환됨
               </div>
             </div>
 
             <div class="form-buttons">
-              <button type="submit" class="btn-primary">카드 추가</button>
+              <button type="submit" class="btn-primary" id="cardSubmitBtn">카드 추가</button>
+              <button type="button" class="btn-secondary" id="cardEditCancel" style="display: none;">수정 취소</button>
               <button type="button" class="btn-secondary" id="cardFormReset">초기화</button>
             </div>
           </form>
@@ -242,6 +247,19 @@
     </a>
   </nav>
 
+  <!-- 카드 상세 -->
+  <div class="admin-modal" id="cardDetailModal" role="dialog" aria-modal="true" aria-labelledby="cardDetailTitle">
+    <div class="admin-modal__box">
+      <div class="admin-modal__head">
+        <h2 id="cardDetailTitle">카드 상세</h2>
+        <button type="button" class="admin-modal__close" id="cardDetailClose" aria-label="닫기">✕</button>
+      </div>
+      <div class="admin-modal__card" id="cardDetailCard"></div>
+      <dl class="admin-modal__info" id="cardDetailInfo"></dl>
+      <div class="admin-modal__actions" id="cardDetailActions"></div>
+    </div>
+  </div>
+
   <script type="module">
     import { initAuth, isAdmin, logout } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
@@ -266,7 +284,12 @@
       deleteQuiz,
     } from './js/admin.js';
     import { initState, getTickets, addTickets } from './js/state.js';
-    import { renderCard, HIDDEN_DEX_BASE } from './js/card.js';
+
+    // 카드 목록(상세 보기용)과 수정 중인 카드
+    let cardsCache = [];
+    let editingCard = null;
+    import { renderCard, RARITY, HIDDEN_DEX_BASE, formatDexNo } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
 
     // 관리자 권한 확인
     initAuth((user) => {
@@ -318,22 +341,17 @@
     async function loadCards() {
       try {
         const cards = await getAllCards();
+        cardsCache = cards;
         const html = cards.length === 0
           ? '<p style="color: var(--mute);">등록된 카드가 없습니다.</p>'
-          : `<div class="cards-grid">${cards
+          : `<p class="cards-hint">카드를 누르면 크게 보고 수정할 수 있어요 (총 ${cards.length}장)</p>
+             <div class="cards-grid">${cards
               .map((card) => `
-                <div class="card-item-wrapper ${!card.active ? 'inactive' : ''}">
+                <div class="card-item-wrapper ${!card.active ? 'inactive' : ''}" data-card-id="${card.id}" role="button" tabindex="0" aria-label="${escapeHtml(card.title)} 상세 보기">
                   ${renderCard({
                     ...card,
                     hue: 30,
                   })}
-                  <div class="card-actions">
-                    <button class="btn-sm btn-secondary" onclick="editCard('${card.id}')">수정</button>
-                    <button class="btn-sm" onclick="toggleActive('${card.id}', ${card.active})" style="background: ${card.active ? '#ffc107' : '#28a745'}; color: white; border: 0;">
-                      ${card.active ? '비활성' : '활성'}
-                    </button>
-                    <button class="btn-sm btn-danger" onclick="deleteCardConfirm('${card.id}')">삭제</button>
-                  </div>
                   <div class="card-status">${card.active ? '활성' : '비활성'}</div>
                 </div>
               `)
@@ -417,23 +435,50 @@
           throw new Error(`일반 카드 도감번호는 ${HIDDEN_DEX_BASE} 이하로 입력해주세요.`);
         }
 
-        await addCard({
-          dexNo: isHiddenCard ? HIDDEN_DEX_BASE + dexNoValue : dexNoValue,
-          title,
-          description,
-          photoData,
-          rarity,
-          category,
-          memoryDate,
-        });
+        const finalDexNo = isHiddenCard ? HIDDEN_DEX_BASE + dexNoValue : dexNoValue;
 
-        showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
-        document.getElementById('cardForm').reset();
+        if (editingCard) {
+          // ----- 수정 -----
+          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate };
+          if (photoData) {
+            updates.photoData = photoData; // 새 사진을 골랐을 때만 교체
+          } else if (document.getElementById('cardPhotoRemove').checked) {
+            updates.photoData = null; // 현재 사진 삭제
+          }
+
+          if (
+            finalDexNo !== editingCard.dexNo &&
+            !confirm('도감번호를 바꾸면 도전과제 목록(js/achievements-list.js)의 rewardDexNo, dexNos, dexNo 도 직접 바꿔야 해요.\n계속할까요?')
+          ) {
+            btn.disabled = false;
+            return;
+          }
+
+          await updateCard(editingCard.id, updates);
+          showMessage('cardMessage', '카드가 수정되었습니다!', 'success');
+          exitEditMode();
+        } else {
+          // ----- 추가 -----
+          await addCard({
+            dexNo: finalDexNo,
+            title,
+            description,
+            photoData,
+            rarity,
+            category,
+            memoryDate,
+          });
+
+          showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
+          document.getElementById('cardForm').reset();
+          document.getElementById('cardPhotoPreview').style.display = 'none';
+        }
+
         await suggestNextDexNo();
         await loadCards();
         btn.disabled = false;
       } catch (error) {
-        showMessage('cardMessage', `카드 추가 실패: ${error.message}`, 'error');
+        showMessage('cardMessage', `${editingCard ? '카드 수정 실패' : '카드 추가 실패'}: ${error.message}`, 'error');
         e.target.querySelector('button[type="submit"]').disabled = false;
       }
     });
@@ -444,9 +489,142 @@
     });
 
     // 전역 함수 (카드 목록에서 호출됨)
-    window.editCard = function (cardId) {
-      alert('수정 기능은 다음 단계에서 구현됩니다.');
-    };
+    // ===== 카드 수정 (위쪽 '카드 추가' 폼을 수정 모드로 재사용) =====
+    function setDexNoLabel(isHidden) {
+      document.getElementById('cardDexNoLabel').textContent = isHidden ? '히든번호 * (1 입력 → S01)' : '도감번호 *';
+    }
+
+    function enterEditMode(card) {
+      editingCard = card;
+      const isHidden = card.rarity === 'hidden';
+
+      document.getElementById('cardRarity').value = card.rarity;
+      setDexNoLabel(isHidden);
+      document.getElementById('cardDexNo').value = isHidden ? card.dexNo - HIDDEN_DEX_BASE : card.dexNo;
+      document.getElementById('cardTitle').value = card.title || '';
+      document.getElementById('cardDesc').value = card.description || '';
+      document.getElementById('cardCategory').value = card.category || '';
+      document.getElementById('cardMemoryDate').value = card.memoryDate || '';
+      document.getElementById('cardPhoto').value = '';
+      document.getElementById('cardPhotoRemove').checked = false;
+
+      const preview = document.getElementById('cardPhotoPreview');
+      if (card.photoData) {
+        preview.innerHTML = `<img src="${card.photoData}" alt="현재 사진">`;
+        preview.style.display = 'flex';
+      } else {
+        preview.style.display = 'none';
+      }
+      document.getElementById('cardPhotoRemoveRow').style.display = card.photoData ? 'block' : 'none';
+
+      document.getElementById('cardFormTitle').textContent = '카드 수정';
+      const banner = document.getElementById('cardEditBanner');
+      banner.textContent = `${formatDexNo(card.dexNo)} ${card.title} 수정 중 — 사진은 새로 고르지 않으면 그대로 유지돼요.`;
+      banner.style.display = 'block';
+      document.getElementById('cardSubmitBtn').textContent = '수정 저장';
+      document.getElementById('cardEditCancel').style.display = '';
+      document.getElementById('cardFormReset').style.display = 'none';
+
+      banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function exitEditMode() {
+      editingCard = null;
+      document.getElementById('cardForm').reset();
+      document.getElementById('cardPhotoPreview').style.display = 'none';
+      document.getElementById('cardPhotoRemoveRow').style.display = 'none';
+      document.getElementById('cardFormTitle').textContent = '카드 추가';
+      document.getElementById('cardEditBanner').style.display = 'none';
+      document.getElementById('cardSubmitBtn').textContent = '카드 추가';
+      document.getElementById('cardEditCancel').style.display = 'none';
+      document.getElementById('cardFormReset').style.display = '';
+      setDexNoLabel(false);
+    }
+
+    document.getElementById('cardEditCancel').addEventListener('click', async () => {
+      exitEditMode();
+      await suggestNextDexNo();
+    });
+
+    // ===== 카드 상세 (목록에서 카드를 누르면) =====
+    let detailCardId = null;
+
+    function openCardDetail(cardId) {
+      const card = cardsCache.find((c) => c.id === cardId);
+      if (!card) return;
+      detailCardId = cardId;
+
+      document.getElementById('cardDetailTitle').textContent = `${formatDexNo(card.dexNo)} ${card.title}`;
+      document.getElementById('cardDetailCard').innerHTML = renderCard({ ...card, hue: 30 });
+      initTilt(document.querySelector('#cardDetailCard .card'));
+
+      const photoKB = card.photoData ? Math.round((card.photoData.length * 3) / 4 / 1024) : 0;
+      const rows = [
+        ['번호', formatDexNo(card.dexNo)],
+        ['등급', RARITY[card.rarity]?.label || '?'],
+        ['분류', card.category || '-'],
+        ['추억 날짜', card.memoryDate || '-'],
+        ['상태', card.active ? '활성' : '비활성'],
+        ['사진', card.photoData ? `있음 (약 ${photoKB}KB)` : '없음'],
+        ['설명', card.description || '-'],
+      ];
+      document.getElementById('cardDetailInfo').innerHTML = rows
+        .map(([k, v]) => `<div class="admin-modal__row"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>`)
+        .join('');
+
+      document.getElementById('cardDetailActions').innerHTML = `
+        <button type="button" class="btn-primary btn-sm" data-act="edit">수정</button>
+        <button type="button" class="btn-secondary btn-sm" data-act="toggle">${card.active ? '비활성으로' : '활성으로'}</button>
+        <button type="button" class="btn-danger btn-sm" data-act="delete">삭제</button>`;
+
+      document.getElementById('cardDetailModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCardDetail() {
+      document.getElementById('cardDetailModal').classList.remove('show');
+      document.body.style.overflow = '';
+      detailCardId = null;
+    }
+
+    document.getElementById('cardsList').addEventListener('click', (e) => {
+      const item = e.target.closest('[data-card-id]');
+      if (item) openCardDetail(item.dataset.cardId);
+    });
+    document.getElementById('cardsList').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const item = e.target.closest('[data-card-id]');
+      if (item) {
+        e.preventDefault();
+        openCardDetail(item.dataset.cardId);
+      }
+    });
+
+    document.getElementById('cardDetailClose').addEventListener('click', closeCardDetail);
+    document.getElementById('cardDetailModal').addEventListener('click', (e) => {
+      if (e.target.id === 'cardDetailModal') closeCardDetail();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeCardDetail();
+    });
+
+    document.getElementById('cardDetailActions').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-act]');
+      const card = cardsCache.find((c) => c.id === detailCardId);
+      if (!btn || !card) return;
+
+      if (btn.dataset.act === 'edit') {
+        closeCardDetail();
+        enterEditMode(card);
+      } else if (btn.dataset.act === 'toggle') {
+        closeCardDetail();
+        await window.toggleActive(card.id, card.active);
+      } else if (btn.dataset.act === 'delete') {
+        if (!confirm('정말로 이 카드를 삭제하시겠습니까?\n(이미 뽑힌 카드라면 삭제 대신 비활성화를 추천해요)')) return;
+        closeCardDetail();
+        await deleteCardHandle(card.id);
+      }
+    });
 
     window.toggleActive = async function (cardId, currentActive) {
       try {

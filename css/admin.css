@@ -265,14 +265,34 @@ main {
 /* 카드 그리드 */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 12px;
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-md);
 }
 
 .card-item-wrapper {
   display: flex;
   flex-direction: column;
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-item-wrapper:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.card-item-wrapper:active .card {
+  transform: translateY(2px);
+}
+
+/* 카드 위의 안내 문구 */
+.cards-hint {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Galmuri';
 }
 
 .card-item-wrapper .card {
@@ -283,22 +303,6 @@ main {
 .card-item-wrapper.inactive .card {
   opacity: 0.5;
   filter: grayscale(80%);
-}
-
-/* 카드 액션 */
-.card-actions {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 10;
-}
-
-.card-item-wrapper:hover .card-actions {
-  opacity: 1;
 }
 
 /* 카드 상태 */
@@ -403,7 +407,7 @@ main {
   }
 
   .cards-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
     gap: 8px;
     margin-top: var(--spacing-md);
   }
@@ -508,4 +512,126 @@ main {
   .quiz-item {
     flex-direction: column;
   }
+}
+
+/* 수정 모드: 현재 사진 삭제 체크 */
+.check-row {
+  margin-top: var(--spacing-sm);
+  font-size: 11px;
+  font-family: 'Galmuri';
+  color: var(--text-dark);
+}
+
+.check-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.check-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+/* 카드 상세 팝업 */
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(30, 20, 10, 0.75);
+}
+
+.admin-modal.show {
+  display: flex;
+}
+
+.admin-modal__box {
+  width: min(360px, 100%);
+  margin: auto;
+  padding: var(--spacing-md);
+  background: var(--bg-cream);
+  border: 3px solid var(--wood-dark);
+  box-shadow: 4px 4px 0 rgba(61, 40, 23, 0.35);
+  font-family: 'Galmuri';
+}
+
+.admin-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.admin-modal__head h2 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dark);
+  word-break: break-all;
+}
+
+.admin-modal__close {
+  flex: 0 0 44px;
+  min-height: 44px;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  color: var(--text-dark);
+}
+
+.admin-modal__card {
+  width: min(220px, 70%);
+  aspect-ratio: 5 / 7;
+  margin: 0 auto var(--spacing-md);
+}
+
+.admin-modal__card .card {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-modal__info {
+  margin: 0 0 var(--spacing-md);
+  font-size: 12px;
+}
+
+.admin-modal__row {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--border);
+}
+
+.admin-modal__row dt {
+  flex: 0 0 64px;
+  color: var(--text-muted);
+}
+
+.admin-modal__row dd {
+  flex: 1;
+  margin: 0;
+  color: var(--text-dark);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.admin-modal__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-modal__actions button {
+  flex: 1;
+  min-height: 44px;
+  font-size: 12px;
 }

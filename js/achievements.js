@@ -39,6 +39,7 @@ export async function loadAchievementData() {
       firstAt: owned[c.id]?.firstAt || null,
     })),
     claimed: state.achievements || {},
+    manualDone: state.manualDone || {},
     stats: state.stats || {}, // { draws, quizAnswered, quizCorrect } 누적 횟수
     sichuanBest: Object.values(records).reduce((max, r) => Math.max(max, r.score || 0), 0),
   };
@@ -77,6 +78,10 @@ export function evaluateAchievement(ach, data) {
     const pool = data.cards.filter((c) => c.rarity === ach.rarity);
     target = Math.max(pool.length, 1);   // 카드가 하나도 없을 때 바로 달성되는 것 방지
     current = pool.filter((c) => c.isOwned).length;
+  } else if (ach.type === 'manual') {
+    // 직접 달성 체크하는 도전과제
+    current = data.manualDone[ach.id] ? 1 : 0;
+    target = 1;
   } else if (ach.type === 'collectCount') {
     current = data.cards.filter((c) => c.rarity !== 'hidden' && c.isOwned).length;
     target = ach.target;
@@ -128,5 +133,18 @@ export async function claimAchievement(id) {
       card: { ...reward, isOwned: true, count: prev.count + 1, firstAt: owned[reward.id].firstAt },
       isFirstTime: prev.count === 0,
     };
+  });
+}
+/* 수동 도전과제 달성 체크 (이미 체크했으면 아무 일도 안 해요) */
+export async function markManualDone(id) {
+  const ach = ACHIEVEMENTS.find((a) => a.id === id);
+  if (!ach || ach.type !== 'manual') throw new Error('수동 도전과제가 아니에요.');
+
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(STATE_REF);
+    if (!snap.exists()) throw new Error('게임 상태를 초기화해주세요.');
+    const done = snap.data().manualDone || {};
+    if (done[id]) return;
+    tx.update(STATE_REF, { manualDone: { ...done, [id]: getTodayKST() } });
   });
 }

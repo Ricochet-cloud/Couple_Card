@@ -75,6 +75,7 @@
       evaluateAchievement,
       findRewardCard,
       claimAchievement,
+      markManualDone,
     } from './js/achievements.js';
 
     let data = null;
@@ -135,7 +136,9 @@
           : '준비 중';
 
         let actionHtml = '';
-        if (claimedDate) {
+         if (ach.type === 'manual' && !status.done && !claimedDate) {
+          actionHtml = `<button class="ach-claim" type="button" data-manual="${escapeHtml(ach.id)}">달성했어요 ✔</button>`;
+        } else if (claimedDate) {
           actionHtml = `<div class="ach-claimed">✔ 수령 완료 · ${escapeHtml(claimedDate)}</div>`;
         } else if (isReady && reward) {
           actionHtml = `<button class="ach-claim" type="button" data-claim="${escapeHtml(ach.id)}">보상 받기</button>`;
@@ -151,7 +154,7 @@
             <h3 class="ach-title">${isSecret ? '???' : escapeHtml(ach.title)}</h3>
             <p class="ach-desc">${isSecret ? '비밀 도전과제예요. 달성하면 공개돼요.' : escapeHtml(ach.description)}</p>
             ${
-              isSecret
+              isSecret || ach.type === 'manual'
                 ? ''
                 : `<div class="ach-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${status.target}" aria-valuenow="${status.current}">
                      <div class="ach-progress__fill" style="width: ${pct}%"></div>
@@ -177,6 +180,21 @@
             : '조건을 달성하면 특별한 카드를 받을 수 있어요'
         }</div>`;
     }
+    // ========== 수동 도전과제 달성 체크 ==========
+      document.getElementById('achList').addEventListener('click', async (e) => {
+      const m = e.target.closest('[data-manual]');
+      if (!m) return;
+      if (!confirm('정말 달성했나요? 한 번 체크하면 되돌릴 수 없어요.')) return;
+      m.disabled = true;
+      try {
+        await markManualDone(m.dataset.manual);
+        data = await loadAchievementData();
+        render();
+      } catch (error) {
+        showMessage('체크하지 못했어요: ' + error.message);
+        m.disabled = false;
+      }
+    });
 
     // ========== 보상 받기 ==========
     document.getElementById('achList').addEventListener('click', async (e) => {

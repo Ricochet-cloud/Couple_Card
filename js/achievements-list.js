@@ -92,4 +92,13 @@ export const ACHIEVEMENTS = [
       rarity: 'ultra', 
       rewardDexNo: 1007 
   },
+  //코쿠시보
+   {
+    id: 'fullmoon-date',
+    icon: '🌕',
+    title: '보름달 데이트',
+    description: '보름달 뜨는 밤에 데이트하기',
+    type: 'manual',
+    rewardDexNo: 1008,
+  },
 ];

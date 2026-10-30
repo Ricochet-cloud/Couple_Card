@@ -690,3 +690,23 @@ main {
   padding-left: 0;
   padding-right: 0;
 }
+
+/* 아이폰 사파리: 관리자 카드 목록에서는 움직이는 효과를 모두 끔 (눌리는 위치가 어긋나는 문제 방지) */
+.cards-grid .card,
+.cards-grid .card *,
+.cards-grid .card::before,
+.cards-grid .card::after {
+  animation: none !important;
+  filter: none !important;
+  transition: none !important;
+  will-change: auto !important;
+  mix-blend-mode: normal !important;
+}
+
+.cards-grid .card[data-rarity="ultra"]::after {
+  display: none;          /* 울트라의 훑고 지나가는 빛 */
+}
+
+.card-item-wrapper:active .card {
+  transform: none;        /* 누를 때 카드가 움직이면 사파리에서 클릭이 씹힐 수 있어요 */
+}

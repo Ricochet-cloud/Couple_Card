@@ -99,6 +99,6 @@ export const ACHIEVEMENTS = [
     title: '보름달 데이트',
     description: '보름달 뜨는 밤에 데이트하기',
     type: 'manual',
-    rewardDexNo: 1008,
+    rewardDexNo: 1040,
   },
 ];

@@ -67,6 +67,16 @@ export function evaluateAchievement(ach, data) {
   } else if (ach.type === 'quizCorrect') {
     current = data.stats.quizCorrect || 0;
     target = ach.target;
+  } else if (ach.type === 'cardCopies') {
+    // 같은 카드를 N장 보유 (중복 포함)
+    const card = data.cards.find((c) => c.dexNo === ach.dexNo);
+    current = card ? card.count : 0;
+    target = ach.target;
+  } else if (ach.type === 'collectRarity') {
+    // 해당 등급의 활성 카드를 전부 보유
+    const pool = data.cards.filter((c) => c.rarity === ach.rarity);
+    target = Math.max(pool.length, 1);   // 카드가 하나도 없을 때 바로 달성되는 것 방지
+    current = pool.filter((c) => c.isOwned).length;
   } else if (ach.type === 'collectCount') {
     current = data.cards.filter((c) => c.rarity !== 'hidden' && c.isOwned).length;
     target = ach.target;

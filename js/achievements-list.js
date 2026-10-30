@@ -62,5 +62,34 @@ export const ACHIEVEMENTS = [
     dexNos: [60, 104, 120, 124, 131 , 154, 165, 170],
     rewardDexNo: 1004, 
   },
-  
+  //뮤츠
+  {
+    id: 'mew-x2',
+    icon: '🧬',
+    title: '뮤츠의 탄생',
+    description: '뮤 카드를 2장 모으기',
+    type: 'cardCopies',
+    dexNo: 151,        // 뮤 카드 도감번호
+    target: 2,
+    rewardDexNo: 1005,  // 뮤츠 카드 도감번호
+  },
+  //카드 100장 모으기
+  {
+    id: 'card-100',
+    icon: '📚',
+    title: '카드 수집가',
+    description: '서로 다른 카드 100종 모으기',
+    type: 'collectCount',
+    target: 100,
+    rewardDexNo: 1006,   // 보상 카드 번호
+  },
+  //울트라 전부 모으기
+    { id: 'ultra-all', 
+      icon: '🌈', 
+      title: '울트라 대마왕', 
+      description: '울트라 카드 전부 모으기',
+      type: 'collectRarity', 
+      rarity: 'ultra', 
+      rewardDexNo: 1007 
+  },
 ];

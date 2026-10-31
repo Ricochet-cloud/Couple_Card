@@ -84,7 +84,12 @@
     import { drawCard, getActiveCards } from './js/gacha.js';
     import { renderCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
-    import { getTickets } from './js/ticket.js';
+    import { getTickets, getSpecialTickets } from './js/ticket.js';
+
+    // 홈의 '특별 뽑기'에서 들어오면 ?mode=special — 안 가진 카드만 나오는 특별 뽑기권으로 뽑아요
+    const isSpecial = new URLSearchParams(location.search).get('mode') === 'special';
+    const readTickets = () => (isSpecial ? getSpecialTickets() : getTickets());
+    const noTicketText = isSpecial ? '특별 뽑기권이 없습니다. 홈으로 돌아가주세요.' : '뽑기권이 없습니다. 홈으로 돌아가주세요.';
 
     let drawResult = null;
     let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -108,7 +113,11 @@
       try {
         // 카드 준비 상태 확인
         const cards = await getActiveCards();
-        const tickets = await getTickets();
+        const tickets = await readTickets();
+
+        if (isSpecial) {
+          document.querySelector('.draw-title').textContent = '✨ 특별 뽑기 (안 가진 카드만)';
+        }
 
         if (cards.length === 0) {
           showError('뽑을 수 있는 카드가 없습니다.');
@@ -116,7 +125,7 @@
         }
 
         if (tickets <= 0) {
-          showError('뽑기권이 없습니다. 홈으로 돌아가주세요.');
+          showError(noTicketText);
           return;
         }
 
@@ -140,7 +149,7 @@
 
       try {
         // 뽑기 실행
-        drawResult = await drawCard();
+        drawResult = await drawCard({ special: isSpecial });
 
         // 첫 뽑기일 경우 NEW 배지 추가
         const newBadge = drawResult.isFirstTime
@@ -200,12 +209,12 @@
 
     async function updateTickets() {
       try {
-        const tickets = await getTickets();
+        const tickets = await readTickets();
         const drawAgainBtn = document.getElementById('drawAgainBtn');
 
         if (tickets <= 0) {
           drawAgainBtn.disabled = true;
-          drawAgainBtn.textContent = '뽑기권 없음';
+          drawAgainBtn.textContent = isSpecial ? '특별 뽑기권 없음' : '뽑기권 없음';
         } else {
           drawAgainBtn.disabled = false;
           drawAgainBtn.textContent = '한 번 더';

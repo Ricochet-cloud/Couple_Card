@@ -1,0 +1,431 @@
+From 95f03a65dfe1d9a5948d4b73d71efc523a9ce8d0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 31 Oct 2026 08:10:26 +0900
+Subject: [PATCH] =?UTF-8?q?=ED=8A=B9=EB=B3=84=20=EB=BD=91=EA=B8=B0?=
+ =?UTF-8?q?=EA=B6=8C=20=EC=B6=94=EA=B0=80=20(=EC=95=88=20=EA=B0=80?=
+ =?UTF-8?q?=EC=A7=84=20=EC=B9=B4=EB=93=9C=EB=A7=8C=20=EB=82=98=EC=98=A4?=
+ =?UTF-8?q?=EB=8A=94=20=EB=BD=91=EA=B8=B0=EA=B6=8C)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- state/shared.specialTickets 로 보유 장수 관리, 관리자 뽑기권 탭에서 지급(+1/+3/직접 입력)
+- drawCard({ special: true }): 히든·이미 가진 카드를 뺀 후보로 추첨, 다 모았으면 거부하고 뽑기권은 유지
+- 홈에 특별 뽑기권 보유 장수와 '특별 뽑기' 버튼 추가, draw.html?mode=special 로 진입
+- 특별 뽑기도 도전과제의 뽑기 횟수에 포함
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NaRW9aR38ZugwWnH7B62Mr
+---
+ admin.html    | 48 ++++++++++++++++++++++++++++++++++++-
+ css/index.css | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ draw.html     | 21 +++++++++++-----
+ index.html    | 21 +++++++++++++++-
+ js/gacha.js   | 29 +++++++++++++++-------
+ js/state.js   | 28 ++++++++++++++++++++++
+ js/ticket.js  | 19 +++++++++++++++
+ 7 files changed, 216 insertions(+), 16 deletions(-)
+
+diff --git a/admin.html b/admin.html
+index 87e56dc..4006d9c 100644
+--- a/admin.html
++++ b/admin.html
+@@ -194,6 +194,26 @@
+             <button type="button" class="btn-primary" id="addCustomTickets" style="flex: 0 0 auto;">직접 입력</button>
+           </div>
+         </div>
++
++        <div class="form-section">
++          <h2>✨ 특별 뽑기권 지급</h2>
++          <p style="font-size: 12px; color: var(--mute); margin-bottom: 12px;">안 가진 카드만 나오는 뽑기권이에요. 홈 화면에서 보유 장수를 볼 수 있어요.</p>
++          <div style="margin-bottom: 20px;">
++            <div style="font-size: 18px; color: var(--ink); margin-bottom: 10px;">
++              현재 보유: <strong id="specialTicketCount">0</strong>장
++            </div>
++          </div>
++
++          <div class="form-row">
++            <button type="button" class="btn-primary" id="addSpecialTicket1">+1장</button>
++            <button type="button" class="btn-primary" id="addSpecialTicket3">+3장</button>
++          </div>
++
++          <div style="margin-top: 20px; display: flex; gap: 10px;">
++            <input type="number" id="customSpecialTicketAmount" min="1" placeholder="수량" style="flex: 1; min-width: 80px;">
++            <button type="button" class="btn-primary" id="addCustomSpecialTickets" style="flex: 0 0 auto;">직접 입력</button>
++          </div>
++        </div>
+       </div>
+ 
+       <!-- 카드 뒷면 탭 -->
+@@ -283,7 +303,7 @@
+       toggleQuizActive,
+       deleteQuiz,
+     } from './js/admin.js';
+-    import { initState, getTickets, addTickets } from './js/state.js';
++    import { initState, getTickets, addTickets, getSpecialTickets, addSpecialTickets } from './js/state.js';
+ 
+     // 카드 목록(상세 보기용)과 수정 중인 카드
+     let cardsCache = [];
+@@ -828,11 +848,37 @@
+       try {
+         const tickets = await getTickets();
+         document.getElementById('ticketCount').textContent = tickets;
++        document.getElementById('specialTicketCount').textContent = await getSpecialTickets();
+       } catch (error) {
+         showMessage('ticketMessage', `뽑기권 로드 실패: ${error.message}`, 'error');
+       }
+     }
+ 
++    // ----- 특별 뽑기권 -----
++    async function giveSpecialTickets(amount) {
++      try {
++        await addSpecialTickets(amount);
++        await loadTickets();
++        showMessage('ticketMessage', `특별 뽑기권 ${amount}장을 지급했습니다.`, 'success');
++        return true;
++      } catch (error) {
++        showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
++        return false;
++      }
++    }
++
++    document.getElementById('addSpecialTicket1').addEventListener('click', () => giveSpecialTickets(1));
++    document.getElementById('addSpecialTicket3').addEventListener('click', () => giveSpecialTickets(3));
++    document.getElementById('addCustomSpecialTickets').addEventListener('click', async () => {
++      const input = document.getElementById('customSpecialTicketAmount');
++      const amount = parseInt(input.value);
++      if (!amount || amount < 1) {
++        showMessage('ticketMessage', '1 이상의 수량을 입력하세요.', 'error');
++        return;
++      }
++      if (await giveSpecialTickets(amount)) input.value = '';
++    });
++
+     document.getElementById('addTicket1').addEventListener('click', async () => {
+       try {
+         await addTickets(1);
+diff --git a/css/index.css b/css/index.css
+index 6042224..c885f97 100644
+--- a/css/index.css
++++ b/css/index.css
+@@ -484,3 +484,69 @@ main {
+   margin-top: 8px;
+   font-family: 'Galmuri';
+ }
++
++/* 특별 뽑기권 (안 가진 카드만 나오는 뽑기권) */
++.special-ticket {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: var(--spacing-md);
++  margin-top: var(--spacing-md);
++  padding: var(--spacing-md);
++  background: var(--bg-cream);
++  border: 2px dashed var(--wood-dark);
++  font-family: 'Galmuri';
++}
++
++.special-ticket.has-tickets {
++  border-style: solid;
++  border-color: var(--gold);
++  box-shadow: 0 0 0 2px var(--wood-dark), 0 0 12px rgba(255, 215, 0, 0.5);
++}
++
++.special-ticket__label {
++  font-size: 12px;
++  color: var(--text-dark);
++  font-weight: 700;
++}
++
++.special-ticket__hint {
++  display: block;
++  margin-top: 2px;
++  font-size: 10px;
++  font-weight: normal;
++  color: var(--text-muted);
++}
++
++.special-ticket__count {
++  margin-top: 4px;
++  font-size: 20px;
++  font-weight: bold;
++  color: var(--text-dark);
++}
++
++.special-draw-button {
++  flex: 0 0 auto;
++  min-height: 44px;
++  padding: 10px 14px;
++  font-family: 'Galmuri';
++  font-size: 12px;
++  font-weight: bold;
++  color: #3a2606;
++  background: var(--gold);
++  border: 2px solid var(--wood-dark);
++  box-shadow: 0 3px 0 var(--wood-dark);
++  cursor: pointer;
++}
++
++.special-draw-button:active:not(:disabled) {
++  transform: translateY(2px);
++  box-shadow: 0 1px 0 var(--wood-dark);
++}
++
++.special-draw-button:disabled {
++  background: #cfc9ba;
++  color: #7d776a;
++  box-shadow: none;
++  cursor: not-allowed;
++}
+diff --git a/draw.html b/draw.html
+index df08235..2ab455d 100644
+--- a/draw.html
++++ b/draw.html
+@@ -84,7 +84,12 @@
+     import { drawCard, getActiveCards } from './js/gacha.js';
+     import { renderCard, RARITY, formatDexNo } from './js/card.js';
+     import { initTilt } from './js/tilt.js';
+-    import { getTickets } from './js/ticket.js';
++    import { getTickets, getSpecialTickets } from './js/ticket.js';
++
++    // 홈의 '특별 뽑기'에서 들어오면 ?mode=special — 안 가진 카드만 나오는 특별 뽑기권으로 뽑아요
++    const isSpecial = new URLSearchParams(location.search).get('mode') === 'special';
++    const readTickets = () => (isSpecial ? getSpecialTickets() : getTickets());
++    const noTicketText = isSpecial ? '특별 뽑기권이 없습니다. 홈으로 돌아가주세요.' : '뽑기권이 없습니다. 홈으로 돌아가주세요.';
+ 
+     let drawResult = null;
+     let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+@@ -108,7 +113,11 @@
+       try {
+         // 카드 준비 상태 확인
+         const cards = await getActiveCards();
+-        const tickets = await getTickets();
++        const tickets = await readTickets();
++
++        if (isSpecial) {
++          document.querySelector('.draw-title').textContent = '✨ 특별 뽑기 (안 가진 카드만)';
++        }
+ 
+         if (cards.length === 0) {
+           showError('뽑을 수 있는 카드가 없습니다.');
+@@ -116,7 +125,7 @@
+         }
+ 
+         if (tickets <= 0) {
+-          showError('뽑기권이 없습니다. 홈으로 돌아가주세요.');
++          showError(noTicketText);
+           return;
+         }
+ 
+@@ -140,7 +149,7 @@
+ 
+       try {
+         // 뽑기 실행
+-        drawResult = await drawCard();
++        drawResult = await drawCard({ special: isSpecial });
+ 
+         // 첫 뽑기일 경우 NEW 배지 추가
+         const newBadge = drawResult.isFirstTime
+@@ -200,12 +209,12 @@
+ 
+     async function updateTickets() {
+       try {
+-        const tickets = await getTickets();
++        const tickets = await readTickets();
+         const drawAgainBtn = document.getElementById('drawAgainBtn');
+ 
+         if (tickets <= 0) {
+           drawAgainBtn.disabled = true;
+-          drawAgainBtn.textContent = '뽑기권 없음';
++          drawAgainBtn.textContent = isSpecial ? '특별 뽑기권 없음' : '뽑기권 없음';
+         } else {
+           drawAgainBtn.disabled = false;
+           drawAgainBtn.textContent = '한 번 더';
+diff --git a/index.html b/index.html
+index 343b539..86544b6 100644
+--- a/index.html
++++ b/index.html
+@@ -32,6 +32,15 @@
+ 
+         <button class="draw-button" id="drawBtn">뽑기</button>
+         <div class="draw-message" id="drawMessage"></div>
++
++        <!-- 특별 뽑기권: 안 가진 카드만 나와요 -->
++        <div class="special-ticket" id="specialTicket">
++          <div class="special-ticket__info">
++            <div class="special-ticket__label">✨ 특별 뽑기권 <span class="special-ticket__hint">(안 가진 카드만 나와요)</span></div>
++            <div class="special-ticket__count"><span id="specialTicketCount">0</span>장</div>
++          </div>
++          <button class="special-draw-button" id="specialDrawBtn" disabled>특별 뽑기</button>
++        </div>
+       </div>
+ 
+       <!-- 방명록 -->
+@@ -115,7 +124,7 @@
+   <script type="module">
+     import { initAuth, isAdmin, logout } from './js/auth.js';
+     import { guardAuth } from './js/auth.js';
+-    import { grantDailyTicketIfNeeded, getTickets } from './js/ticket.js';
++    import { grantDailyTicketIfNeeded, getTickets, getSpecialTickets } from './js/ticket.js';
+     import { getActiveCards } from './js/gacha.js';
+     import { renderCard } from './js/card.js';
+     import { getCollectionData } from './js/collection.js';
+@@ -158,6 +167,12 @@
+       const tickets = await getTickets();
+       document.getElementById('ticketCount').textContent = tickets;
+ 
++      // 특별 뽑기권
++      const specialTickets = await getSpecialTickets();
++      document.getElementById('specialTicketCount').textContent = specialTickets;
++      document.getElementById('specialDrawBtn').disabled = specialTickets <= 0;
++      document.getElementById('specialTicket').classList.toggle('has-tickets', specialTickets > 0);
++
+       // 뽄기 버튼 상태
+       const drawBtn = document.getElementById('drawBtn');
+       if (tickets <= 0) {
+@@ -371,6 +386,10 @@
+         }
+       });
+ 
++      document.getElementById('specialDrawBtn').addEventListener('click', () => {
++        window.location.href = './draw.html?mode=special';
++      });
++
+       document.getElementById('logoutBtn').addEventListener('click', async () => {
+         try {
+           await logout();
+diff --git a/js/gacha.js b/js/gacha.js
+index b777b9a..0f0191e 100644
+--- a/js/gacha.js
++++ b/js/gacha.js
+@@ -76,9 +76,11 @@ export function pickRarity(cards) {
+ 
+ /**
+  * 카드 뽑기 (트랜잭션)
++ * @param {{special?: boolean}} [options]
++ *   special: true 이면 특별 뽑기권을 쓰고, 지금 안 가진 카드만 후보로 뽑아요
+  * @returns { cardId, card, isFirstTime }
+  */
+-export async function drawCard() {
++export async function drawCard({ special = false } = {}) {
+   const stateRef = doc(db, 'state', 'shared');
+   const today = getTodayKST();
+ 
+@@ -91,10 +93,11 @@ export async function drawCard() {
+       }
+ 
+       const state = stateDoc.data();
+-      const tickets = state.tickets || 0;
++      const ticketField = special ? 'specialTickets' : 'tickets';
++      const tickets = state[ticketField] || 0;
+ 
+       if (tickets <= 0) {
+-        throw new Error('뽑기권이 없습니다.');
++        throw new Error(special ? '특별 뽑기권이 없습니다.' : '뽑기권이 없습니다.');
+       }
+ 
+       // 2. 활성 카드 조회
+@@ -103,13 +106,23 @@ export async function drawCard() {
+         throw new Error('뽑을 수 있는 카드가 없습니다.');
+       }
+ 
+-      // 3. 등급 추첨
+-      const selectedRarity = pickRarity(cards);
+-      const cardsOfRarity = cards.filter((c) => c.rarity === selectedRarity);
++      // 3. 후보 정하기: 특별 뽑기는 히든 카드와 이미 가진 카드를 뺀 것만
++      const owned = state.owned || {};
++      let pool = cards;
++      if (special) {
++        pool = cards.filter((c) => c.rarity !== 'hidden' && !owned[c.id]);
++        if (pool.length === 0) {
++          // 던지면 트랜잭션이 취소돼서 특별 뽑기권은 그대로예요
++          throw new Error('이미 모든 카드를 모았어요! 특별 뽑기권은 그대로 남아 있어요.');
++        }
++      }
++
++      // 등급 추첨 (후보가 있는 등급끼리만 기존 확률로)
++      const selectedRarity = pickRarity(pool);
++      const cardsOfRarity = pool.filter((c) => c.rarity === selectedRarity);
+       const selectedCard = cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
+ 
+       // 4. 보유 정보 업데이트
+-      const owned = state.owned || {};
+       const cardOwned = owned[selectedCard.id] || { count: 0, firstAt: null };
+       const isFirstTime = cardOwned.count === 0;
+ 
+@@ -123,7 +136,7 @@ export async function drawCard() {
+       const stats = state.stats || {};
+ 
+       transaction.update(stateRef, {
+-        tickets: tickets - 1,
++        [ticketField]: tickets - 1,
+         owned: owned,
+         stats: { ...stats, draws: (stats.draws || 0) + 1 },
+       });
+diff --git a/js/state.js b/js/state.js
+index 172f8da..fbce68f 100644
+--- a/js/state.js
++++ b/js/state.js
+@@ -71,3 +71,31 @@ export async function subtractTickets(amount) {
+     throw error;
+   }
+ }
++
++/**
++ * 현재 특별 뽑기권 수 조회 (안 가진 카드만 나오는 뽑기권)
++ */
++export async function getSpecialTickets() {
++  try {
++    const snapshot = await getDoc(STATE_DOC);
++    return snapshot.exists() ? snapshot.data().specialTickets || 0 : 0;
++  } catch (error) {
++    console.error('특별 뽑기권 조회 실패:', error);
++    throw error;
++  }
++}
++
++/**
++ * 특별 뽑기권 지급 (관리자용)
++ * @param {number} amount - 지급할 수량
++ */
++export async function addSpecialTickets(amount) {
++  try {
++    await updateDoc(STATE_DOC, {
++      specialTickets: increment(amount),
++    });
++  } catch (error) {
++    console.error('특별 뽑기권 지급 실패:', error);
++    throw error;
++  }
++}
+diff --git a/js/ticket.js b/js/ticket.js
+index 25e1319..7be9dd2 100644
+--- a/js/ticket.js
++++ b/js/ticket.js
+@@ -75,3 +75,22 @@ export async function getTickets() {
+     throw error;
+   }
+ }
++
++/**
++ * 현재 특별 뽑기권 수 조회 (안 가진 카드만 나오는 뽑기권)
++ */
++export async function getSpecialTickets() {
++  try {
++    const { getDoc } = await import(
++      'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js'
++    );
++    const snapshot = await getDoc(doc(db, 'state', 'shared'));
++    if (snapshot.exists()) {
++      return snapshot.data().specialTickets || 0;
++    }
++    return 0;
++  } catch (error) {
++    console.error('특별 뽑기권 조회 실패:', error);
++    throw error;
++  }
++}
+-- 
+2.43.0
+

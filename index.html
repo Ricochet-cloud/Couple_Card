@@ -32,6 +32,15 @@
 
         <button class="draw-button" id="drawBtn">뽑기</button>
         <div class="draw-message" id="drawMessage"></div>
+
+        <!-- 특별 뽑기권: 안 가진 카드만 나와요 -->
+        <div class="special-ticket" id="specialTicket">
+          <div class="special-ticket__info">
+            <div class="special-ticket__label">✨ 특별 뽑기권 <span class="special-ticket__hint">(안 가진 카드만 나와요)</span></div>
+            <div class="special-ticket__count"><span id="specialTicketCount">0</span>장</div>
+          </div>
+          <button class="special-draw-button" id="specialDrawBtn" disabled>특별 뽑기</button>
+        </div>
       </div>
 
       <!-- 방명록 -->
@@ -115,7 +124,7 @@
   <script type="module">
     import { initAuth, isAdmin, logout } from './js/auth.js';
     import { guardAuth } from './js/auth.js';
-    import { grantDailyTicketIfNeeded, getTickets } from './js/ticket.js';
+    import { grantDailyTicketIfNeeded, getTickets, getSpecialTickets } from './js/ticket.js';
     import { getActiveCards } from './js/gacha.js';
     import { renderCard } from './js/card.js';
     import { getCollectionData } from './js/collection.js';
@@ -157,6 +166,12 @@
       // 뽑기권
       const tickets = await getTickets();
       document.getElementById('ticketCount').textContent = tickets;
+
+      // 특별 뽑기권
+      const specialTickets = await getSpecialTickets();
+      document.getElementById('specialTicketCount').textContent = specialTickets;
+      document.getElementById('specialDrawBtn').disabled = specialTickets <= 0;
+      document.getElementById('specialTicket').classList.toggle('has-tickets', specialTickets > 0);
 
       // 뽄기 버튼 상태
       const drawBtn = document.getElementById('drawBtn');
@@ -369,6 +384,10 @@
         } catch (error) {
           showDrawMessage('오류가 발생했습니다: ' + error.message, 'error');
         }
+      });
+
+      document.getElementById('specialDrawBtn').addEventListener('click', () => {
+        window.location.href = './draw.html?mode=special';
       });
 
       document.getElementById('logoutBtn').addEventListener('click', async () => {

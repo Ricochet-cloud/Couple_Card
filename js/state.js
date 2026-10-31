@@ -71,3 +71,31 @@ export async function subtractTickets(amount) {
     throw error;
   }
 }
+
+/**
+ * 현재 특별 뽑기권 수 조회 (안 가진 카드만 나오는 뽑기권)
+ */
+export async function getSpecialTickets() {
+  try {
+    const snapshot = await getDoc(STATE_DOC);
+    return snapshot.exists() ? snapshot.data().specialTickets || 0 : 0;
+  } catch (error) {
+    console.error('특별 뽑기권 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 특별 뽑기권 지급 (관리자용)
+ * @param {number} amount - 지급할 수량
+ */
+export async function addSpecialTickets(amount) {
+  try {
+    await updateDoc(STATE_DOC, {
+      specialTickets: increment(amount),
+    });
+  } catch (error) {
+    console.error('특별 뽑기권 지급 실패:', error);
+    throw error;
+  }
+}

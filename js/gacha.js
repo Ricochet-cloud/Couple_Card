@@ -76,9 +76,11 @@ export function pickRarity(cards) {
 
 /**
  * 카드 뽑기 (트랜잭션)
+ * @param {{special?: boolean}} [options]
+ *   special: true 이면 특별 뽑기권을 쓰고, 지금 안 가진 카드만 후보로 뽑아요
  * @returns { cardId, card, isFirstTime }
  */
-export async function drawCard() {
+export async function drawCard({ special = false } = {}) {
   const stateRef = doc(db, 'state', 'shared');
   const today = getTodayKST();
 
@@ -91,10 +93,11 @@ export async function drawCard() {
       }
 
       const state = stateDoc.data();
-      const tickets = state.tickets || 0;
+      const ticketField = special ? 'specialTickets' : 'tickets';
+      const tickets = state[ticketField] || 0;
 
       if (tickets <= 0) {
-        throw new Error('뽑기권이 없습니다.');
+        throw new Error(special ? '특별 뽑기권이 없습니다.' : '뽑기권이 없습니다.');
       }
 
       // 2. 활성 카드 조회
@@ -103,13 +106,23 @@ export async function drawCard() {
         throw new Error('뽑을 수 있는 카드가 없습니다.');
       }
 
-      // 3. 등급 추첨
-      const selectedRarity = pickRarity(cards);
-      const cardsOfRarity = cards.filter((c) => c.rarity === selectedRarity);
+      // 3. 후보 정하기: 특별 뽑기는 히든 카드와 이미 가진 카드를 뺀 것만
+      const owned = state.owned || {};
+      let pool = cards;
+      if (special) {
+        pool = cards.filter((c) => c.rarity !== 'hidden' && !owned[c.id]);
+        if (pool.length === 0) {
+          // 던지면 트랜잭션이 취소돼서 특별 뽑기권은 그대로예요
+          throw new Error('이미 모든 카드를 모았어요! 특별 뽑기권은 그대로 남아 있어요.');
+        }
+      }
+
+      // 등급 추첨 (후보가 있는 등급끼리만 기존 확률로)
+      const selectedRarity = pickRarity(pool);
+      const cardsOfRarity = pool.filter((c) => c.rarity === selectedRarity);
       const selectedCard = cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
 
       // 4. 보유 정보 업데이트
-      const owned = state.owned || {};
       const cardOwned = owned[selectedCard.id] || { count: 0, firstAt: null };
       const isFirstTime = cardOwned.count === 0;
 
@@ -123,7 +136,7 @@ export async function drawCard() {
       const stats = state.stats || {};
 
       transaction.update(stateRef, {
-        tickets: tickets - 1,
+        [ticketField]: tickets - 1,
         owned: owned,
         stats: { ...stats, draws: (stats.draws || 0) + 1 },
       });

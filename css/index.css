@@ -484,3 +484,69 @@ main {
   margin-top: 8px;
   font-family: 'Galmuri';
 }
+
+/* 특별 뽑기권 (안 가진 카드만 나오는 뽑기권) */
+.special-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-cream);
+  border: 2px dashed var(--wood-dark);
+  font-family: 'Galmuri';
+}
+
+.special-ticket.has-tickets {
+  border-style: solid;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--wood-dark), 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+.special-ticket__label {
+  font-size: 12px;
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+.special-ticket__hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+.special-ticket__count {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-dark);
+}
+
+.special-draw-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-family: 'Galmuri';
+  font-size: 12px;
+  font-weight: bold;
+  color: #3a2606;
+  background: var(--gold);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 0 3px 0 var(--wood-dark);
+  cursor: pointer;
+}
+
+.special-draw-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--wood-dark);
+}
+
+.special-draw-button:disabled {
+  background: #cfc9ba;
+  color: #7d776a;
+  box-shadow: none;
+  cursor: not-allowed;
+}

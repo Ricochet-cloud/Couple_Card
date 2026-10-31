@@ -194,6 +194,26 @@
             <button type="button" class="btn-primary" id="addCustomTickets" style="flex: 0 0 auto;">직접 입력</button>
           </div>
         </div>
+
+        <div class="form-section">
+          <h2>✨ 특별 뽑기권 지급</h2>
+          <p style="font-size: 12px; color: var(--mute); margin-bottom: 12px;">안 가진 카드만 나오는 뽑기권이에요. 홈 화면에서 보유 장수를 볼 수 있어요.</p>
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 18px; color: var(--ink); margin-bottom: 10px;">
+              현재 보유: <strong id="specialTicketCount">0</strong>장
+            </div>
+          </div>
+
+          <div class="form-row">
+            <button type="button" class="btn-primary" id="addSpecialTicket1">+1장</button>
+            <button type="button" class="btn-primary" id="addSpecialTicket3">+3장</button>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <input type="number" id="customSpecialTicketAmount" min="1" placeholder="수량" style="flex: 1; min-width: 80px;">
+            <button type="button" class="btn-primary" id="addCustomSpecialTickets" style="flex: 0 0 auto;">직접 입력</button>
+          </div>
+        </div>
       </div>
 
       <!-- 카드 뒷면 탭 -->
@@ -283,7 +303,7 @@
       toggleQuizActive,
       deleteQuiz,
     } from './js/admin.js';
-    import { initState, getTickets, addTickets } from './js/state.js';
+    import { initState, getTickets, addTickets, getSpecialTickets, addSpecialTickets } from './js/state.js';
 
     // 카드 목록(상세 보기용)과 수정 중인 카드
     let cardsCache = [];
@@ -828,10 +848,36 @@
       try {
         const tickets = await getTickets();
         document.getElementById('ticketCount').textContent = tickets;
+        document.getElementById('specialTicketCount').textContent = await getSpecialTickets();
       } catch (error) {
         showMessage('ticketMessage', `뽑기권 로드 실패: ${error.message}`, 'error');
       }
     }
+
+    // ----- 특별 뽑기권 -----
+    async function giveSpecialTickets(amount) {
+      try {
+        await addSpecialTickets(amount);
+        await loadTickets();
+        showMessage('ticketMessage', `특별 뽑기권 ${amount}장을 지급했습니다.`, 'success');
+        return true;
+      } catch (error) {
+        showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    document.getElementById('addSpecialTicket1').addEventListener('click', () => giveSpecialTickets(1));
+    document.getElementById('addSpecialTicket3').addEventListener('click', () => giveSpecialTickets(3));
+    document.getElementById('addCustomSpecialTickets').addEventListener('click', async () => {
+      const input = document.getElementById('customSpecialTicketAmount');
+      const amount = parseInt(input.value);
+      if (!amount || amount < 1) {
+        showMessage('ticketMessage', '1 이상의 수량을 입력하세요.', 'error');
+        return;
+      }
+      if (await giveSpecialTickets(amount)) input.value = '';
+    });
 
     document.getElementById('addTicket1').addEventListener('click', async () => {
       try {

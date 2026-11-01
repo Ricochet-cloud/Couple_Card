@@ -118,6 +118,7 @@
     import { guardAuth } from './js/auth.js';
     import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
+    import { isShapeshifter, wobbleInto, pickRandomOwned } from './js/morph.js';
     import {
       getCollectionData,
       getCollectionStats,
@@ -317,6 +318,7 @@
         <div class="modal-card-preview">
           ${renderCard(card)}
         </div>
+        ${isShapeshifter(card) ? '<div class="morph-hint" id="morphHint">👆 카드를 눌러 보세요. 무엇으로 변할까요?</div>' : ''}
         <div class="modal-info">
           <div class="modal-info-row">
             <div class="modal-info-label">설명</div>
@@ -347,10 +349,31 @@
 
       document.getElementById('modalTitle').textContent = modalTitle;
       document.getElementById('modalBody').innerHTML = modalBody;
-      initTilt(document.querySelector('#modalBody .card'));
+      const modalCard = document.querySelector('#modalBody .card');
+      initTilt(modalCard);
+      if (isShapeshifter(card)) setupShapeshift(modalCard, card);
       document.getElementById('cardModal').classList.add('show');
       document.body.style.overflow = 'hidden';
     };
+
+    // 변신 카드: 누를 때마다 울렁이며 가지고 있는 카드 중 하나로 변신해요
+    function setupShapeshift(cardEl, card) {
+      let busy = false;
+      let current = card;
+      cardEl.style.cursor = 'pointer';
+      cardEl.addEventListener('click', async () => {
+        if (busy) return;
+        const next = pickRandomOwned(allCards, [current.id, card.id]);
+        if (!next) return;
+        busy = true;
+        const hint = document.getElementById('morphHint');
+        if (hint) hint.textContent = '...';
+        current = next;
+        await wobbleInto(cardEl, next);
+        if (hint) hint.textContent = `${card.title}이(가) '${next.title}'(으)로 변신했어요! 다시 눌러 보세요`;
+        busy = false;
+      });
+    }
 
     window.closeModal = function () {
       document.getElementById('cardModal').classList.remove('show');

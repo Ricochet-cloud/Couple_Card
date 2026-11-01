@@ -84,6 +84,7 @@
     import { drawCard, getActiveCards } from './js/gacha.js';
     import { renderCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
+    import { isShapeshifter, wobbleInto } from './js/morph.js';
     import { getTickets, getSpecialTickets } from './js/ticket.js';
 
     // 홈의 '특별 뽑기'에서 들어오면 ?mode=special — 안 가진 카드만 나오는 특별 뽑기권으로 뽑아요
@@ -156,10 +157,17 @@
           ? '<div class="new-badge">NEW</div>'
           : `<div style="position: absolute; top: 20px; right: 20px; font-size: 24px; font-weight: 700; color: var(--btn);">×${drawResult.card.isOwned ? drawResult.card.count : 1}</div>`;
 
+        // 변신 카드는 처음엔 다른 카드로 변장한 모습으로 나와요
+        let disguise = null;
+        if (isShapeshifter(drawResult.card)) {
+          const all = await getActiveCards();
+          disguise = all.find((c) => c.dexNo === drawResult.card.disguiseDexNo) || null;
+        }
+
         cardFront.innerHTML = `
           <div style="position: relative; width: 100%; height: 100%;">
-            ${renderCard(drawResult.card)}
-            ${newBadge}
+            ${renderCard(disguise || drawResult.card)}
+            ${disguise ? '' : newBadge}
           </div>
         `;
 
@@ -176,6 +184,13 @@
 
         // 뒤집기가 끝난 카드에 기울이기 효과
         initTilt(cardFront.querySelector('.card'));
+
+        // 변장을 벗고 진짜 모습으로 변신!
+        if (disguise) {
+          if (!reducedMotion) await new Promise((resolve) => setTimeout(resolve, 1300));
+          await wobbleInto(cardFront.querySelector('.card'), drawResult.card);
+          cardFront.firstElementChild.insertAdjacentHTML('beforeend', newBadge);
+        }
 
         // 결과 표시
         showResult();

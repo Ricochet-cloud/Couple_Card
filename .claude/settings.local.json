@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -20 {}')",
+      "Bash(grep -E \"\\\\.\\(css\\)$\")",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(python -m http.server 8000)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(curl -s http://localhost:8000/recombine.html)",
+      "Bash(node *)"
+    ]
+  }
+}

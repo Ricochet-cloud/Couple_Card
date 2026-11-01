@@ -79,6 +79,14 @@
             </div>
 
             <div class="form-group">
+              <label for="cardDisguise">변신 카드 설정 (선택)</label>
+              <input type="number" id="cardDisguise" min="1" placeholder="뽑기에서 변장할 카드의 도감번호 (예: 뮤 151)">
+              <div style="font-size: 12px; color: var(--mute); margin-top: 8px;">
+                비워두면 일반 카드예요. 번호를 넣으면 뽑을 때 그 카드로 나타났다가 울렁이며 이 카드로 변신하고, 도감에서는 누를 때마다 가진 카드로 변신해요.
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="cardPhoto">사진 (선택)</label>
               <input type="file" id="cardPhoto" accept="image/*">
               <div class="image-preview" id="cardPhotoPreview" style="display: none;"></div>
@@ -310,6 +318,7 @@
     let editingCard = null;
     import { renderCard, RARITY, HIDDEN_DEX_BASE, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
+    import { isShapeshifter, wobbleInto } from './js/morph.js';
 
     // 관리자 권한 확인
     initAuth((user) => {
@@ -459,7 +468,9 @@
 
         if (editingCard) {
           // ----- 수정 -----
-          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate };
+          const disguiseRaw = document.getElementById('cardDisguise').value;
+          const disguiseDexNo = disguiseRaw === '' ? null : parseInt(disguiseRaw);
+          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate, disguiseDexNo };
           if (photoData) {
             updates.photoData = photoData; // 새 사진을 골랐을 때만 교체
           } else if (document.getElementById('cardPhotoRemove').checked) {
@@ -487,6 +498,9 @@
             rarity,
             category,
             memoryDate,
+            disguiseDexNo: document.getElementById('cardDisguise').value === ''
+              ? null
+              : parseInt(document.getElementById('cardDisguise').value),
           });
 
           showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
@@ -525,6 +539,7 @@
       document.getElementById('cardDesc').value = card.description || '';
       document.getElementById('cardCategory').value = card.category || '';
       document.getElementById('cardMemoryDate').value = card.memoryDate || '';
+      document.getElementById('cardDisguise').value = Number.isFinite(card.disguiseDexNo) ? card.disguiseDexNo : '';
       document.getElementById('cardPhoto').value = '';
       document.getElementById('cardPhotoRemove').checked = false;
 
@@ -576,7 +591,10 @@
 
       document.getElementById('cardDetailTitle').textContent = `${formatDexNo(card.dexNo)} ${card.title}`;
       document.getElementById('cardDetailCard').innerHTML = renderCard({ ...card, hue: 30 });
-      initTilt(document.querySelector('#cardDetailCard .card'));
+      const detailEl = document.querySelector('#cardDetailCard .card');
+      initTilt(detailEl);
+      const shifter = isShapeshifter(card);
+      if (shifter) setupDetailShapeshift(detailEl, card);
 
       const photoKB = card.photoData ? Math.round((card.photoData.length * 3) / 4 / 1024) : 0;
       const rows = [
@@ -587,18 +605,46 @@
         ['상태', card.active ? '활성' : '비활성'],
         ['사진', card.photoData ? `있음 (약 ${photoKB}KB)` : '없음'],
         ['설명', card.description || '-'],
+        ...(shifter ? [['변신 카드', `뽑기에서 ${formatDexNo(card.disguiseDexNo)} 카드로 변장`]] : []),
       ];
       document.getElementById('cardDetailInfo').innerHTML = rows
         .map(([k, v]) => `<div class="admin-modal__row"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>`)
         .join('');
 
       document.getElementById('cardDetailActions').innerHTML = `
+        ${shifter ? '<button type="button" class="btn-secondary btn-sm" data-act="shift">🎲 랜덤 변신</button>' : ''}
         <button type="button" class="btn-primary btn-sm" data-act="edit">수정</button>
         <button type="button" class="btn-secondary btn-sm" data-act="toggle">${card.active ? '비활성으로' : '활성으로'}</button>
         <button type="button" class="btn-danger btn-sm" data-act="delete">삭제</button>`;
 
       document.getElementById('cardDetailModal').classList.add('show');
       document.body.style.overflow = 'hidden';
+    }
+
+    // 변신 카드 미리보기: 카드를 누르면 변장 모습 ↔ 진짜 모습, '랜덤 변신'은 아무 카드로 변신
+    let detailShift = null;
+    function setupDetailShapeshift(el, card) {
+      const disguise = cardsCache.find((c) => c.dexNo === card.disguiseDexNo) || null;
+      let showingDisguise = false;
+      detailShift = { busy: false, el, card, disguise };
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', async () => {
+        if (detailShift.busy || !disguise) return;
+        detailShift.busy = true;
+        showingDisguise = !showingDisguise;
+        await wobbleInto(el, showingDisguise ? disguise : card);
+        detailShift.busy = false;
+      });
+    }
+
+    async function randomShift() {
+      const s = detailShift;
+      if (!s || s.busy) return;
+      const others = cardsCache.filter((c) => c.id !== s.card.id);
+      if (!others.length) return;
+      s.busy = true;
+      await wobbleInto(s.el, others[Math.floor(Math.random() * others.length)]);
+      s.busy = false;
     }
 
     function closeCardDetail() {
@@ -633,7 +679,9 @@
       const card = cardsCache.find((c) => c.id === detailCardId);
       if (!btn || !card) return;
 
-      if (btn.dataset.act === 'edit') {
+      if (btn.dataset.act === 'shift') {
+        await randomShift();
+      } else if (btn.dataset.act === 'edit') {
         closeCardDetail();
         enterEditMode(card);
       } else if (btn.dataset.act === 'toggle') {

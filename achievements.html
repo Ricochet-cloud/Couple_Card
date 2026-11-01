@@ -67,7 +67,7 @@
 
   <script type="module">
     import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
-    import { renderCard, RARITY, formatDexNo } from './js/card.js';
+    import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
     import { ACHIEVEMENTS } from './js/achievements-list.js';
     import {
@@ -115,6 +115,42 @@
       }
     }
 
+    // ========== 진행 표시 (카드 칸 / 단계 사다리) ==========
+    const SLOT_FOLD = 12;                 // 카드 칸이 이보다 많으면 접어 둬요
+    const expandedSlots = new Set();      // 펼친 도전과제 id
+
+    function slotsHtml(ach, status) {
+      const open = expandedSlots.has(ach.id);
+      const folded = status.slots.length > SLOT_FOLD && !open;
+      const shown = folded ? status.slots.slice(0, SLOT_FOLD) : status.slots;
+      const cells = shown.map((s) => {
+        if (s.card) return `<div class="ach-slot is-owned">${renderCard(s.card)}</div>`;
+        if (s.ghost && s.ghostCard) return `<div class="ach-slot is-ghost">${renderCard(s.ghostCard)}</div>`;
+        return `<div class="ach-slot is-empty">${renderLockedCard(s.dexNo)}</div>`;
+      }).join('');
+      const more = status.slots.length > SLOT_FOLD
+        ? `<button type="button" class="ach-slots__more" data-fold="${escapeHtml(ach.id)}">${
+            folded ? `+${status.slots.length - SLOT_FOLD}장 더 보기` : '접기'
+          }</button>`
+        : '';
+      return `<div class="ach-slots">${cells}</div>${more}
+        <div class="ach-progress__text">${fmt(status.current)} / ${fmt(status.target)}</div>`;
+    }
+
+    function ladderHtml(status) {
+      const pctOf = (n) => Math.min(100, (n / status.target) * 100);
+      const marks = status.ticks.map((t) => {
+        const last = t === status.target;
+        return `<span class="ach-ladder__tick${status.current >= t ? ' is-passed' : ''}${last ? ' is-last' : ''}"
+                      style="left:${pctOf(t)}%"><i></i><b>${fmt(t)}</b></span>`;
+      }).join('');
+      return `<div class="ach-ladder" role="progressbar" aria-valuemin="0" aria-valuemax="${status.target}" aria-valuenow="${status.current}">
+          <div class="ach-ladder__bar"><div class="ach-progress__fill" style="width:${pctOf(status.current)}%"></div></div>
+          <div class="ach-ladder__ticks">${marks}</div>
+        </div>
+        <div class="ach-progress__text">${fmt(status.current)} / ${fmt(status.target)}</div>`;
+    }
+
     // ========== 화면 그리기 ==========
     function render() {
       let claimedCount = 0;
@@ -130,7 +166,6 @@
         if (claimedDate) claimedCount++;
         if (isReady && reward) readyCount++;
 
-        const pct = Math.min(100, Math.floor((status.current / status.target) * 100));
         const rewardLabel = reward
           ? `${escapeHtml(RARITY[reward.rarity]?.label || '')} 카드`
           : '준비 중';
@@ -156,10 +191,9 @@
             ${
               isSecret || ach.type === 'manual'
                 ? ''
-                : `<div class="ach-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${status.target}" aria-valuenow="${status.current}">
-                     <div class="ach-progress__fill" style="width: ${pct}%"></div>
-                   </div>
-                   <div class="ach-progress__text">${fmt(status.current)} / ${fmt(status.target)}</div>`
+                : status.slots
+                  ? slotsHtml(ach, status)
+                  : ladderHtml(status)
             }
             <div class="ach-reward">🎁 보상: ${isSecret ? '???' : rewardLabel}</div>
             ${actionHtml}
@@ -194,6 +228,16 @@
         showMessage('체크하지 못했어요: ' + error.message);
         m.disabled = false;
       }
+    });
+
+    // ========== 카드 칸 펼치기/접기 ==========
+    document.getElementById('achList').addEventListener('click', (e) => {
+      const f = e.target.closest('[data-fold]');
+      if (!f) return;
+      const id = f.dataset.fold;
+      if (expandedSlots.has(id)) expandedSlots.delete(id);
+      else expandedSlots.add(id);
+      render();
     });
 
     // ========== 보상 받기 ==========

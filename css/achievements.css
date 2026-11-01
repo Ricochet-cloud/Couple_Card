@@ -218,3 +218,145 @@
 @media (prefers-reduced-motion: reduce) {
   .ach-modal.show .ach-modal__card { animation: none; }
 }
+
+
+/* ── 카드 칸 (모은 카드는 보이고, 없는 카드는 빈칸) ── */
+.ach-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 6px;
+}
+
+.ach-slot {
+  min-width: 0;
+}
+
+.ach-slot .card {
+  width: 100%;
+  padding: 3px;
+}
+
+.ach-slot.is-ghost {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+/* 작은 칸 안에서는 사진과 번호만 보여주고, 움직이는 효과는 끔 */
+.ach-slot .card,
+.ach-slot .card *,
+.ach-slot .card::before,
+.ach-slot .card::after {
+  animation: none !important;
+  filter: none !important;
+  transition: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.ach-slot.is-ghost .card { filter: grayscale(1) !important; }
+
+.ach-slot .card::before,
+.ach-slot .card::after { display: none; }
+
+.ach-slot .card__no {
+  left: 2px;
+  top: 2px;
+  font-size: 6px;
+  padding: 0 2px;
+}
+
+.ach-slot .card__body {
+  padding: 2px 3px;
+  gap: 1px;
+}
+
+.ach-slot .card__badge {
+  font-size: 6px;
+  padding: 0 3px;
+}
+
+.ach-slot .card__badge::before { display: none; }
+
+.ach-slot .card__title {
+  font-size: 7px;
+  line-height: 1.2;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ach-slot .card__desc,
+.ach-slot .card__meta { display: none; }
+
+.ach-slot.is-empty { opacity: 0.55; }
+.ach-slot.is-empty .card { border-style: dashed; }
+
+.ach-slots__more {
+  display: block;
+  margin: 8px auto 0;
+  padding: 6px 12px;
+  font-family: 'Galmuri';
+  font-size: 11px;
+  color: var(--text-dark);
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  cursor: pointer;
+}
+
+/* ── 단계 사다리 ── */
+.ach-ladder {
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.ach-ladder__bar {
+  height: 12px;
+  background: var(--white);
+  border: 2px solid var(--wood-dark);
+  overflow: hidden;
+}
+
+.ach-ladder__bar .ach-progress__fill { height: 100%; }
+
+.ach-ladder__ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ach-ladder__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ach-ladder__tick.is-last { transform: translateX(-100%); align-items: flex-end; }
+
+.ach-ladder__tick i {
+  display: block;
+  width: 2px;
+  height: 16px;
+  background: var(--wood-dark);
+}
+
+.ach-ladder__tick.is-last i { margin-right: 1px; }
+
+.ach-ladder__tick b {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ach-ladder__tick.is-passed b {
+  color: var(--grass-green);
+  font-weight: 700;
+}

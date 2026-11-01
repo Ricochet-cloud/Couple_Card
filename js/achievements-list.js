@@ -103,7 +103,7 @@ export const ACHIEVEMENTS = [
   },
  // 무잔
   {
-    id: 'fullmoon-date',
+    id: 'MUSAN',
     icon: '🩸',
     title: '도깨비의 시조',
     description: '십이귀월 상현을 전부 모아라',

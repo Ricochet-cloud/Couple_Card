@@ -45,13 +45,37 @@ export async function loadAchievementData() {
   };
 }
 
+const SLOT_COPIES_MAX = 6; // 같은 카드 N장 모으기: 이 장수 이하일 때만 칸으로 보여줘요
+
+/** 단계 사다리 눈금: 목표의 25/50/75/100% 근처 (ach.milestones 로 직접 지정도 가능) */
+export function makeTicks(ach, target) {
+  if (Array.isArray(ach.milestones) && ach.milestones.length) {
+    const t = ach.milestones.filter((n) => n > 0 && n < target).sort((a, b) => a - b);
+    return [...t, target];
+  }
+  if (target <= 4) return Array.from({ length: target }, (_, i) => i + 1);
+  let unit = 1;
+  for (const u of [1, 5, 10, 50, 100, 500, 1000, 5000, 10000]) if (u <= target / 20) unit = u;
+  const ticks = [0.25, 0.5, 0.75].map((r) => Math.max(unit, Math.round((target * r) / unit) * unit));
+  return [...new Set([...ticks.filter((n) => n < target), target])];
+}
+
 /**
  * 도전과제 하나의 진행도
- * @returns {{current: number, target: number, done: boolean}}
+ * @returns {{current: number, target: number, done: boolean,
+ *            slots: Array|null, ticks: number[]|null}}
+ *   slots : 카드 칸 목록 [{dexNo, card, ghost}] (카드 모으기 계열)
+ *   ticks : 단계 사다리 눈금 (숫자 누적 계열)
  */
 export function evaluateAchievement(ach, data) {
   let current = 0;
   let target = 1;
+  let slots = null;
+  let ticks = null;
+  const bySlot = (no) => {
+    const c = data.cards.find((x) => x.dexNo === no);
+    return { dexNo: no, card: c && c.isOwned ? c : null, ghost: false };
+  };
 
   if (ach.type === 'sichuanScore') {
     current = data.sichuanBest;
@@ -59,6 +83,7 @@ export function evaluateAchievement(ach, data) {
   } else if (ach.type === 'collectSet') {
     target = ach.dexNos.length;
     current = ach.dexNos.filter((no) => data.cards.some((c) => c.dexNo === no && c.isOwned)).length;
+    slots = ach.dexNos.map(bySlot);
   } else if (ach.type === 'drawCount') {
     current = data.stats.draws || 0;
     target = ach.target;
@@ -73,11 +98,21 @@ export function evaluateAchievement(ach, data) {
     const card = data.cards.find((c) => c.dexNo === ach.dexNo);
     current = card ? card.count : 0;
     target = ach.target;
+    if (target <= SLOT_COPIES_MAX) {
+      // 같은 카드 칸 N개: 가진 장수만큼 채우고, 나머지는 흐릿한 고스트로
+      slots = Array.from({ length: target }, (_, i) => ({
+        dexNo: ach.dexNo,
+        card: card && card.count > i ? card : null,
+        ghost: !!(card && card.isOwned && card.count <= i),
+        ghostCard: card && card.isOwned ? card : null,
+      }));
+    }
   } else if (ach.type === 'collectRarity') {
     // 해당 등급의 활성 카드를 전부 보유
     const pool = data.cards.filter((c) => c.rarity === ach.rarity);
     target = Math.max(pool.length, 1);   // 카드가 하나도 없을 때 바로 달성되는 것 방지
     current = pool.filter((c) => c.isOwned).length;
+    slots = pool.map((c) => ({ dexNo: c.dexNo, card: c.isOwned ? c : null, ghost: false }));
   } else if (ach.type === 'manual') {
     // 직접 달성 체크하는 도전과제
     current = data.manualDone[ach.id] ? 1 : 0;
@@ -88,7 +123,8 @@ export function evaluateAchievement(ach, data) {
   }
 
   current = Math.min(current, target);
-  return { current, target, done: current >= target };
+  if (!slots && ach.type !== 'manual') ticks = makeTicks(ach, target);
+  return { current, target, done: current >= target, slots, ticks };
 }
 
 /**

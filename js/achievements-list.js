@@ -108,7 +108,7 @@ export const ACHIEVEMENTS = [
     title: '도깨비의 시조',
     description: '십이귀월 상현을 전부 모아라',
     type: 'collectSet',
-    dexNos: [183, 184, 185, 137, 1008, 1002],
+    dexNos: [1008, 137, 183, 1002, 185, 184],
     rewardDexNo: 1009,
   },
 

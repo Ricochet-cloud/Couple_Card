@@ -121,5 +121,15 @@ export const ACHIEVEMENTS = [
     target: 200,
     rewardDexNo: 1010,   // 보상 카드 번호
   },
+  // 텐겐
+  {
+    id: 'bitch-3',
+    icon: '🎶',
+    title: '내비치는 세계',
+    description: '아내들을 전부 구하세요',
+    type: 'collectSet',
+    dexNos: [192,193,194],
+    rewardDexNo: 1011,
+  },
 
 ];

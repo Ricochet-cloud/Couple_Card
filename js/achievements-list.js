@@ -111,5 +111,15 @@ export const ACHIEVEMENTS = [
     dexNos: [1008, 137, 183, 1002, 185, 184],
     rewardDexNo: 1009,
   },
+  //카드 200장 모으기
+  {
+    id: 'card-200',
+    icon: '📚',
+    title: '카드게임 마스터',
+    description: '서로 다른 카드 200종 모으기',
+    type: 'collectCount',
+    target: 200,
+    rewardDexNo: 1010,   // 보상 카드 번호
+  },
 
 ];

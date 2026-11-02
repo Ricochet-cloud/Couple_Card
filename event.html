@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>이벤트 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/event.css">
+  <link rel="stylesheet" href="./css/audio.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <div class="event-summary" id="eventSummary">
+        <div class="event-summary__main">🎪 이벤트</div>
+        <div class="event-summary__sub">불러오는 중...</div>
+      </div>
+
+      <div class="event-message" id="eventMessage" style="display: none;"></div>
+
+      <div class="event-list" id="eventList"></div>
+
+      <p class="event-hint">
+        스페이스 / ↑ / 화면 터치로 점프해요. 폰에서는 가로로 돌리면 더 크게 보여요.
+      </p>
+    </main>
+  </div>
+
+  <!-- 하단 탭 네비 -->
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./recombine.html" class="nav-item" data-page="recombine">
+      <span class="nav-icon">✨</span>
+      <span class="nav-label">재조합</span>
+    </a>
+    <a href="./achievements.html" class="nav-item" data-page="achievements">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">도전과제</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <!-- 게임 화면 (전체 화면 겹침) -->
+  <div class="event-game" id="eventGame" aria-hidden="true">
+    <button type="button" class="event-game__close" id="eventGameClose" aria-label="게임 닫기">✕</button>
+    <iframe id="eventFrame" title="JUMP & SURVIVE" allow="fullscreen"></iframe>
+  </div>
+
+  <!-- 보상 카드 공개 -->
+  <div class="event-modal" id="eventModal" role="dialog" aria-modal="true">
+    <div class="event-modal__box">
+      <div class="event-modal__title" id="eventModalTitle">🎉 클리어!</div>
+      <div class="event-modal__card" id="eventModalCard"></div>
+      <div class="event-modal__info" id="eventModalInfo"></div>
+      <button class="event-btn" id="eventModalClose" type="button">확인</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
+    import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
+    import { EVENT, getEventStatus, daysLeft } from './js/event-config.js';
+    import { loadEventData, claimEventReward } from './js/event.js';
+
+    let data = null;
+    let playing = null;     // 지금 하고 있는 난이도 키 ('EASY' ...)
+    let claiming = false;
+
+    function escapeHtml(str) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return String(str).replace(/[&<>"']/g, (c) => map[c]);
+    }
+
+    function showMessage(text) {
+      const el = document.getElementById('eventMessage');
+      el.textContent = text;
+      el.style.display = text ? 'block' : 'none';
+    }
+
+    // ========== 초기화 ==========
+    initAuth(() => {
+      guardAuth();
+      if (isAdmin()) document.getElementById('adminNav').style.display = 'flex';
+      init();
+    });
+
+    async function init() {
+      if (getEventStatus() === 'off') {
+        document.querySelector('.event-summary__sub').textContent = '지금은 열려 있는 이벤트가 없어요';
+        return;
+      }
+      try {
+        data = await loadEventData();
+        render();
+      } catch (error) {
+        console.error('이벤트 불러오기 실패:', error);
+        document.querySelector('.event-summary__sub').textContent = '';
+        showMessage('이벤트를 불러오지 못했어요: ' + error.message);
+      }
+    }
+
+    // ========== 화면 그리기 ==========
+    function render() {
+      const status = getEventStatus();
+      const canPlay = status === 'open';
+      const doneCount = EVENT.levels.filter((l) => data.claimed[l.key]).length;
+
+      const items = EVENT.levels.map((level) => {
+        const claimedDate = data.claimed[level.key] || null;
+        const card = data.cards.find((c) => c.dexNo === level.rewardDexNo);
+        const slot = card && card.isOwned ? renderCard(card) : renderLockedCard(level.rewardDexNo);
+
+        let action;
+        if (claimedDate) action = `<div class="event-done">✔ 클리어 · ${escapeHtml(claimedDate)}</div>`;
+        else if (canPlay) action = `<button class="event-btn" type="button" data-play="${level.key}">도전하기</button>`;
+        else action = `<button class="event-btn" type="button" disabled>${status === 'upcoming' ? '아직 열리지 않았어요' : '종료된 이벤트예요'}</button>`;
+
+        return `<article class="event-item ${claimedDate ? 'is-done' : ''}">
+          <div class="event-item__body">
+            <h3 class="event-item__title">${escapeHtml(level.name)} <small>${level.sec}초 버티기</small></h3>
+            <div class="event-item__reward">🎁 보상: ${card && card.isOwned ? escapeHtml(card.title) : '???'}</div>
+            ${action}
+          </div>
+          <div class="event-slot ${card && card.isOwned ? 'is-owned' : 'is-empty'}">${slot}</div>
+        </article>`;
+      }).join('');
+
+      document.getElementById('eventList').innerHTML = items;
+
+      const left = daysLeft();
+      let sub = status === 'upcoming' ? `${EVENT.startDate}부터 열려요`
+        : status === 'ended' ? '이벤트가 끝났어요'
+        : '난이도별로 한 번씩 클리어하면 카드를 받아요';
+      if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
+      document.getElementById('eventSummary').innerHTML = `
+        <div class="event-summary__main">🎪 ${escapeHtml(EVENT.title)} · 클리어 ${doneCount} / ${EVENT.levels.length}</div>
+        <div class="event-summary__sub">${escapeHtml(sub)}</div>`;
+    }
+
+    // ========== 게임 열기/닫기 ==========
+    const gameEl = document.getElementById('eventGame');
+    const frame = document.getElementById('eventFrame');
+
+    function openGame(levelKey) {
+      playing = levelKey;
+      showMessage('');
+      frame.src = `${EVENT.gamePath}?d=${encodeURIComponent(levelKey)}&_=${Date.now()}`;
+      gameEl.classList.add('show');
+      gameEl.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeGame() {
+      playing = null;
+      gameEl.classList.remove('show');
+      gameEl.setAttribute('aria-hidden', 'true');
+      frame.src = 'about:blank';
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('eventList').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-play]');
+      if (btn && getEventStatus() === 'open') openGame(btn.dataset.play);
+    });
+    document.getElementById('eventGameClose').addEventListener('click', closeGame);
+    addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && playing) closeGame();
+    });
+
+    // ========== 게임 결과 받기 ==========
+    addEventListener('message', async (e) => {
+      // 같은 사이트의, 지금 열려 있는 게임 iframe 이 보낸 메시지만 믿어요
+      if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
+      const m = e.data;
+      if (!m || typeof m !== 'object' || m.type !== 'gameResult') return;
+      if (!playing || m.difficulty !== playing) return;
+      if (m.isWin !== true || !(m.survived >= m.duration - 0.5)) return;
+      if (claiming || getEventStatus() !== 'open') return;
+
+      claiming = true;
+      const levelKey = playing;
+      try {
+        const result = await claimEventReward(levelKey);
+        data = await loadEventData();
+        render();
+        if (result.already) {
+          showMessage('이미 받은 보상이에요. 다른 난이도도 도전해 보세요!');
+        } else {
+          closeGame();
+          openReveal(levelKey, result);
+        }
+      } catch (error) {
+        console.error('보상 받기 실패:', error);
+        showMessage('보상을 받지 못했어요: ' + error.message);
+      } finally {
+        claiming = false;
+      }
+    });
+
+    // ========== 보상 카드 공개 ==========
+    function openReveal(levelKey, { card, isFirstTime }) {
+      const level = EVENT.levels.find((l) => l.key === levelKey);
+      document.getElementById('eventModalTitle').textContent = `🎉 ${level ? level.name : ''} 클리어!`;
+      document.getElementById('eventModalCard').innerHTML = renderCard(card);
+      document.getElementById('eventModalInfo').innerHTML = `
+        ${escapeHtml(RARITY[card.rarity]?.label || '')} · ${escapeHtml(formatDexNo(card.dexNo))} ${escapeHtml(card.title)}<br>
+        ${isFirstTime ? '처음 획득!' : `보유 ${card.count}장`}`;
+      initTilt(document.querySelector('#eventModalCard .card'));
+      document.getElementById('eventModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.getElementById('eventModalClose').addEventListener('click', () => {
+      document.getElementById('eventModal').classList.remove('show');
+      if (!playing) document.body.style.overflow = '';
+    });
+
+    // ========== 로그아웃 ==========
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await logout();
+        window.location.href = './login.html';
+      } catch (error) {
+        alert('로그아웃 실패: ' + error.message);
+      }
+    });
+  </script>
+<script src="./js/audio.js"></script>
+</body>
+</html>

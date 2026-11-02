@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./css/card.css">
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/index.css">
+  <link rel="stylesheet" href="./css/event.css">
   <link rel="stylesheet" href="./css/audio.css">
 </head>
 <body>
@@ -42,6 +43,18 @@
           <button class="special-draw-button" id="specialDrawBtn" disabled>특별 뽑기</button>
         </div>
       </div>
+
+      <!-- 이벤트 배너 (지울 때: 이 블록 + 아래 event-banner import/호출 + css/event.css 링크) -->
+      <a class="home-section event-banner" id="eventBanner" href="./event.html">
+        <div class="event-banner__row">
+          <div class="event-banner__icon">🎪</div>
+          <div class="event-banner__text">
+            <div class="event-banner__title">JUMP & SURVIVE 이벤트</div>
+            <div class="event-banner__sub" id="eventBannerSub"></div>
+          </div>
+          <div class="event-banner__count" id="eventBannerCount"></div>
+        </div>
+      </a>
 
       <!-- 방명록 -->
       <div class="home-section">
@@ -131,6 +144,7 @@
     import { assignOrGetDailyMission, completeMission } from './js/mission.js';
     import { assignOrGetDailyQuiz, submitQuizAnswer } from './js/quiz.js';
     import { getTodayEntries, addEntry } from './js/guestbook.js';
+    import { initEventBanner } from './js/event-banner.js';
 
     // ========== 초기화 ==========
     initAuth(async (user) => {
@@ -157,6 +171,9 @@
 
       // UI 업데이트
       await updateUI();
+
+      // 이벤트 배너 (실패해도 홈은 그대로)
+      initEventBanner().catch((error) => console.warn('이벤트 배너 실패:', error));
 
       // 이벤트 리스너
       setupEventListeners();

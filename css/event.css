@@ -1,0 +1,167 @@
+/* 이벤트 페이지 · 홈 배너 (이벤트를 지울 때 이 파일도 지우세요) */
+
+.event-summary {
+  background: var(--bg-cream);
+  padding: var(--spacing-md);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  margin: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+  font-family: 'Galmuri';
+}
+
+.event-summary__main { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+.event-summary__sub { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+
+.event-message {
+  margin: 0 var(--spacing-md) var(--spacing-md);
+  padding: 10px 12px;
+  background: #fde8e8;
+  border: 2px solid var(--error);
+  color: var(--error);
+  font-size: 12px;
+  font-family: 'Galmuri';
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--spacing-md);
+}
+
+.event-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-cream);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  font-family: 'Galmuri';
+}
+
+.event-item.is-done { opacity: 0.9; }
+.event-item__body { flex: 1; min-width: 0; }
+
+.event-item__title { margin: 0; font-size: 15px; color: var(--text-dark); }
+.event-item__title small { font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 4px; }
+
+.event-item__reward { margin: 6px 0 10px; font-size: 11px; color: var(--text-dark); }
+
+.event-done { font-size: 12px; font-weight: 700; color: var(--grass-green); }
+
+.event-btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  font-family: 'Galmuri';
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--btn);
+  color: var(--btn-ink);
+  border: 2px solid var(--wood-dark);
+  box-shadow: 0 3px 0 var(--wood-dark);
+}
+
+.event-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--wood-dark); }
+.event-btn:disabled { background: #cfc9ba; color: #7d776a; cursor: default; box-shadow: none; }
+
+.event-hint {
+  margin: var(--spacing-md);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Galmuri';
+  text-align: center;
+}
+
+/* 보상 카드 칸 (작게) */
+.event-slot { flex: 0 0 72px; min-width: 0; }
+.event-slot .card { width: 100%; padding: 3px; }
+.event-slot.is-empty { opacity: 0.6; }
+.event-slot .card,
+.event-slot .card *,
+.event-slot .card::before,
+.event-slot .card::after {
+  animation: none !important;
+  filter: none !important;
+  transition: none !important;
+  mix-blend-mode: normal !important;
+}
+.event-slot .card::before, .event-slot .card::after { display: none; }
+.event-slot .card__no { left: 2px; top: 2px; font-size: 6px; padding: 0 2px; }
+.event-slot .card__body { padding: 2px 3px; gap: 1px; }
+.event-slot .card__badge { font-size: 6px; padding: 0 3px; }
+.event-slot .card__badge::before { display: none; }
+.event-slot .card__title {
+  font-size: 7px; line-height: 1.2; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.event-slot .card__desc, .event-slot .card__meta { display: none; }
+
+/* 게임 화면: 전체 화면으로 덮어요 */
+.event-game {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;           /* 음악 버튼(9999)보다 위 */
+  display: none;
+  background: #0e0b14;
+}
+.event-game.show { display: block; }
+.event-game iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.event-game__close {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+/* 보상 카드 공개 */
+.event-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 6, 13, 0.85);
+}
+.event-modal.show { display: flex; }
+.event-modal__box { width: min(300px, 100%); text-align: center; font-family: 'Galmuri'; color: #eef4ff; }
+.event-modal__title { font-size: 15px; margin-bottom: 14px; }
+.event-modal__card { width: min(210px, 62vw); aspect-ratio: 5 / 7; margin: 0 auto 14px; }
+.event-modal__card .card { width: 100%; height: 100%; }
+.event-modal.show .event-modal__card { animation: eventReveal 0.7s ease-out; }
+.event-modal__info { font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
+
+@keyframes eventReveal {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* 홈 이벤트 배너 */
+.event-banner {
+  display: none;
+  text-decoration: none;
+  color: inherit;
+  border-color: var(--gold);
+}
+.event-banner__row { display: flex; align-items: center; gap: 12px; }
+.event-banner__icon { font-size: 28px; }
+.event-banner__text { flex: 1; min-width: 0; font-family: 'Galmuri'; }
+.event-banner__title { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+.event-banner__sub { margin-top: 2px; font-size: 11px; color: var(--text-muted); }
+.event-banner__count { font-family: 'Galmuri'; font-size: 12px; font-weight: 700; color: #b8651b; white-space: nowrap; }
+.event-banner.is-complete .event-banner__count { color: var(--grass-green); }
+
+@media (prefers-reduced-motion: reduce) {
+  .event-modal.show .event-modal__card { animation: none; }
+}

@@ -6,7 +6,7 @@ export const EVENT = {
   enabled: true,                      // false 면 홈 배너가 사라지고 이벤트 페이지도 닫혀요
   title: 'JUMP & SURVIVE',
   startDate: '2026-11-02',            // 이 날부터 열려요 (한국 시간, YYYY-MM-DD)
-  endDate: null,                      // 이 날까지 열려요. null 이면 기간 제한 없음
+  endDate: '2026-11-11',                      // 이 날까지 열려요. null 이면 기간 제한 없음
   gamePath: './event/jump-survive.html',
 
   // 난이도별 보상 카드 (도감번호). 관리자에서 '이벤트 전용'을 체크해 두세요.

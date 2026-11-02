@@ -87,6 +87,12 @@
             </div>
 
             <div class="form-group">
+              <div class="check-row">
+                <label><input type="checkbox" id="cardEventOnly"> 이벤트 전용 (뽑기·특별 뽑기·재조합 결과에서 제외, 이벤트 보상으로만 얻어요)</label>
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="cardPhoto">사진 (선택)</label>
               <input type="file" id="cardPhoto" accept="image/*">
               <div class="image-preview" id="cardPhotoPreview" style="display: none;"></div>
@@ -470,7 +476,7 @@
           // ----- 수정 -----
           const disguiseRaw = document.getElementById('cardDisguise').value;
           const disguiseDexNo = disguiseRaw === '' ? null : parseInt(disguiseRaw);
-          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate, disguiseDexNo };
+          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate, disguiseDexNo, eventOnly: document.getElementById('cardEventOnly').checked };
           if (photoData) {
             updates.photoData = photoData; // 새 사진을 골랐을 때만 교체
           } else if (document.getElementById('cardPhotoRemove').checked) {
@@ -501,6 +507,7 @@
             disguiseDexNo: document.getElementById('cardDisguise').value === ''
               ? null
               : parseInt(document.getElementById('cardDisguise').value),
+            eventOnly: document.getElementById('cardEventOnly').checked,
           });
 
           showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
@@ -540,6 +547,7 @@
       document.getElementById('cardCategory').value = card.category || '';
       document.getElementById('cardMemoryDate').value = card.memoryDate || '';
       document.getElementById('cardDisguise').value = Number.isFinite(card.disguiseDexNo) ? card.disguiseDexNo : '';
+      document.getElementById('cardEventOnly').checked = !!card.eventOnly;
       document.getElementById('cardPhoto').value = '';
       document.getElementById('cardPhotoRemove').checked = false;
 
@@ -603,6 +611,7 @@
         ['분류', card.category || '-'],
         ['추억 날짜', card.memoryDate || '-'],
         ['상태', card.active ? '활성' : '비활성'],
+        ...(card.eventOnly ? [['이벤트 전용', '뽑기·재조합에서 제외']] : []),
         ['사진', card.photoData ? `있음 (약 ${photoKB}KB)` : '없음'],
         ['설명', card.description || '-'],
         ...(shifter ? [['변신 카드', `뽑기에서 ${formatDexNo(card.disguiseDexNo)} 카드로 변장`]] : []),

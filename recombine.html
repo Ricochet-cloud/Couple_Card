@@ -450,7 +450,7 @@
           // 4. 결과 카드 선택 (active: true, rarity: resultRarity)
           const allCards = await getActiveCards();
           const resultCandidates = allCards.filter(
-            (c) => c.active === true && c.rarity === resultRarity
+            (c) => c.active === true && !c.eventOnly && c.rarity === resultRarity
           );
 
           if (resultCandidates.length === 0) {

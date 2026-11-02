@@ -108,9 +108,13 @@ export async function drawCard({ special = false } = {}) {
 
       // 3. 후보 정하기: 특별 뽑기는 히든 카드와 이미 가진 카드를 뺀 것만
       const owned = state.owned || {};
-      let pool = cards;
+      // 이벤트 전용 카드(eventOnly)는 뽑기에서 나오지 않아요 (이벤트 보상으로만 얻어요)
+      let pool = cards.filter((c) => !c.eventOnly);
+      if (pool.length === 0) {
+        throw new Error('뽑을 수 있는 카드가 없습니다.');
+      }
       if (special) {
-        pool = cards.filter((c) => c.rarity !== 'hidden' && !owned[c.id]);
+        pool = pool.filter((c) => c.rarity !== 'hidden' && !owned[c.id]);
         if (pool.length === 0) {
           // 던지면 트랜잭션이 취소돼서 특별 뽑기권은 그대로예요
           throw new Error('이미 모든 카드를 모았어요! 특별 뽑기권은 그대로 남아 있어요.');

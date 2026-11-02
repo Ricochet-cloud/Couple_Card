@@ -28,7 +28,8 @@ const DIFFICULTIES = {
     baseSpeed: 280,
     speedUp: 3.2,
     spawnStart: 1.6,
-    spawnMin: 0.8
+    spawnMin: 0.8,
+    fairMargin: 0.25
   },
   NORMAL: {
     duration: 60,
@@ -37,7 +38,8 @@ const DIFFICULTIES = {
     baseSpeed: 330,
     speedUp: 4.5,
     spawnStart: 1.25,
-    spawnMin: 0.6
+    spawnMin: 0.6,
+    fairMargin: 0.15
   },
   HARD: {
     duration: 70,
@@ -46,7 +48,8 @@ const DIFFICULTIES = {
     baseSpeed: 380,
     speedUp: 5.5,
     spawnStart: 1.0,
-    spawnMin: 0.45
+    spawnMin: 0.45,
+    fairMargin: 0.10
   }
 };
 
@@ -60,7 +63,7 @@ function loadBest() {
 function saveBest() {
   try { localStorage.setItem('js_best_' + currentDifficulty, best); } catch (e) {}
 }
-let DURATION, GRAVITY, JUMP_V, BASE_SPEED, SPEED_UP, SPAWN_START, SPAWN_MIN;
+let DURATION, GRAVITY, JUMP_V, BASE_SPEED, SPEED_UP, SPAWN_START, SPAWN_MIN, FAIR_MARGIN;
 
 function applyDifficulty(difficulty) {
   const diff = DIFFICULTIES[difficulty] || DIFFICULTIES.NORMAL;
@@ -71,6 +74,7 @@ function applyDifficulty(difficulty) {
   SPEED_UP = diff.speedUp;
   SPAWN_START = diff.spawnStart;
   SPAWN_MIN = diff.spawnMin;
+  FAIR_MARGIN = diff.fairMargin;
   currentDifficulty = DIFFICULTIES[difficulty] ? difficulty : 'NORMAL';
   loadBest();
 }
@@ -170,35 +174,58 @@ function burst(x, y, n, color) {
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 // ===== 투사체 생성 =====
+// 공정성 규칙: 점프로 피해야 하는 투사체(낫) 뒤에는, 착지해서 다시 뛸 시간이 있을 만큼 간격을 둬요.
+//   낫(low/lob) → 다음 투사체: 점프 체공시간 + fairMargin 초 이상 간격
+//   참격(high)  → 다음 투사체: 0.3초 이상 간격 (서서 피하니까 짧아도 돼요)
+// 간격이 모자라면 이번 투사체는 만들지 않고 잠깐 뒤 다시 시도해요.
+function gapNeeded(firstKind) {
+  return firstKind === 'high' ? 0.3 : (2 * JUMP_V) / GRAVITY + FAIR_MARGIN;
+}
+function isFair(kind, arrive) {
+  for (const s of shots) {
+    if (s.arrive < t - 0.3) continue;           // 이미 지나간 투사체
+    const d = arrive - s.arrive;                  // 플레이어에게 도착하는 시각 차이
+    const need = d >= 0 ? gapNeeded(s.type) : gapNeeded(kind);
+    if (Math.abs(d) < need) return false;
+  }
+  return true;
+}
+
+// 만들었으면 true, 간격이 부족해서 건너뛰었으면 false
 function spawn() {
   const speed = BASE_SPEED + t * SPEED_UP;
   const hx = boss.x - 50;
   const r = Math.random();
   const lobChance = t > 8 ? 0.3 : 0;
   const highChance = t > 4 ? 0.28 : 0;
-  let ey;
+  const kind = r < lobChance ? 'lob' : r < lobChance + highChance ? 'high' : 'low';
+  const T = kind === 'lob' ? rnd(0.85, 1.1) : 0;     // 포물선 낫이 플레이어 근처에 떨어지기까지 시간
+  const travel = kind === 'lob' ? T : (hx - PX) / (kind === 'high' ? speed * 1.05 : speed);
+  const arrive = t + travel;
+  if (!isFair(kind, arrive)) return false;
 
-  if (r < lobChance) {
+  let ey;
+  if (kind === 'lob') {
     // 포물선 낫: 플레이어 근처 바닥으로 떨어짐 -> 점프로 넘겨야 함
     ey = GROUND - 130;
-    const T = rnd(0.85, 1.1);
     const targetX = PX + rnd(-10, 40);
     const targetY = GROUND - 16;
     const vx = (targetX - hx) / T;
     const g = 1100;
     const vy = (targetY - ey - 0.5 * g * T * T) / T;
-    shots.push({ type: 'lob', x: hx, y: ey, vx, vy, g, r: 16, cxo: 0 });
-  } else if (r < lobChance + highChance) {
+    shots.push({ type: 'lob', x: hx, y: ey, vx, vy, g, r: 16, cxo: 0, arrive });
+  } else if (kind === 'high') {
     // 높은 참격: 서 있으면 지나감, 점프하면 맞음
     ey = GROUND - 100;
-    shots.push({ type: 'high', x: hx, y: ey, vx: -speed * 1.05, vy: 0, g: 0, r: 16, cxo: -12 });
+    shots.push({ type: 'high', x: hx, y: ey, vx: -speed * 1.05, vy: 0, g: 0, r: 16, cxo: -12, arrive });
   } else {
     // 바닥 낫: 점프로 넘기
     ey = GROUND - 22;
-    shots.push({ type: 'low', x: hx, y: ey, vx: -speed, vy: 0, g: 0, r: 16, cxo: 0 });
+    shots.push({ type: 'low', x: hx, y: ey, vx: -speed, vy: 0, g: 0, r: 16, cxo: 0, arrive });
   }
   boss.throw = 0.36;
   burst(hx, ey, 4, '#ff6b81');
+  return true;
 }
 
 // ===== 업데이트 =====
@@ -221,9 +248,12 @@ function update(dt) {
     // 스폰
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
-      spawn();
-      const interval = Math.max(SPAWN_MIN, SPAWN_START - t * 0.011);
-      spawnTimer = interval * rnd(0.9, 1.25);
+      if (spawn()) {
+        const interval = Math.max(SPAWN_MIN, SPAWN_START - t * 0.011);
+        spawnTimer = interval * rnd(0.9, 1.25);
+      } else {
+        spawnTimer = 0.05;   // 간격이 모자라서 건너뜀 → 곧 다시 시도
+      }
     }
 
     // 투사체

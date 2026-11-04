@@ -637,7 +637,13 @@
 /* 변신 카드: 울렁울렁 (js/morph.js) */
 .card.card--wobble {
   animation: cardWobble 0.9s ease-in-out;
+  /* 변신 중에는 네모난 바깥 프레임·장식을 모두 꺼서, 물렁물렁한 카드 본체만 보이게 해요 */
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
 }
+.card.card--wobble::before,
+.card.card--wobble::after { display: none !important; }
 
 .card.card--wobble .card__in {
   animation: cardWobbleIn 0.9s ease-in-out;

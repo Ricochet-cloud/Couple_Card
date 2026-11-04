@@ -12,6 +12,10 @@ export const EVENT = {
   // 난이도별 보상 카드 (도감번호). 관리자에서 '이벤트 전용'을 체크해 두세요.
   //   key            : 게임이 쓰는 난이도 이름 (게임의 ?d= 값, 결과 메시지의 difficulty 와 같아야 해요)
   //   openAfterDays  : startDate 에서 며칠 뒤에 열리는지 (0 또는 생략 = 처음부터). 아직 안 열린 난이도는 잠겨요
+  //   rewardDexNo          : 보상 카드 도감번호 (선택)
+  //   rewardTickets        : 보상 뽑기권 장수 (선택)       예) rewardTickets: 3
+  //   rewardSpecialTickets : 보상 특별 뽑기권 장수 (선택)  예) rewardSpecialTickets: 1
+  //     → 위 셋 중 필요한 것만 쓰세요. 카드+뽑기권을 같이 줄 수도 있어요. (하나는 꼭 있어야 해요)
   //   sec / desc     : 화면 표시용 설명 (desc 가 있으면 그걸 써요, 없으면 'sec초 버티기')
   //
   // ※ 난이도 선택이 없는 게임: levels 에 항목을 딱 하나만 두세요. 이 경우 게임에 ?d= 를 붙이지 않고,
@@ -27,6 +31,15 @@ export const EVENT = {
 
 export function todayKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
+}
+
+/** 난이도의 보상 구성 (카드/뽑기권/특별 뽑기권) */
+export function levelRewards(level) {
+  return {
+    dexNo: level.rewardDexNo || null,
+    tickets: level.rewardTickets || 0,
+    specialTickets: level.rewardSpecialTickets || 0,
+  };
 }
 
 /** 'upcoming' | 'open' | 'ended' | 'off' */

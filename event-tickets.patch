@@ -1,0 +1,275 @@
+From c56f7812e562186e1a6c494a7499c486ab1115d7 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 12:25:00 +0900
+Subject: [PATCH] =?UTF-8?q?=EC=9D=B4=EB=B2=A4=ED=8A=B8=20=EB=B3=B4?=
+ =?UTF-8?q?=EC=83=81:=20=EB=BD=91=EA=B8=B0=EA=B6=8C=C2=B7=ED=8A=B9?=
+ =?UTF-8?q?=EB=B3=84=20=EB=BD=91=EA=B8=B0=EA=B6=8C(=EC=B9=B4=EB=93=9C?=
+ =?UTF-8?q?=EC=99=80=20=ED=95=A8=EA=BB=98=EB=8F=84=20=EA=B0=80=EB=8A=A5)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NaRW9aR38ZugwWnH7B62Mr
+---
+ css/event.css      | 22 +++++++++++++++++++
+ event.html         | 53 +++++++++++++++++++++++++++++++++++-----------
+ js/event-banner.js |  2 +-
+ js/event-config.js | 13 ++++++++++++
+ js/event.js        | 42 +++++++++++++++++++++---------------
+ 5 files changed, 102 insertions(+), 30 deletions(-)
+
+diff --git a/css/event.css b/css/event.css
+index e3ec716..95df49d 100644
+--- a/css/event.css
++++ b/css/event.css
+@@ -180,3 +180,25 @@
+   border-color: var(--grass-green);
+   color: #3d6b1f;
+ }
++
++/* 뽑기권 보상 그림 */
++.event-ticket {
++  width: 100%;
++  aspect-ratio: 5 / 7;
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  justify-content: center;
++  gap: 2px;
++  font-family: 'Galmuri';
++  color: var(--text-dark);
++  background: repeating-linear-gradient(135deg, #fff6cf 0 6px, #ffeaa0 6px 12px);
++  border: 2px dashed var(--wood-dark);
++  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.25);
++}
++.event-ticket span { font-size: 22px; line-height: 1.1; }
++.event-ticket b { font-size: 14px; }
++.event-ticket.is-done { opacity: 0.55; filter: grayscale(0.5); }
++.event-modal__card .event-ticket { border-color: #ffd166; box-shadow: 0 0 24px rgba(255, 209, 102, 0.5); }
++.event-modal__card .event-ticket span { font-size: 56px; }
++.event-modal__card .event-ticket b { font-size: 30px; }
+diff --git a/event.html b/event.html
+index 0ed0388..9d004da 100644
+--- a/event.html
++++ b/event.html
+@@ -79,7 +79,7 @@
+     import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
+     import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
+     import { initTilt } from './js/tilt.js';
+-    import { EVENT, getEventStatus, daysLeft, getLevelState, levelOpenDate, daysUntil, formatKoreanDate } from './js/event-config.js';
++    import { EVENT, getEventStatus, daysLeft, getLevelState, levelOpenDate, daysUntil, formatKoreanDate, levelRewards } from './js/event-config.js';
+     import { loadEventData, claimEventReward } from './js/event.js';
+ 
+     let data = null;
+@@ -100,6 +100,25 @@
+ 
+     const multiLevel = EVENT.levels.length > 1;   // 난이도 선택이 있는 게임인지
+ 
++    // 보상 글자: '카드 ???' + '🎟️ 뽑기권 3장' + '✨ 특별 뽑기권 1장'
++    function rewardText(level, card) {
++      const rw = levelRewards(level);
++      const parts = [];
++      if (rw.dexNo) parts.push(card && card.isOwned ? escapeHtml(card.title) : '카드 ???');
++      if (rw.tickets) parts.push(`🎟️ 뽑기권 ${rw.tickets}장`);
++      if (rw.specialTickets) parts.push(`✨ 특별 뽑기권 ${rw.specialTickets}장`);
++      return parts.join(' + ');
++    }
++
++    // 뽑기권 보상 그림 (카드 모양 칸)
++    function ticketBoxHtml(level, done) {
++      const rw = levelRewards(level);
++      const lines = [];
++      if (rw.tickets) lines.push(`<span>🎟️</span><b>×${rw.tickets}</b>`);
++      if (rw.specialTickets) lines.push(`<span>✨</span><b>×${rw.specialTickets}</b>`);
++      return `<div class="event-ticket ${done ? 'is-done' : ''}">${lines.join('')}</div>`;
++    }
++
+     // ========== 초기화 ==========
+     initAuth(() => {
+       guardAuth();
+@@ -129,8 +148,10 @@
+ 
+       const items = EVENT.levels.map((level) => {
+         const claimedDate = data.claimed[level.key] || null;
+-        const card = data.cards.find((c) => c.dexNo === level.rewardDexNo);
+-        const slot = card && card.isOwned ? renderCard(card) : renderLockedCard(level.rewardDexNo);
++        const card = level.rewardDexNo ? data.cards.find((c) => c.dexNo === level.rewardDexNo) : null;
++        const slot = !level.rewardDexNo
++          ? ticketBoxHtml(level, !!claimedDate)
++          : card && card.isOwned ? renderCard(card) : renderLockedCard(level.rewardDexNo);
+ 
+         const levelState = getLevelState(level);
+         const openDate = levelOpenDate(level);
+@@ -152,10 +173,10 @@
+         return `<article class="event-item ${claimedDate ? 'is-done' : ''}">
+           <div class="event-item__body">
+             <h3 class="event-item__title">${escapeHtml(level.name)} <small>${escapeHtml(level.desc || (level.sec ? level.sec + '초 버티기' : ''))}</small></h3>
+-            <div class="event-item__reward">🎁 보상: ${card && card.isOwned ? escapeHtml(card.title) : '???'}</div>
++            <div class="event-item__reward">🎁 보상: ${rewardText(level, card)}</div>
+             ${action}
+           </div>
+-          <div class="event-slot ${card && card.isOwned ? 'is-owned' : 'is-empty'}">${slot}</div>
++          <div class="event-slot ${!level.rewardDexNo || (card && card.isOwned) ? 'is-owned' : 'is-empty'}">${slot}</div>
+         </article>`;
+       }).join('');
+ 
+@@ -167,7 +188,7 @@
+         .sort((a, b) => levelOpenDate(a).localeCompare(levelOpenDate(b)))[0];
+       let sub = status === 'upcoming' ? `${EVENT.startDate}부터 열려요`
+         : status === 'ended' ? '이벤트가 끝났어요'
+-        : multiLevel ? '난이도별로 한 번씩 클리어하면 카드를 받아요' : '클리어하면 카드를 받아요';
++        : multiLevel ? '난이도별로 한 번씩 클리어하면 보상을 받아요' : '클리어하면 보상을 받아요';
+       if (status === 'open' && nextLocked) sub += ` · ${nextLocked.name}은 ${formatKoreanDate(levelOpenDate(nextLocked))}에 열려요`;
+       if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
+       document.getElementById('eventSummary').innerHTML = `
+@@ -241,14 +262,22 @@
+     });
+ 
+     // ========== 보상 카드 공개 ==========
+-    function openReveal(levelKey, { card, isFirstTime }) {
++    function openReveal(levelKey, { card, isFirstTime, tickets, specialTickets }) {
+       const level = EVENT.levels.find((l) => l.key === levelKey);
+       document.getElementById('eventModalTitle').textContent = `🎉 ${level ? level.name : ''} 클리어!`;
+-      document.getElementById('eventModalCard').innerHTML = renderCard(card);
+-      document.getElementById('eventModalInfo').innerHTML = `
+-        ${escapeHtml(RARITY[card.rarity]?.label || '')} · ${escapeHtml(formatDexNo(card.dexNo))} ${escapeHtml(card.title)}<br>
+-        ${isFirstTime ? '처음 획득!' : `보유 ${card.count}장`}`;
+-      initTilt(document.querySelector('#eventModalCard .card'));
++      const lines = [];
++      if (card) {
++        document.getElementById('eventModalCard').innerHTML = renderCard(card);
++        lines.push(`${escapeHtml(RARITY[card.rarity]?.label || '')} · ${escapeHtml(formatDexNo(card.dexNo))} ${escapeHtml(card.title)}`);
++        lines.push(isFirstTime ? '처음 획득!' : `보유 ${card.count}장`);
++      } else {
++        // 카드 없이 뽑기권만 주는 난이도
++        document.getElementById('eventModalCard').innerHTML = ticketBoxHtml(level, false);
++      }
++      if (tickets) lines.push(`🎟️ 뽑기권 ${tickets}장을 받았어요!`);
++      if (specialTickets) lines.push(`✨ 특별 뽑기권 ${specialTickets}장을 받았어요!`);
++      document.getElementById('eventModalInfo').innerHTML = lines.join('<br>');
++      if (card) initTilt(document.querySelector('#eventModalCard .card'));
+       document.getElementById('eventModal').classList.add('show');
+       document.body.style.overflow = 'hidden';
+     }
+diff --git a/js/event-banner.js b/js/event-banner.js
+index d4fb61e..e3798f3 100644
+--- a/js/event-banner.js
++++ b/js/event-banner.js
+@@ -14,7 +14,7 @@ export async function initEventBanner() {
+   }
+ 
+   const left = daysLeft();
+-  let sub = status === 'upcoming' ? `${EVENT.startDate}부터 시작해요` : '난이도별로 클리어하면 카드를 받아요';
++  let sub = status === 'upcoming' ? `${EVENT.startDate}부터 시작해요` : '난이도별로 클리어하면 보상을 받아요';
+   if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
+   if (status === 'open') {
+     const next = EVENT.levels
+diff --git a/js/event-config.js b/js/event-config.js
+index bfe6500..57ff68c 100644
+--- a/js/event-config.js
++++ b/js/event-config.js
+@@ -12,6 +12,10 @@ export const EVENT = {
+   // 난이도별 보상 카드 (도감번호). 관리자에서 '이벤트 전용'을 체크해 두세요.
+   //   key            : 게임이 쓰는 난이도 이름 (게임의 ?d= 값, 결과 메시지의 difficulty 와 같아야 해요)
+   //   openAfterDays  : startDate 에서 며칠 뒤에 열리는지 (0 또는 생략 = 처음부터). 아직 안 열린 난이도는 잠겨요
++  //   rewardDexNo          : 보상 카드 도감번호 (선택)
++  //   rewardTickets        : 보상 뽑기권 장수 (선택)       예) rewardTickets: 3
++  //   rewardSpecialTickets : 보상 특별 뽑기권 장수 (선택)  예) rewardSpecialTickets: 1
++  //     → 위 셋 중 필요한 것만 쓰세요. 카드+뽑기권을 같이 줄 수도 있어요. (하나는 꼭 있어야 해요)
+   //   sec / desc     : 화면 표시용 설명 (desc 가 있으면 그걸 써요, 없으면 'sec초 버티기')
+   //
+   // ※ 난이도 선택이 없는 게임: levels 에 항목을 딱 하나만 두세요. 이 경우 게임에 ?d= 를 붙이지 않고,
+@@ -29,6 +33,15 @@ export function todayKST() {
+   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
+ }
+ 
++/** 난이도의 보상 구성 (카드/뽑기권/특별 뽑기권) */
++export function levelRewards(level) {
++  return {
++    dexNo: level.rewardDexNo || null,
++    tickets: level.rewardTickets || 0,
++    specialTickets: level.rewardSpecialTickets || 0,
++  };
++}
++
+ /** 'upcoming' | 'open' | 'ended' | 'off' */
+ export function getEventStatus() {
+   if (!EVENT.enabled) return 'off';
+diff --git a/js/event.js b/js/event.js
+index 78c6532..a6de5e9 100644
+--- a/js/event.js
++++ b/js/event.js
+@@ -6,7 +6,7 @@ import {
+   runTransaction,
+ } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+ import { getActiveCards } from './collection.js';
+-import { EVENT, todayKST, getLevelState } from './event-config.js';
++import { EVENT, todayKST, getLevelState, levelRewards } from './event-config.js';
+ 
+ const STATE_REF = doc(db, 'state', 'shared');
+ 
+@@ -34,16 +34,22 @@ export function findLevel(key) {
+ 
+ /**
+  * 난이도 클리어 보상 받기. 이미 받았으면 { already: true }
+- * @returns {{already: boolean, card?: Object, isFirstTime?: boolean}}
++ * @returns {{already: boolean, card?: Object|null, isFirstTime?: boolean, tickets?: number, specialTickets?: number}}
+  */
+ export async function claimEventReward(levelKey) {
+   const level = findLevel(levelKey);
+   if (!level) throw new Error('알 수 없는 난이도예요.');
+   if (getLevelState(level) !== 'open') throw new Error('아직 열리지 않았거나 끝난 난이도예요.');
+ 
+-  const cards = await getActiveCards();
+-  const reward = cards.find((c) => c.dexNo === level.rewardDexNo);
+-  if (!reward) throw new Error(`보상 카드(No.${level.rewardDexNo})를 찾을 수 없어요.`);
++  const rw = levelRewards(level);
++  if (!rw.dexNo && !rw.tickets && !rw.specialTickets) throw new Error('이 난이도에는 보상이 정해져 있지 않아요.');
++
++  let reward = null;
++  if (rw.dexNo) {
++    const cards = await getActiveCards();
++    reward = cards.find((c) => c.dexNo === rw.dexNo);
++    if (!reward) throw new Error(`보상 카드(No.${rw.dexNo})를 찾을 수 없어요.`);
++  }
+ 
+   const today = todayKST();
+ 
+@@ -56,19 +62,21 @@ export async function claimEventReward(levelKey) {
+     const mine = events[EVENT.id] || {};
+     if (mine[levelKey]) return { already: true };
+ 
+-    const owned = state.owned || {};
+-    const prev = owned[reward.id] || { count: 0, firstAt: null };
+-    owned[reward.id] = { count: prev.count + 1, firstAt: prev.firstAt || today };
++    const updates = { events: { ...events, [EVENT.id]: { ...mine, [levelKey]: today } } };
++    const result = { already: false, card: null, isFirstTime: false, tickets: rw.tickets, specialTickets: rw.specialTickets };
+ 
+-    tx.update(STATE_REF, {
+-      owned,
+-      events: { ...events, [EVENT.id]: { ...mine, [levelKey]: today } },
+-    });
++    if (reward) {
++      const owned = state.owned || {};
++      const prev = owned[reward.id] || { count: 0, firstAt: null };
++      owned[reward.id] = { count: prev.count + 1, firstAt: prev.firstAt || today };
++      updates.owned = owned;
++      result.card = { ...reward, isOwned: true, count: prev.count + 1, firstAt: owned[reward.id].firstAt };
++      result.isFirstTime = prev.count === 0;
++    }
++    if (rw.tickets) updates.tickets = (state.tickets || 0) + rw.tickets;
++    if (rw.specialTickets) updates.specialTickets = (state.specialTickets || 0) + rw.specialTickets;
+ 
+-    return {
+-      already: false,
+-      card: { ...reward, isOwned: true, count: prev.count + 1, firstAt: owned[reward.id].firstAt },
+-      isFirstTime: prev.count === 0,
+-    };
++    tx.update(STATE_REF, updates);
++    return result;
+   });
+ }
+-- 
+2.43.0
+

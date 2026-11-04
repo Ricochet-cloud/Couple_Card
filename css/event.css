@@ -180,3 +180,25 @@
   border-color: var(--grass-green);
   color: #3d6b1f;
 }
+
+/* 뽑기권 보상 그림 */
+.event-ticket {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: 'Galmuri';
+  color: var(--text-dark);
+  background: repeating-linear-gradient(135deg, #fff6cf 0 6px, #ffeaa0 6px 12px);
+  border: 2px dashed var(--wood-dark);
+  box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.25);
+}
+.event-ticket span { font-size: 22px; line-height: 1.1; }
+.event-ticket b { font-size: 14px; }
+.event-ticket.is-done { opacity: 0.55; filter: grayscale(0.5); }
+.event-modal__card .event-ticket { border-color: #ffd166; box-shadow: 0 0 24px rgba(255, 209, 102, 0.5); }
+.event-modal__card .event-ticket span { font-size: 56px; }
+.event-modal__card .event-ticket b { font-size: 30px; }

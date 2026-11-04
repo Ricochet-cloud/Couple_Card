@@ -6,7 +6,7 @@ import {
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { getActiveCards } from './collection.js';
-import { EVENT, todayKST } from './event-config.js';
+import { EVENT, todayKST, getLevelState } from './event-config.js';
 
 const STATE_REF = doc(db, 'state', 'shared');
 
@@ -39,6 +39,7 @@ export function findLevel(key) {
 export async function claimEventReward(levelKey) {
   const level = findLevel(levelKey);
   if (!level) throw new Error('알 수 없는 난이도예요.');
+  if (getLevelState(level) !== 'open') throw new Error('아직 열리지 않았거나 끝난 난이도예요.');
 
   const cards = await getActiveCards();
   const reward = cards.find((c) => c.dexNo === level.rewardDexNo);

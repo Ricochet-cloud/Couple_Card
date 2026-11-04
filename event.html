@@ -79,7 +79,7 @@
     import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
     import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
-    import { EVENT, getEventStatus, daysLeft } from './js/event-config.js';
+    import { EVENT, getEventStatus, daysLeft, getLevelState, levelOpenDate, daysUntil, formatKoreanDate } from './js/event-config.js';
     import { loadEventData, claimEventReward } from './js/event.js';
 
     let data = null;
@@ -91,11 +91,14 @@
       return String(str).replace(/[&<>"']/g, (c) => map[c]);
     }
 
-    function showMessage(text) {
+    function showMessage(text, kind = 'error') {
       const el = document.getElementById('eventMessage');
       el.textContent = text;
+      el.classList.toggle('event-message--info', kind === 'info');
       el.style.display = text ? 'block' : 'none';
     }
+
+    const multiLevel = EVENT.levels.length > 1;   // 난이도 선택이 있는 게임인지
 
     // ========== 초기화 ==========
     initAuth(() => {
@@ -122,7 +125,6 @@
     // ========== 화면 그리기 ==========
     function render() {
       const status = getEventStatus();
-      const canPlay = status === 'open';
       const doneCount = EVENT.levels.filter((l) => data.claimed[l.key]).length;
 
       const items = EVENT.levels.map((level) => {
@@ -130,14 +132,26 @@
         const card = data.cards.find((c) => c.dexNo === level.rewardDexNo);
         const slot = card && card.isOwned ? renderCard(card) : renderLockedCard(level.rewardDexNo);
 
+        const levelState = getLevelState(level);
+        const openDate = levelOpenDate(level);
         let action;
-        if (claimedDate) action = `<div class="event-done">✔ 클리어 · ${escapeHtml(claimedDate)}</div>`;
-        else if (canPlay) action = `<button class="event-btn" type="button" data-play="${level.key}">도전하기</button>`;
-        else action = `<button class="event-btn" type="button" disabled>${status === 'upcoming' ? '아직 열리지 않았어요' : '종료된 이벤트예요'}</button>`;
+        if (claimedDate) {
+          // 클리어한 난이도도 계속 할 수 있어요 (보상은 한 번만)
+          action = `<div class="event-done">✔ 클리어 · ${escapeHtml(claimedDate)}</div>`
+            + (levelState === 'open' ? `<button class="event-btn event-btn--ghost" type="button" data-play="${level.key}">다시 하기</button>` : '');
+        } else if (levelState === 'open') {
+          action = `<button class="event-btn" type="button" data-play="${level.key}">${multiLevel ? '도전하기' : '시작하기'}</button>`;
+        } else if (levelState === 'locked') {
+          const d = openDate ? daysUntil(openDate) : null;
+          const when = openDate ? `${formatKoreanDate(openDate)} 오픈${d > 0 ? ` (D-${d})` : ''}` : '아직 열리지 않았어요';
+          action = `<button class="event-btn" type="button" disabled>🔒 ${when}</button>`;
+        } else {
+          action = `<button class="event-btn" type="button" disabled>종료된 이벤트예요</button>`;
+        }
 
         return `<article class="event-item ${claimedDate ? 'is-done' : ''}">
           <div class="event-item__body">
-            <h3 class="event-item__title">${escapeHtml(level.name)} <small>${level.sec}초 버티기</small></h3>
+            <h3 class="event-item__title">${escapeHtml(level.name)} <small>${escapeHtml(level.desc || (level.sec ? level.sec + '초 버티기' : ''))}</small></h3>
             <div class="event-item__reward">🎁 보상: ${card && card.isOwned ? escapeHtml(card.title) : '???'}</div>
             ${action}
           </div>
@@ -148,9 +162,13 @@
       document.getElementById('eventList').innerHTML = items;
 
       const left = daysLeft();
+      const nextLocked = EVENT.levels
+        .filter((l) => !data.claimed[l.key] && getLevelState(l) === 'locked' && levelOpenDate(l))
+        .sort((a, b) => levelOpenDate(a).localeCompare(levelOpenDate(b)))[0];
       let sub = status === 'upcoming' ? `${EVENT.startDate}부터 열려요`
         : status === 'ended' ? '이벤트가 끝났어요'
-        : '난이도별로 한 번씩 클리어하면 카드를 받아요';
+        : multiLevel ? '난이도별로 한 번씩 클리어하면 카드를 받아요' : '클리어하면 카드를 받아요';
+      if (status === 'open' && nextLocked) sub += ` · ${nextLocked.name}은 ${formatKoreanDate(levelOpenDate(nextLocked))}에 열려요`;
       if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
       document.getElementById('eventSummary').innerHTML = `
         <div class="event-summary__main">🎪 ${escapeHtml(EVENT.title)} · 클리어 ${doneCount} / ${EVENT.levels.length}</div>
@@ -164,7 +182,8 @@
     function openGame(levelKey) {
       playing = levelKey;
       showMessage('');
-      frame.src = `${EVENT.gamePath}?d=${encodeURIComponent(levelKey)}&_=${Date.now()}`;
+      // 난이도 선택이 없는 게임에는 ?d= 를 붙이지 않아요
+      frame.src = `${EVENT.gamePath}?${multiLevel ? `d=${encodeURIComponent(levelKey)}&` : ''}_=${Date.now()}`;
       gameEl.classList.add('show');
       gameEl.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -180,7 +199,8 @@
 
     document.getElementById('eventList').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-play]');
-      if (btn && getEventStatus() === 'open') openGame(btn.dataset.play);
+      const level = btn && EVENT.levels.find((l) => l.key === btn.dataset.play);
+      if (level && getLevelState(level) === 'open') openGame(level.key);
     });
     document.getElementById('eventGameClose').addEventListener('click', closeGame);
     addEventListener('keydown', (e) => {
@@ -193,9 +213,12 @@
       if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
       const m = e.data;
       if (!m || typeof m !== 'object' || m.type !== 'gameResult') return;
-      if (!playing || m.difficulty !== playing) return;
-      if (m.isWin !== true || !(m.survived >= m.duration - 0.5)) return;
-      if (claiming || getEventStatus() !== 'open') return;
+      if (!playing) return;
+      if (multiLevel && m.difficulty !== playing) return;          // 다른 난이도의 결과는 무시
+      if (m.isWin !== true) return;
+      // 시간 정보가 있는 게임이면 버틴 시간도 확인해요
+      if (Number.isFinite(m.survived) && Number.isFinite(m.duration) && m.survived < m.duration - 0.5) return;
+      if (claiming || getLevelState(EVENT.levels.find((l) => l.key === playing)) !== 'open') return;
 
       claiming = true;
       const levelKey = playing;
@@ -204,7 +227,7 @@
         data = await loadEventData();
         render();
         if (result.already) {
-          showMessage('이미 받은 보상이에요. 다른 난이도도 도전해 보세요!');
+          showMessage('클리어! 이 보상은 이미 받았어요. 연습 모드로 계속 즐길 수 있어요.', 'info');
         } else {
           closeGame();
           openReveal(levelKey, result);

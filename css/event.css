@@ -165,3 +165,18 @@
 @media (prefers-reduced-motion: reduce) {
   .event-modal.show .event-modal__card { animation: none; }
 }
+
+/* 다시 하기(클리어한 난이도) · 안내 메시지 */
+.event-btn--ghost {
+  margin-top: 8px;
+  min-height: 40px;
+  background: var(--white);
+  color: var(--text-dark);
+  box-shadow: 0 2px 0 var(--wood-dark);
+}
+
+.event-message--info {
+  background: #e8f4e0;
+  border-color: var(--grass-green);
+  color: #3d6b1f;
+}

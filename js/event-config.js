@@ -6,15 +6,22 @@ export const EVENT = {
   enabled: true,                      // false 면 홈 배너가 사라지고 이벤트 페이지도 닫혀요
   title: 'JUMP & SURVIVE',
   startDate: '2026-11-02',            // 이 날부터 열려요 (한국 시간, YYYY-MM-DD)
-  endDate: '2026-11-11',                      // 이 날까지 열려요. null 이면 기간 제한 없음
+  endDate: '2026-11-09',                      // 이 날까지 열려요. null 이면 기간 제한 없음
   gamePath: './event/jump-survive.html',
 
   // 난이도별 보상 카드 (도감번호). 관리자에서 '이벤트 전용'을 체크해 두세요.
-  // sec 는 게임 안의 시간(event/jump-survive.html 의 DIFFICULTIES)과 맞춰 주세요 — 화면 표시용이에요.
+  //   key            : 게임이 쓰는 난이도 이름 (게임의 ?d= 값, 결과 메시지의 difficulty 와 같아야 해요)
+  //   openAfterDays  : startDate 에서 며칠 뒤에 열리는지 (0 또는 생략 = 처음부터). 아직 안 열린 난이도는 잠겨요
+  //   sec / desc     : 화면 표시용 설명 (desc 가 있으면 그걸 써요, 없으면 'sec초 버티기')
+  //
+  // ※ 난이도 선택이 없는 게임: levels 에 항목을 딱 하나만 두세요. 이 경우 게임에 ?d= 를 붙이지 않고,
+  //   게임의 결과 메시지에 difficulty 가 없어도 돼요. (예: { key: 'MAIN', name: '클리어', rewardDexNo: 195 })
+  //
+  // ※ 클리어한 난이도도 계속 '다시 하기'로 할 수 있어요. 보상은 난이도마다 한 번만 줘요.
   levels: [
-    { key: 'EASY',   name: '이지',  sec: 50, rewardDexNo: 192 },
-    { key: 'NORMAL', name: '노말',  sec: 60, rewardDexNo: 193 },
-    { key: 'HARD',   name: '하드',  sec: 70, rewardDexNo: 194 },
+    { key: 'EASY',   name: '이지',  sec: 50, rewardDexNo: 192, openAfterDays: 0 },
+    { key: 'NORMAL', name: '노말',  sec: 60, rewardDexNo: 193, openAfterDays: 3 },
+    { key: 'HARD',   name: '하드',  sec: 70, rewardDexNo: 194, openAfterDays: 5 },
   ],
 };
 
@@ -29,6 +36,34 @@ export function getEventStatus() {
   if (EVENT.startDate && today < EVENT.startDate) return 'upcoming';
   if (EVENT.endDate && today > EVENT.endDate) return 'ended';
   return 'open';
+}
+
+/** 난이도가 열리는 날짜 (startDate + openAfterDays, YYYY-MM-DD) */
+export function levelOpenDate(level) {
+  if (!EVENT.startDate) return null;
+  const d = new Date(EVENT.startDate + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + (level.openAfterDays || 0));
+  return d.toISOString().split('T')[0];
+}
+
+/** 'open' (할 수 있음) | 'locked' (아직 안 열림) | 'closed' (이벤트 끝/꺼짐) */
+export function getLevelState(level) {
+  const status = getEventStatus();
+  if (status === 'off' || status === 'ended') return 'closed';
+  if (status === 'upcoming') return 'locked';
+  const openDate = levelOpenDate(level);
+  return openDate && todayKST() < openDate ? 'locked' : 'open';
+}
+
+/** 오늘부터 날짜까지 남은 날 */
+export function daysUntil(dateStr) {
+  return Math.round((new Date(dateStr) - new Date(todayKST())) / 86400000);
+}
+
+/** 'YYYY-MM-DD' → '11월 5일' */
+export function formatKoreanDate(dateStr) {
+  const [, m, d] = dateStr.split('-').map(Number);
+  return `${m}월 ${d}일`;
 }
 
 /** 종료일까지 남은 날 (endDate 가 없으면 null) */

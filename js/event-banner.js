@@ -1,5 +1,5 @@
 // 홈의 이벤트 배너 (설정은 js/event-config.js)
-import { EVENT, getEventStatus, daysLeft } from './event-config.js';
+import { EVENT, getEventStatus, daysLeft, getLevelState, levelOpenDate, formatKoreanDate } from './event-config.js';
 import { db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 
@@ -16,6 +16,12 @@ export async function initEventBanner() {
   const left = daysLeft();
   let sub = status === 'upcoming' ? `${EVENT.startDate}부터 시작해요` : '난이도별로 클리어하면 카드를 받아요';
   if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
+  if (status === 'open') {
+    const next = EVENT.levels
+      .filter((l) => getLevelState(l) === 'locked' && levelOpenDate(l))
+      .sort((a, b) => levelOpenDate(a).localeCompare(levelOpenDate(b)))[0];
+    if (next) sub += ` · ${next.name} ${formatKoreanDate(levelOpenDate(next))} 오픈`;
+  }
   document.getElementById('eventBannerSub').textContent = sub;
   el.style.display = 'block';
 

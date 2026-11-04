@@ -15,6 +15,8 @@ function paintFace(el, card) {
   const keep = ['tilt', 'card--wobble'].filter((c) => el.classList.contains(c));
   el.className = [next.className, ...keep].join(' ');
   el.setAttribute('data-rarity', next.getAttribute('data-rarity'));
+  if (next.hasAttribute('data-theme')) el.setAttribute('data-theme', next.getAttribute('data-theme'));
+  else el.removeAttribute('data-theme');
   el.setAttribute('style', next.getAttribute('style') || '');
   el.innerHTML = next.innerHTML;
 }

@@ -62,13 +62,16 @@ export function renderCard(card) {
     category,
     memoryDate,
     hue = 30,
+    theme,
   } = card;
 
   const photoHtml = photoData
     ? `<img src="${photoData}" alt="${escapeHtml(title)}">`
     : '';
 
-  return `<article class="card" data-rarity="${escapeHtml(rarity)}" style="--h:${hue}">
+  const themeAttr = theme ? ` data-theme="${escapeHtml(theme)}"` : '';   // 특수 디자인 (예: muzan)
+
+  return `<article class="card" data-rarity="${escapeHtml(rarity)}"${themeAttr} style="--h:${hue}">
     <div class="card__in">
       <div class="card__photo">${photoHtml}<span class="card__no">${formatDexNo(dexNo)}</span></div>
       <div class="card__body">

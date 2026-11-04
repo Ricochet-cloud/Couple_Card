@@ -87,6 +87,14 @@
             </div>
 
             <div class="form-group">
+              <label for="cardTheme">특수 디자인 (선택)</label>
+              <select id="cardTheme">
+                <option value="">없음 (등급 디자인 그대로)</option>
+                <option value="muzan">무잔 — 핏빛 가시 촉수</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <div class="check-row">
                 <label><input type="checkbox" id="cardEventOnly"> 이벤트 전용 (뽑기·특별 뽑기·재조합 결과에서 제외, 이벤트 보상으로만 얻어요)</label>
               </div>
@@ -476,7 +484,7 @@
           // ----- 수정 -----
           const disguiseRaw = document.getElementById('cardDisguise').value;
           const disguiseDexNo = disguiseRaw === '' ? null : parseInt(disguiseRaw);
-          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate, disguiseDexNo, eventOnly: document.getElementById('cardEventOnly').checked };
+          const updates = { dexNo: finalDexNo, title, description, rarity, category, memoryDate, disguiseDexNo, eventOnly: document.getElementById('cardEventOnly').checked, theme: document.getElementById('cardTheme').value || null };
           if (photoData) {
             updates.photoData = photoData; // 새 사진을 골랐을 때만 교체
           } else if (document.getElementById('cardPhotoRemove').checked) {
@@ -508,6 +516,7 @@
               ? null
               : parseInt(document.getElementById('cardDisguise').value),
             eventOnly: document.getElementById('cardEventOnly').checked,
+            theme: document.getElementById('cardTheme').value || null,
           });
 
           showMessage('cardMessage', '카드가 추가되었습니다!', 'success');
@@ -548,6 +557,7 @@
       document.getElementById('cardMemoryDate').value = card.memoryDate || '';
       document.getElementById('cardDisguise').value = Number.isFinite(card.disguiseDexNo) ? card.disguiseDexNo : '';
       document.getElementById('cardEventOnly').checked = !!card.eventOnly;
+      document.getElementById('cardTheme').value = card.theme || '';
       document.getElementById('cardPhoto').value = '';
       document.getElementById('cardPhotoRemove').checked = false;
 
@@ -612,6 +622,7 @@
         ['추억 날짜', card.memoryDate || '-'],
         ['상태', card.active ? '활성' : '비활성'],
         ...(card.eventOnly ? [['이벤트 전용', '뽑기·재조합에서 제외']] : []),
+        ...(card.theme ? [['특수 디자인', card.theme]] : []),
         ['사진', card.photoData ? `있음 (약 ${photoKB}KB)` : '없음'],
         ['설명', card.description || '-'],
         ...(shifter ? [['변신 카드', `뽑기에서 ${formatDexNo(card.disguiseDexNo)} 카드로 변장`]] : []),

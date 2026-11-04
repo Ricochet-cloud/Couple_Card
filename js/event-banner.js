@@ -14,7 +14,7 @@ export async function initEventBanner() {
   }
 
   const left = daysLeft();
-  let sub = status === 'upcoming' ? `${EVENT.startDate}부터 시작해요` : '난이도별로 클리어하면 보상을 받아요';
+  let sub = status === 'upcoming' ? `${EVENT.startDate}부터 시작해요` : (EVENT.levels.length > 1 ? '난이도별로 클리어하면 보상을 받아요' : '클리어하면 보상을 받아요');
   if (status === 'open' && left !== null) sub += left === 0 ? ' · 오늘까지!' : ` · D-${left}`;
   if (status === 'open') {
     const next = EVENT.levels

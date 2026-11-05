@@ -821,10 +821,19 @@
   content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
   background: linear-gradient(115deg,
     #ff5ab4, #ffe15a, #5affc0, #5aa0ff, #c05aff, #ff5ab4) var(--mx, 50%) var(--my, 50%) / 300% 300%;
-  mix-blend-mode: color-dodge;
-  opacity: calc(var(--glare, 0) * 0.18);
+  mix-blend-mode: screen;   /* 어두운 바탕에서는 color-dodge 가 너무 세서 screen 으로 */
+  opacity: calc(var(--glare, 0) * 0.22);
   transition: opacity 0.3s;
   animation: none;
+}
+/* 울트라처럼 카드 전체를 비스듬히 훑고 지나가는 무지개 빛 */
+.card[data-theme="johakuten"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(115deg,
+    transparent 30%, rgba(255, 90, 180, 0.2) 38%, rgba(255, 240, 120, 0.3) 45%,
+    rgba(90, 255, 190, 0.22) 52%, rgba(90, 160, 255, 0.2) 59%, transparent 67%) 0 0 / 300% 100%;
+  mix-blend-mode: screen;
+  animation: holo 3.2s ease-in-out infinite;
 }
 /* 가운데 호박빛은 숨 쉬듯 */
 .card[data-theme="johakuten"] .card__photo { animation: johaBreath 4.2s ease-in-out infinite alternate; }
@@ -852,6 +861,9 @@
 
 /* 작은 칸에서는 바깥 이펙트를 숨기고 글리치·숨결도 멈춰요 */
 .cards-grid .card[data-theme="johakuten"]::before,
+.cards-grid .card[data-theme="johakuten"]::after,
+.ach-slot .card[data-theme="johakuten"]::after,
+.event-slot .card[data-theme="johakuten"]::after,
 .ach-slot .card[data-theme="johakuten"]::before,
 .event-slot .card[data-theme="johakuten"]::before { display: none; }
 .cards-grid .card[data-theme="johakuten"],
@@ -870,6 +882,7 @@
   to   { filter: brightness(1.2); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .card[data-theme="johakuten"]::after,
   .card[data-theme="johakuten"],
   .card[data-theme="johakuten"] .card__in,
   .card[data-theme="johakuten"] .card__photo { animation: none; }

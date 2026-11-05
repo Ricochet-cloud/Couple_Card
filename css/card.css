@@ -792,6 +792,60 @@
   .card.card--wobble .card__in { animation: none; }
 }
 
+/* ===== 카드 특수 디자인: 코쿠시보 (카드 데이터 theme: 'kokushibo') =====
+   남보라 프레임 가장자리에서 눈 여섯 개가 지켜보고, 모서리를 감싼 초승달 칼날이 빛나요(달의 호흡).
+   6초마다 초승달 참격이 카드를 비스듬히 가르고 가장자리를 훑고 지나가며, 그 순간 눈이 번쩍 떠요.
+   기울이면 달빛 은보라 빛이 따라와요. 히든 등급 위에 얹어서 써요. */
+.card[data-theme="kokushibo"] {
+  --f-dark: #07040f; --f-shade: #231046; --f-mid: #6a3fb0; --f-base: #140b26; --f-light: #b79bff; --f-hi: #efe4ff;
+  --gem: #d08cff;
+  --glow: 0 0 16px rgba(160, 100, 255, 0.5), 0 0 34px rgba(110, 50, 220, 0.35);
+  overflow: visible;
+}
+.card[data-theme="kokushibo"] .card__in { background: #0a0614; }
+/* 사진 자리: 보랏빛 밤 + 커다란 달 */
+.card[data-theme="kokushibo"] .card__photo {
+  background:
+    radial-gradient(circle at 74% 26%, rgba(226, 208, 255, 0.4) 0 9%, rgba(160, 110, 255, 0.12) 10% 22%, transparent 23%),
+    linear-gradient(165deg, #261450, #07040f);
+}
+.card[data-theme="kokushibo"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #07040f, inset 0 -5px 0 #6a3fb0, inset 0 -6px 0 #b79bff;
+}
+.card[data-theme="kokushibo"] .card__body {
+  position: relative;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(180, 120, 255, 0.05) 3px 4px), #0a0614;
+}
+.card[data-theme="kokushibo"] .card__title { color: #efe4ff; text-shadow: 0 0 8px rgba(170, 110, 255, 0.65), 0 1px 0 #000; }
+.card[data-theme="kokushibo"] .card__desc { color: #b9a9d9; }
+.card[data-theme="kokushibo"] .card__meta { color: #9a88bd; border-top-color: rgba(190, 140, 255, 0.35); }
+.card[data-theme="kokushibo"] .card__badge {
+  color: #d08cff; background: #07040f;
+  box-shadow: inset 0 0 0 1px #6a3fb0, 0 0 6px rgba(190, 120, 255, 0.5);
+}
+.card[data-theme="kokushibo"] .card__no { background: #0e0820; color: #d9bfff; box-shadow: inset 0 0 0 1px #6a3fb0; }
+/* 눈동자에 새겨진 글자처럼: 上弦 壱 */
+.card[data-theme="kokushibo"] .card__body::after {
+  content: '上弦 壱'; position: absolute; right: 8px; bottom: 7px;
+  font-size: 9px; letter-spacing: 0.1em; color: rgba(255, 80, 100, 0.75);
+  text-shadow: 0 0 5px rgba(255, 40, 70, 0.6); pointer-events: none;
+}
+/* 기울이면 달빛 은보라 */
+.tilt[data-theme="kokushibo"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(214, 190, 255, 0.5), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 눈 여섯 개 + 모서리 초승달 + 참격 (카드 밖까지 그려져요) */
+.card[data-theme="kokushibo"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cstyle%3E.ey%7Btransform-box:fill-box%3Btransform-origin:center%3Banimation:ey 6s ease-in-out infinite%7D%40keyframes ey%7B0%25%7Btransform:scaleY(.08)%7D12%25,30%25%7Btransform:scaleY(.55)%7D38%25%7Btransform:scaleY(1.25)%7D52%25%7Btransform:scaleY(.6)%7D88%25%7Btransform:scaleY(.6)%7D91%25%7Btransform:scaleY(.06)%7D95%25,100%25%7Btransform:scaleY(.6)%7D%7D.cr%7Banimation:cr 6s ease-in-out infinite%7D%40keyframes cr%7B0%25,100%25%7Bopacity:.5%7D40%25%7Bopacity:1%7D60%25%7Bopacity:.7%7D%7D.cs%7Bopacity:.4%7D.sl%7Btransform-box:fill-box%3Btransform-origin:0 50%25%3Bopacity:0%3Banimation:sl 6s linear infinite%7D%40keyframes sl%7B0%25,35%25%7Btransform:scaleX(0)%3Bopacity:0%7D37%25%7Btransform:scaleX(.04)%3Bopacity:1%7D43%25%7Btransform:scaleX(1)%3Bopacity:1%7D60%25%7Btransform:scaleX(1)%3Bopacity:0%7D100%25%7Btransform:scaleX(1)%3Bopacity:0%7D%7D.sl3%7Banimation-name:sl3%7D%40keyframes sl3%7B0%25,45%25%7Btransform:scaleX(0)%3Bopacity:0%7D47%25%7Btransform:scaleX(.04)%3Bopacity:1%7D52%25%7Btransform:scaleX(1)%3Bopacity:.9%7D66%25%7Btransform:scaleX(1)%3Bopacity:0%7D100%25%7Btransform:scaleX(1)%3Bopacity:0%7D%7D.eg%7Bopacity:0%3Banimation:eg1 6s linear infinite%7D.eg2%7Banimation-name:eg2%7D%40keyframes eg1%7B0%25,40%25%7Btransform:translateY(-45px)%3Bopacity:0%7D42%25%7Bopacity:1%7D56%25%7Btransform:translateY(150px)%3Bopacity:0%7D100%25%7Btransform:translateY(150px)%3Bopacity:0%7D%7D%40keyframes eg2%7B0%25,48%25%7Btransform:translateY(150px)%3Bopacity:0%7D50%25%7Bopacity:1%7D64%25%7Btransform:translateY(-45px)%3Bopacity:0%7D100%25%7Btransform:translateY(-45px)%3Bopacity:0%7D%7D.sh%7Bopacity:0%3Banimation:sh 5s ease-in-out infinite%7D%40keyframes sh%7B0%25,100%25%7Bopacity:0%7D50%25%7Bopacity:.85%7D%7D%40media (prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.ey%7Btransform:scaleY(.6)%7D.cr%7Bopacity:.8%7D.sl,.eg,.sh%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3CradialGradient id='ir'%3E%3Cstop offset='0' stop-color='%23ff7d8c'/%3E%3Cstop offset='.55' stop-color='%23e0132c'/%3E%3Cstop offset='1' stop-color='%235a0010'/%3E%3C/radialGradient%3E%3CradialGradient id='ms'%3E%3Cstop offset='0' stop-color='%233a1470' stop-opacity='.85'/%3E%3Cstop offset='1' stop-color='%233a1470' stop-opacity='0'/%3E%3C/radialGradient%3E%3ClinearGradient id='cg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f3e8ff'/%3E%3Cstop offset='.5' stop-color='%23b27bff'/%3E%3Cstop offset='1' stop-color='%236a3fb0'/%3E%3C/linearGradient%3E%3ClinearGradient id='sg'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='.35' stop-color='%23f6ecff'/%3E%3Cstop offset='.7' stop-color='%23b985ff'/%3E%3Cstop offset='1' stop-color='%237a3cff' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='sg2'%3E%3Cstop offset='0' stop-color='%239a5cff' stop-opacity='0'/%3E%3Cstop offset='.5' stop-color='%237a3cff' stop-opacity='.7'/%3E%3Cstop offset='1' stop-color='%234a1c9a' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='gl' filterUnits='userSpaceOnUse' x='-8' y='-8' width='116' height='156'%3E%3CfeGaussianBlur stdDeviation='1.2' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cellipse cx='22' cy='0' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cellipse cx='50' cy='-0.5' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cellipse cx='78' cy='0' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cellipse cx='22' cy='140' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cellipse cx='50' cy='140.5' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cellipse cx='78' cy='140' rx='17' ry='5.5' fill='url(%23ms)'/%3E%3Cg filter='url(%23gl)'%3E%3Cpath class='cr' d='M72,-3 A30,30 0 0 1 103,28 A24,24 0 0 0 72,-3Z' fill='url(%23cg)' style='animation-delay:0s'/%3E%3Cpath class='cr' d='M28,143 A30,30 0 0 1 -3,112 A24,24 0 0 0 28,143Z' fill='url(%23cg)' style='animation-delay:-1.5s'/%3E%3Cpath class='cr cs' d='M-3,16 A16,16 0 0 1 13,-3 A12,12 0 0 0 -3,16Z' fill='url(%23cg)' style='animation-delay:-0.8s'/%3E%3Cpath class='cr cs' d='M103,124 A16,16 0 0 1 87,143 A12,12 0 0 0 103,124Z' fill='url(%23cg)' style='animation-delay:-2.2s'/%3E%3Cpath class='sh' d='M0,0 Q4,-5 9,0 Q4.5,-2.2 0,0Z' fill='%23cfa8ff' style='transform:translate(4px,48px) rotate(-70deg)%3Banimation-delay:0s%3Banimation-duration:5s'/%3E%3Cpath class='sh' d='M0,0 Q4,-5 9,0 Q4.5,-2.2 0,0Z' fill='%23cfa8ff' style='transform:translate(95px,92px) rotate(100deg)%3Banimation-delay:-2s%3Banimation-duration:6s'/%3E%3Cpath class='sh' d='M0,0 Q4,-5 9,0 Q4.5,-2.2 0,0Z' fill='%23cfa8ff' style='transform:translate(12px,112px) rotate(-30deg)%3Banimation-delay:-3.3s%3Banimation-duration:5.5s'/%3E%3Cpath class='sh' d='M0,0 Q4,-5 9,0 Q4.5,-2.2 0,0Z' fill='%23cfa8ff' style='transform:translate(88px,30px) rotate(40deg)%3Banimation-delay:-1s%3Banimation-duration:6.5s'/%3E%3Cg transform='translate(22,0) scale(1.2)'%3E%3Cg class='ey' style='animation-delay:0s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(50,-0.5) scale(1.4)'%3E%3Cg class='ey' style='animation-delay:-0.2s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(78,0) scale(1.2)'%3E%3Cg class='ey' style='animation-delay:-0.1s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(22,140) scale(1.2)'%3E%3Cg class='ey' style='animation-delay:-0.15s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(50,140.5) scale(1.4)'%3E%3Cg class='ey' style='animation-delay:-0.05s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(78,140) scale(1.2)'%3E%3Cg class='ey' style='animation-delay:-0.25s'%3E%3Cpath d='M-6.5,0 Q0,-5 6.5,0 Q0,5 -6.5,0Z' fill='%23090108' stroke='%23ff4258' stroke-width='.45'/%3E%3Ccircle r='2.7' fill='url(%23ir)'/%3E%3Cellipse rx='.5' ry='2.3' fill='%23080006'/%3E%3Ccircle cx='-.9' cy='-1' r='.55' fill='%23ffd9de'/%3E%3C/g%3E%3C/g%3E%3Cpath class='eg eg1' d='M104.5,0 Q110.5,20 104.5,42 Q107.5,20 104.5,0Z' fill='url(%23sg)'/%3E%3Cpath class='eg eg2' d='M-4.5,0 Q-10.5,20 -4.5,42 Q-7.5,20 -4.5,0Z' fill='url(%23sg)'/%3E%3Cg transform='translate(-8,-5) rotate(53.6)'%3E%3Cpath class='sl' d='M0,0 Q96.5,-26 193,0 Q96.5,-7.8 0,0Z' fill='url(%23sg)' style='animation-delay:0s'/%3E%3C/g%3E%3Cg transform='translate(-8,-5) rotate(53.6)'%3E%3Cpath class='sl sl2' d='M0,0 Q96.5,-34 193,0 Q96.5,-10.2 0,0Z' fill='url(%23sg2)' style='animation-delay:0.12s'/%3E%3C/g%3E%3Cg transform='translate(108,22) rotate(126)'%3E%3Cpath class='sl sl3' d='M0,0 Q60.0,-14 120,0 Q60.0,-4.2 0,0Z' fill='url(%23sg)' style='animation-delay:0.45s'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 작은 칸에서는 바깥 이펙트를 숨겨요 */
+.cards-grid .card[data-theme="kokushibo"]::before,
+.ach-slot .card[data-theme="kokushibo"]::before,
+.event-slot .card[data-theme="kokushibo"]::before,
+.cards-grid .card[data-theme="kokushibo"] .card__body::after { display: none; }
+
 /* ===== 카드 특수 디자인: 조하쿠텐 (카드 데이터 theme: 'johakuten') =====
    희노애락이 네 모서리에서 속성 이펙트로 일렁이고(노=번개, 희=음파, 애=비, 락=바람, 각각 모서리를 ㄱ·ㄴ자로 감싸요), 프레임을 따라 호박색 균열이 빛나요.
    가끔 네 가지 색으로 어긋나는 RGB 글리치. 히든 등급 위에 얹어서 써요. */

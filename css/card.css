@@ -1000,6 +1000,75 @@
 .cards-grid .card[data-theme="akaza"] .card__body::after { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .card[data-theme="akaza"]::after { animation: none; opacity: 0; }
+/* ===== 카드 특수 디자인: 다키 & 규타로 (카드 데이터 theme: 'daki') =====
+   위쪽은 다키: 붉은 오비 띠가 가장자리를 휘감고 금빛이 반짝여요. 아래쪽은 규타로: 독 청록 프레임, 피 묻은 낫이 모서리를 감싸고 독·피 방울이 맺혀요.
+   6초마다 오비 띠가 카드를 가로로 휘감고 낫이 X로 교차하며 베어요. 영웅 등급 위에 얹어서 써요. */
+.card[data-theme="daki"] {
+  --f-dark: #1a0710; --f-shade: #5c1020; --f-mid: #c0283f; --f-base: #1d0a12; --f-light: #ffb86b; --f-hi: #fff3dc;
+  --gem: #ffd77a;
+  --glow: 0 0 14px rgba(255, 70, 100, 0.45), 0 0 28px rgba(40, 200, 170, 0.3);
+  overflow: visible;
+}
+.card[data-theme="daki"] .card__in { background: #12070d; }
+.card[data-theme="daki"] .card__photo {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 12%, rgba(255, 190, 90, 0.28), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 96%, rgba(40, 210, 170, 0.28), transparent 70%),
+    linear-gradient(180deg, #4a0b1d, #1a0a14 52%, #08262a);
+}
+.card[data-theme="daki"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #1a0710, inset 0 -5px 0 #1f9a8a, inset 0 -6px 0 #ffd77a;
+}
+.card[data-theme="daki"] .card__body {
+  position: relative;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 190, 110, 0.04) 3px 4px), linear-gradient(180deg, #1d0a12, #08201f);
+}
+.card[data-theme="daki"] .card__title { color: #fff3dc; text-shadow: 0 0 8px rgba(255, 90, 110, 0.6), 0 1px 0 #000; }
+.card[data-theme="daki"] .card__desc { color: #d3c0bb; }
+.card[data-theme="daki"] .card__meta { color: #a8958f; border-top-color: rgba(255, 190, 110, 0.4); }
+.card[data-theme="daki"] .card__badge {
+  color: #ffd77a; background: #12070d;
+  box-shadow: inset 0 0 0 1px #c0283f, 0 0 6px rgba(255, 190, 110, 0.5);
+}
+.card[data-theme="daki"] .card__no { background: #1a0710; color: #ffd77a; box-shadow: inset 0 0 0 1px #c0283f; }
+/* 눈동자에 새겨진 글자처럼: 上弦 陸 */
+.card[data-theme="daki"] .card__body::after {
+  content: '上弦 陸'; position: absolute; right: 8px; bottom: 7px;
+  font-size: 9px; letter-spacing: 0.1em; color: rgba(255, 215, 122, 0.85);
+  text-shadow: 0 0 5px rgba(255, 120, 90, 0.6); pointer-events: none;
+}
+/* 기울이면 위는 금빛, 아래는 독빛 */
+.tilt[data-theme="daki"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 214, 160, 0.5), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 오비 띠 + 낫 + 독·피 방울 + 참격 (카드 밖까지 그려져요) */
+.card[data-theme="daki"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cstyle%3E.rb1,.rb2%7Btransform-box:fill-box%3Btransform-origin:50%25 0%3Banimation:rbs 4s ease-in-out infinite alternate%7D.rb2%7Banimation-delay:-1.7s%7D%40keyframes rbs%7Bfrom%7Btransform:rotate(-1.2deg) translateY(0)%7Dto%7Btransform:rotate(1.2deg) translateY(1.2px)%7D%7D.th%7Banimation:th 1.8s linear infinite%7D%40keyframes th%7Bto%7Bstroke-dashoffset:-16%7D%7D.tw%7Btransform-box:fill-box%3Btransform-origin:center%3Banimation:tw 2.6s ease-in-out infinite%7D%40keyframes tw%7B0%25,100%25%7Btransform:scale(.3)%3Bopacity:.2%7D50%25%7Btransform:scale(1)%3Bopacity:1%7D%7D.sk%7Banimation:sk 6s ease-in-out infinite%7D%40keyframes sk%7B0%25,100%25%7Bopacity:.6%7D40%25%7Bopacity:1%7D%7D.pd%7Bopacity:0%3Banimation:pd 3s linear infinite%7D%40keyframes pd%7B0%25%7Btransform:translateY(0)%3Bopacity:0%7D15%25%7Bopacity:1%7D100%25%7Btransform:translateY(8px)%3Bopacity:0%7D%7D.sl%7Btransform-box:fill-box%3Btransform-origin:0 50%25%3Bopacity:0%3Banimation:sl 6s linear infinite%7D%40keyframes sl%7B0%25,37%25%7Btransform:scaleX(0)%3Bopacity:0%7D39%25%7Btransform:scaleX(.04)%3Bopacity:1%7D45%25%7Btransform:scaleX(1)%3Bopacity:1%7D62%25%7Btransform:scaleX(1)%3Bopacity:0%7D100%25%7Btransform:scaleX(1)%3Bopacity:0%7D%7D.ob%7Btransform-box:fill-box%3Btransform-origin:0 50%25%3Bopacity:0%3Banimation:ob 6s linear infinite%7D%40keyframes ob%7B0%25,34%25%7Btransform:scaleX(0)%3Bopacity:0%7D36%25%7Btransform:scaleX(.04)%3Bopacity:1%7D43%25%7Btransform:scaleX(1)%3Bopacity:1%7D60%25%7Btransform:scaleX(1)%3Bopacity:0%7D100%25%7Btransform:scaleX(1)%3Bopacity:0%7D%7D%40media (prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.sl,.ob,.pd%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3ClinearGradient id='rb'%3E%3Cstop offset='0' stop-color='%23ff4c68'/%3E%3Cstop offset='1' stop-color='%23a50f2c'/%3E%3C/linearGradient%3E%3ClinearGradient id='sv' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e8fff6'/%3E%3Cstop offset='.55' stop-color='%2358c9ac'/%3E%3Cstop offset='1' stop-color='%231b6a63'/%3E%3C/linearGradient%3E%3ClinearGradient id='sx'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='.35' stop-color='%23ffe8ec'/%3E%3Cstop offset='.7' stop-color='%23ff2e48'/%3E%3Cstop offset='1' stop-color='%23a50f2c' stop-opacity='0'/%3E%3C/linearGradient%3E%3CradialGradient id='pm'%3E%3Cstop offset='0' stop-color='%231fb59a' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%231fb59a' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cfilter id='gl' filterUnits='userSpaceOnUse' x='-8' y='-8' width='116' height='156'%3E%3CfeGaussianBlur stdDeviation='1.1' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cellipse cx='16' cy='141' rx='22' ry='6' fill='url(%23pm)'/%3E%3Cellipse cx='84' cy='141' rx='22' ry='6' fill='url(%23pm)'/%3E%3Cellipse cx='50' cy='144' rx='26' ry='6' fill='url(%23pm)'/%3E%3Cg filter='url(%23gl)'%3E%3Cg class='rb1'%3E%3Cpath d='M-6,4 C8,-6 20,10 34,2 S52,-4 62,4 L62,9 C52,2 40,6 34,8 S10,16 -6,10Z' fill='url(%23rb)' stroke='%23ffd77a' stroke-width='.35'/%3E%3Cpath d='M-6,10 C2,24 -3,38 4,56 L7.2,55 C1.5,38 6,24 0,9Z' fill='url(%23rb)' stroke='%23ffd77a' stroke-width='.3'/%3E%3Cpath class='th' d='M-6,7 C8,-1 20,13 34,5 S52,0 62,6' fill='none' stroke='%23ffd77a' stroke-width='.7' stroke-dasharray='5 3' stroke-linecap='round'/%3E%3Cpath class='th' d='M-3,12 C3,26 -1,38 5,54' fill='none' stroke='%23ffd77a' stroke-width='.6' stroke-dasharray='4 3' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(100,0) scale(-1,1)'%3E%3Cg class='rb2'%3E%3Cpath d='M-6,4 C8,-6 20,10 34,2 S52,-4 62,4 L62,9 C52,2 40,6 34,8 S10,16 -6,10Z' fill='url(%23rb)' stroke='%23ffd77a' stroke-width='.35'/%3E%3Cpath d='M-6,10 C2,24 -3,38 4,56 L7.2,55 C1.5,38 6,24 0,9Z' fill='url(%23rb)' stroke='%23ffd77a' stroke-width='.3'/%3E%3Cpath class='th' d='M-6,7 C8,-1 20,13 34,5 S52,0 62,6' fill='none' stroke='%23ffd77a' stroke-width='.7' stroke-dasharray='5 3' stroke-linecap='round'/%3E%3Cpath class='th' d='M-3,12 C3,26 -1,38 5,54' fill='none' stroke='%23ffd77a' stroke-width='.6' stroke-dasharray='4 3' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(70,10) scale(1)'%3E%3Cpath class='tw' style='animation-delay:0s' d='M0,-3 L.7,-.7 L3,0 L.7,.7 L0,3 L-.7,.7 L-3,0 L-.7,-.7Z' fill='%23ffd77a'/%3E%3C/g%3E%3Cg transform='translate(30,14) scale(0.8)'%3E%3Cpath class='tw' style='animation-delay:-1s' d='M0,-3 L.7,-.7 L3,0 L.7,.7 L0,3 L-.7,.7 L-3,0 L-.7,-.7Z' fill='%23ffd77a'/%3E%3C/g%3E%3Cg transform='translate(50,5) scale(0.9)'%3E%3Cpath class='tw' style='animation-delay:-2s' d='M0,-3 L.7,-.7 L3,0 L.7,.7 L0,3 L-.7,.7 L-3,0 L-.7,-.7Z' fill='%23ffd77a'/%3E%3C/g%3E%3Cg transform='translate(86,26) scale(0.7)'%3E%3Cpath class='tw' style='animation-delay:-0.5s' d='M0,-3 L.7,-.7 L3,0 L.7,.7 L0,3 L-.7,.7 L-3,0 L-.7,-.7Z' fill='%23ffd77a'/%3E%3C/g%3E%3Cg transform='translate(14,30) scale(0.7)'%3E%3Cpath class='tw' style='animation-delay:-1.6s' d='M0,-3 L.7,-.7 L3,0 L.7,.7 L0,3 L-.7,.7 L-3,0 L-.7,-.7Z' fill='%23ffd77a'/%3E%3C/g%3E%3Cg class='sk' style='animation-delay:0s'%3E%3Cpath d='M28,143 A30,30 0 0 1 -3,112 A24,24 0 0 0 28,143Z' fill='url(%23sv)' stroke='%23ff2a3a' stroke-width='.45'/%3E%3C/g%3E%3Cg class='sk' style='animation-delay:-1.5s'%3E%3Cpath d='M72,143 A30,30 0 0 0 103,112 A24,24 0 0 1 72,143Z' fill='url(%23sv)' stroke='%23ff2a3a' stroke-width='.45'/%3E%3C/g%3E%3Cg transform='translate(30,139)'%3E%3Cpath class='pd' style='animation-delay:0s%3Banimation-duration:3s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%235de0b0'/%3E%3C/g%3E%3Cg transform='translate(46,139)'%3E%3Cpath class='pd' style='animation-delay:-1s%3Banimation-duration:3.4s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%23ff3a4d'/%3E%3C/g%3E%3Cg transform='translate(62,139)'%3E%3Cpath class='pd' style='animation-delay:-2s%3Banimation-duration:2.8s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%235de0b0'/%3E%3C/g%3E%3Cg transform='translate(76,139)'%3E%3Cpath class='pd' style='animation-delay:-0.5s%3Banimation-duration:3.2s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%23ff3a4d'/%3E%3C/g%3E%3Cg transform='translate(8,126)'%3E%3Cpath class='pd' style='animation-delay:-1.4s%3Banimation-duration:3.6s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%235de0b0'/%3E%3C/g%3E%3Cg transform='translate(93,126)'%3E%3Cpath class='pd' style='animation-delay:-2.2s%3Banimation-duration:3.1s' d='M0,-2.4 C1.5,-.3 1.6,1.4 0,1.5 C-1.6,1.4 -1.5,-.3 0,-2.4Z' fill='%23ff3a4d'/%3E%3C/g%3E%3Cg transform='translate(-8,48)'%3E%3Cg class='ob'%3E%3Cpath d='M0,0 C30,-7 62,9 116,-3 L116,7 C62,17 30,1 0,7Z' fill='url(%23rb)' stroke='%23ffd77a' stroke-width='.5'/%3E%3Cpath d='M0,3.5 C30,-3 62,13 116,2' fill='none' stroke='%23ffd77a' stroke-width='.6' stroke-dasharray='4 3'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(2,76) rotate(35.8)'%3E%3Cpath class='sl' d='M0,0 Q54.0,-16 108,0 Q54.0,-4.8 0,0Z' fill='url(%23sx)' style='animation-delay:0s'/%3E%3C/g%3E%3Cg transform='translate(98,76) rotate(144.2)'%3E%3Cpath class='sl' d='M0,0 Q54.0,-16 108,0 Q54.0,-4.8 0,0Z' fill='url(%23sx)' style='animation-delay:0.15s'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 프레임 두 색: 위는 붉은 금, 아래는 독 청록 (가운데서 섞여요). 참격 순간 번쩍 */
+.card[data-theme="daki"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  border: 4px solid transparent;
+  background: linear-gradient(180deg, #ffcf6a 0%, #e0243c 38%, #8a2a5a 50%, #1f9a8a 62%, #0f4f4a 100%) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: dakiFlash 6s ease-out infinite;
+}
+@keyframes dakiFlash {
+  0%, 36%, 62%, 100% { filter: none; }
+  42% { filter: brightness(1.9) drop-shadow(0 0 5px rgba(255, 200, 120, 0.9)); }
+}
+/* 작은 칸에서는 바깥 이펙트를 숨겨요 */
+.cards-grid .card[data-theme="daki"]::before,
+.ach-slot .card[data-theme="daki"]::before,
+.event-slot .card[data-theme="daki"]::before,
+.cards-grid .card[data-theme="daki"] .card__body::after { display: none; }
+.cards-grid .card[data-theme="daki"]::after { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-theme="daki"]::after { animation: none; }
 }
 
 /* ===== 카드 특수 디자인: 무잔 (카드 데이터 theme: 'muzan') =====

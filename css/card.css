@@ -754,6 +754,76 @@
   .card[data-theme="douma"] .card__body::before { animation: none; }
 }
 
+/* ===== 카드 특수 디자인: 교쿠코 (카드 데이터 theme: 'gyokko') =====
+   청화백자 프레임에 금빛 균열(킨츠기), 가장자리 물결 사이를 헤엄치는 금붕어, 모서리의 항아리.
+   6초마다 항아리가 열려 물고기가 튀어나오고 천 개의 바늘(千本針)이 날아가요. 초희귀 등급 위에 얹어서 써요. */
+.card[data-theme="gyokko"] {
+  --f-dark: #0b2a5c; --f-shade: #1f4fa0; --f-mid: #3d78d6; --f-base: #eef3ff; --f-light: #fffdf5; --f-hi: #ffffff;
+  --gem: #ffd45a;
+  --glow: 0 0 14px rgba(110, 170, 255, 0.5), 0 0 26px rgba(255, 212, 90, 0.3);
+  overflow: visible;
+}
+.card[data-theme="gyokko"] .card__in { background: #f3f0e6; }
+/* 사진 자리: 항아리 속 물빛 */
+.card[data-theme="gyokko"] .card__photo {
+  background:
+    radial-gradient(ellipse 50% 35% at 30% 20%, rgba(190, 240, 255, 0.45), transparent 70%),
+    radial-gradient(ellipse 45% 30% at 78% 55%, rgba(120, 200, 255, 0.3), transparent 70%),
+    linear-gradient(175deg, #1c6a8f, #0d3b66 55%, #0a1f3d);
+}
+.card[data-theme="gyokko"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #0b2a5c, inset 0 -5px 0 #f4f8ff, inset 0 -6px 0 #ffd45a;
+}
+.card[data-theme="gyokko"] .card__body {
+  position: relative;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(61, 120, 214, 0.06) 3px 4px), #f3f0e6;
+}
+.card[data-theme="gyokko"] .card__title { color: #0f3a86; text-shadow: none; }
+.card[data-theme="gyokko"] .card__desc { color: #46506a; }
+.card[data-theme="gyokko"] .card__meta { color: #6a7390; border-top-color: rgba(61, 120, 214, 0.45); }
+.card[data-theme="gyokko"] .card__badge {
+  color: #0f3a86; background: #fffdf5;
+  box-shadow: inset 0 0 0 1px #3d78d6, 0 0 5px rgba(255, 212, 90, 0.7);
+}
+.card[data-theme="gyokko"] .card__no { background: #fffdf5; color: #0f3a86; box-shadow: inset 0 0 0 1px #3d78d6; }
+/* 눈동자에 새겨진 글자처럼: 上弦 伍 */
+.card[data-theme="gyokko"] .card__body::after {
+  content: '上弦 伍'; position: absolute; right: 8px; bottom: 7px;
+  font-size: 9px; letter-spacing: 0.1em; color: #1f4fa0;
+  text-shadow: 0 0 4px rgba(255, 212, 90, 0.8); pointer-events: none;
+}
+.tilt[data-theme="gyokko"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(150, 235, 255, 0.5), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 물결 + 금빛 균열 + 금붕어 + 항아리 + 바늘 (카드 밖까지 그려져요) */
+.card[data-theme="gyokko"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cstyle%3E.wv%7Banimation:wv 2s linear infinite%3Bopacity:.8%7D.wv2%7Banimation-direction:reverse%7D%40keyframes wv%7Bto%7Bstroke-dashoffset:-26%7D%7D.kg%7Banimation:kg 3s ease-in-out infinite%7D%40keyframes kg%7B0%25,100%25%7Bopacity:.65%7D50%25%7Bopacity:1%7D%7D.sw1%7Banimation:sw1 9s linear infinite%3Bopacity:0%7D%40keyframes sw1%7B0%25%7Btransform:translateX(0)%3Bopacity:0%7D8%25%7Bopacity:1%7D92%25%7Bopacity:1%7D100%25%7Btransform:translateX(124px)%3Bopacity:0%7D%7D.sw2%7Banimation:sw2 10s linear infinite%3Bopacity:0%7D%40keyframes sw2%7B0%25%7Btransform:translateX(0)%3Bopacity:0%7D8%25%7Bopacity:1%7D92%25%7Bopacity:1%7D100%25%7Btransform:translateX(-124px)%3Bopacity:0%7D%7D.tl%7Btransform-box:fill-box%3Btransform-origin:100%25 50%25%3Banimation:tl .5s ease-in-out infinite alternate%7D%40keyframes tl%7Bfrom%7Btransform:rotate(-14deg)%7Dto%7Btransform:rotate(14deg)%7D%7D.bb%7Bopacity:0%3Banimation:bb 6s linear infinite%7D%40keyframes bb%7B0%25%7Btransform:translateY(0)%3Bopacity:0%7D10%25%7Bopacity:.9%7D100%25%7Btransform:translateY(-28px)%3Bopacity:0%7D%7D.ld1%7Btransform-box:fill-box%3Btransform-origin:50%25 100%25%3Banimation:ld 6s ease-out infinite%7D%40keyframes ld%7B0%25,34%25%7Btransform:translateY(0) rotate(0)%7D38%25%7Btransform:translateY(-3.2px) rotate(-10deg)%7D50%25%7Btransform:translateY(-1.6px) rotate(-6deg)%7D58%25,100%25%7Btransform:translateY(0) rotate(0)%7D%7D.jf1%7Bopacity:0%3Banimation:jf1 6s ease-out infinite%7D%40keyframes jf1%7B0%25,36%25%7Btransform:translate(0,0)%3Bopacity:0%7D38%25%7Bopacity:1%7D44%25%7Btransform:translate(-10px,-12px) rotate(-30deg)%7D52%25%7Btransform:translate(-20px,-4px) rotate(20deg)%7D58%25%7Btransform:translate(-26px,8px) rotate(60deg)%3Bopacity:0%7D100%25%7Bopacity:0%7D%7D.jf2%7Bopacity:0%3Banimation:jf2 6s ease-out infinite%7D%40keyframes jf2%7B0%25,36%25%7Btransform:translate(0,0)%3Bopacity:0%7D38%25%7Bopacity:1%7D44%25%7Btransform:translate(10px,-12px) rotate(-30deg)%7D52%25%7Btransform:translate(20px,-4px) rotate(20deg)%7D58%25%7Btransform:translate(26px,8px) rotate(60deg)%3Bopacity:0%7D100%25%7Bopacity:0%7D%7D.nd%7Bstroke-dasharray:12 400%3Bstroke-dashoffset:12%3Bopacity:0%3Banimation:nd 6s linear infinite%7D%40keyframes nd%7B0%25,41%25%7Bstroke-dashoffset:12%3Bopacity:0%7D42%25%7Bopacity:1%7D52%25%7Bstroke-dashoffset:-136%3Bopacity:1%7D53%25,100%25%7Bstroke-dashoffset:-136%3Bopacity:0%7D%7D%40media (prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.nd,.jf1,.jf2,.bb,.sw1,.sw2%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3ClinearGradient id='nd'%3E%3Cstop offset='0' stop-color='%23e9f6ff'/%3E%3Cstop offset='1' stop-color='%237fb6ff'/%3E%3C/linearGradient%3E%3Cfilter id='gl' filterUnits='userSpaceOnUse' x='-8' y='-8' width='116' height='156'%3E%3CfeGaussianBlur stdDeviation='.9' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23gl)'%3E%3Cpath class='wv' d='M2.4,14 Q4.6,18 2.4,22 Q0.2,26 2.4,30 Q4.6,34 2.4,38 Q0.2,42 2.4,46 Q4.6,50 2.4,54 Q0.2,58 2.4,62 Q4.6,66 2.4,70 Q0.2,74 2.4,78 Q4.6,82 2.4,86 Q0.2,90 2.4,94 Q4.6,98 2.4,102 Q0.2,106 2.4,110 Q4.6,114 2.4,118 Q0.2,122 2.4,126' fill='none' stroke='%233d78d6' stroke-width='.8' stroke-linecap='round' stroke-dasharray='8 5'/%3E%3Cpath class='wv wv2' d='M97.6,14 Q95.4,18 97.6,22 Q99.8,26 97.6,30 Q95.4,34 97.6,38 Q99.8,42 97.6,46 Q95.4,50 97.6,54 Q99.8,58 97.6,62 Q95.4,66 97.6,70 Q99.8,74 97.6,78 Q95.4,82 97.6,86 Q99.8,90 97.6,94 Q95.4,98 97.6,102 Q99.8,106 97.6,110 Q95.4,114 97.6,118 Q99.8,122 97.6,126' fill='none' stroke='%233d78d6' stroke-width='.8' stroke-linecap='round' stroke-dasharray='8 5'/%3E%3Cpath class='kg' d='M-.6,38 L2.4,42 L-.2,46 L2.6,52 L.2,57' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath class='kg' d='M2.4,42 L5.4,43.5' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath class='kg' d='M100.6,84 L97.6,88 L100.4,92 L97.4,98 L100.2,103' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath class='kg' d='M97.6,88 L94.8,89.2' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath class='kg' d='M30,-.6 L33,2.4 L36,-.2 L40,2.6' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath class='kg' d='M64,140.6 L67,137.6 L70,140.2 L74,137.4' fill='none' stroke='%23ffd45a' stroke-width='.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cg transform='translate(2.4,0) rotate(90) scale(1.2)'%3E%3Cg class='sw1' style='animation-delay:0s%3Banimation-duration:9s'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath class='tl' d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Cpath d='M-.5,-1.8 Q0,-3.3 1.2,-2Z' fill='%23ffb066'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(2.4,0) rotate(90) scale(0.9)'%3E%3Cg class='sw1' style='animation-delay:-4.5s%3Banimation-duration:9s'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath class='tl' d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Cpath d='M-.5,-1.8 Q0,-3.3 1.2,-2Z' fill='%23ffb066'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(97.6,0) rotate(-90) scale(1.2)'%3E%3Cg class='sw2' style='animation-delay:-2s%3Banimation-duration:10s'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath class='tl' d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Cpath d='M-.5,-1.8 Q0,-3.3 1.2,-2Z' fill='%23ffb066'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(97.6,0) rotate(-90) scale(0.9)'%3E%3Cg class='sw2' style='animation-delay:-6.5s%3Banimation-duration:10s'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath class='tl' d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Cpath d='M-.5,-1.8 Q0,-3.3 1.2,-2Z' fill='%23ffb066'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3Ccircle class='bb' cx='18' cy='146' r='1' fill='none' stroke='%23bfe6ff' stroke-width='.4' style='animation-delay:0s%3Banimation-duration:6s'/%3E%3Ccircle class='bb' cx='40' cy='146' r='0.8' fill='none' stroke='%23bfe6ff' stroke-width='.4' style='animation-delay:-2s%3Banimation-duration:7s'/%3E%3Ccircle class='bb' cx='63' cy='146' r='1.1' fill='none' stroke='%23bfe6ff' stroke-width='.4' style='animation-delay:-4s%3Banimation-duration:6.5s'/%3E%3Ccircle class='bb' cx='84' cy='146' r='0.8' fill='none' stroke='%23bfe6ff' stroke-width='.4' style='animation-delay:-1s%3Banimation-duration:7.5s'/%3E%3Ccircle class='bb' cx='52' cy='146' r='0.7' fill='none' stroke='%23bfe6ff' stroke-width='.4' style='animation-delay:-5s%3Banimation-duration:8s'/%3E%3Cg transform='translate(93,12) scale(1.5,1.5)'%3E%3Cpath d='M-6,-2 C-8,3 -6,8 0,8 C6,8 8,3 6,-2Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Cpath d='M-6.9,2 Q0,4.6 6.9,2' fill='none' stroke='%233d78d6' stroke-width='.7'/%3E%3Cpath d='M-6.2,5 Q0,7.4 6.2,5' fill='none' stroke='%233d78d6' stroke-width='.5'/%3E%3Cpath d='M-3,-2 L-2.6,-5 H2.6 L3,-2Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Cg class='ld1'%3E%3Cpath d='M-3.8,-5 H3.8 L3,-7.4 H-3 Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Ccircle cy='-8' r='.8' fill='%23ffd45a'/%3E%3C/g%3E%3Cpath d='M-3,-2 H3' stroke='%23ffd45a' stroke-width='.5'/%3E%3C/g%3E%3Cg transform='translate(7,128) scale(-1.5,1.5)'%3E%3Cpath d='M-6,-2 C-8,3 -6,8 0,8 C6,8 8,3 6,-2Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Cpath d='M-6.9,2 Q0,4.6 6.9,2' fill='none' stroke='%233d78d6' stroke-width='.7'/%3E%3Cpath d='M-6.2,5 Q0,7.4 6.2,5' fill='none' stroke='%233d78d6' stroke-width='.5'/%3E%3Cpath d='M-3,-2 L-2.6,-5 H2.6 L3,-2Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Cg class='ld1'%3E%3Cpath d='M-3.8,-5 H3.8 L3,-7.4 H-3 Z' fill='%23f4f8ff' stroke='%232f5fb8' stroke-width='.5'/%3E%3Ccircle cy='-8' r='.8' fill='%23ffd45a'/%3E%3C/g%3E%3Cpath d='M-3,-2 H3' stroke='%23ffd45a' stroke-width='.5'/%3E%3C/g%3E%3Cg transform='translate(93,8)'%3E%3Cg class='jf1'%3E%3Cg transform='rotate(180)'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(7,124)'%3E%3Cg class='jf2'%3E%3Cpath d='M-3,0 Q0,-2.5 3,0 Q0,2.5 -3,0Z' fill='%23ff8a2a'/%3E%3Cpath d='M-3,0 L-5.8,-2.2 L-5.4,0 L-5.8,2.2Z' fill='%23ff6a1a'/%3E%3Ccircle cx='1.6' cy='-.5' r='.45' fill='%2313213a'/%3E%3C/g%3E%3C/g%3E%3Cpath class='nd' d='M76.6,5.7 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.0s'/%3E%3Cpath class='nd' d='M79.4,7.8 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.05s'/%3E%3Cpath class='nd' d='M82.3,9.8 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.1s'/%3E%3Cpath class='nd' d='M85.1,11.9 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.15000000000000002s'/%3E%3Cpath class='nd' d='M88.0,14.0 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.2s'/%3E%3Cpath class='nd' d='M90.9,16.1 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.25s'/%3E%3Cpath class='nd' d='M93.7,18.2 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.30000000000000004s'/%3E%3Cpath class='nd' d='M96.6,20.2 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.35000000000000003s'/%3E%3Cpath class='nd' d='M99.4,22.3 l-80,108' stroke='url(%23nd)' stroke-width='.55' stroke-linecap='round' fill='none' style='animation-delay:0.4s'/%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 항아리가 열릴 때 프레임이 금빛 물빛으로 번쩍 */
+.card[data-theme="gyokko"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  box-shadow: inset 0 0 0 3px #ffd45a, inset 0 0 14px rgba(120, 190, 255, 0.8), 0 0 18px rgba(120, 190, 255, 0.9);
+  opacity: 0; animation: gyokkoFlash 6s ease-out infinite;
+}
+@keyframes gyokkoFlash {
+  0%, 38% { opacity: 0; }
+  41% { opacity: 1; }
+  58%, 100% { opacity: 0; }
+}
+/* 작은 칸에서는 바깥 이펙트를 숨겨요 */
+.cards-grid .card[data-theme="gyokko"]::before,
+.cards-grid .card[data-theme="gyokko"]::after,
+.ach-slot .card[data-theme="gyokko"]::before,
+.ach-slot .card[data-theme="gyokko"]::after,
+.event-slot .card[data-theme="gyokko"]::before,
+.event-slot .card[data-theme="gyokko"]::after,
+.cards-grid .card[data-theme="gyokko"] .card__body::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-theme="gyokko"]::after { animation: none; opacity: 0; }
+}
+
 /* 변신 카드: 울렁울렁 (js/morph.js) */
 .card.card--wobble {
   animation: cardWobble 0.9s ease-in-out;

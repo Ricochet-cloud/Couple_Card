@@ -1000,6 +1000,8 @@
 .cards-grid .card[data-theme="akaza"] .card__body::after { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .card[data-theme="akaza"]::after { animation: none; opacity: 0; }
+}
+
 /* ===== 카드 특수 디자인: 다키 & 규타로 (카드 데이터 theme: 'daki') =====
    위쪽은 다키: 붉은 오비 띠가 가장자리를 휘감고 금빛이 반짝여요. 아래쪽은 규타로: 독 청록 프레임, 피 묻은 낫이 모서리를 감싸고 독·피 방울이 맺혀요.
    6초마다 오비 띠가 카드를 가로로 휘감고 낫이 X로 교차하며 베어요. 영웅 등급 위에 얹어서 써요. */

@@ -205,7 +205,7 @@
       if (!pending.length) { section.style.display = 'none'; return; }
       let names = {};
       if (pending.some((g) => g.dexNo)) {
-        try { (await getActiveCards()).forEach((c) => { names[c.dexNo] = c.name; }); } catch (e) { /* 이름 없이 번호만 */ }
+        try { (await getActiveCards()).forEach((c) => { names[c.dexNo] = c.title; }); } catch (e) { /* 이름 없이 번호만 */ }
       }
       document.getElementById('giftList').innerHTML = pending.map((g) => `
         <div class="gift-item">
@@ -231,7 +231,7 @@
           const got = [];
           if (r.tickets) got.push(`뽑기권 ${r.tickets}장`);
           if (r.specialTickets) got.push(`특별 뽑기권 ${r.specialTickets}장`);
-          if (r.card) got.push(`카드 「${r.card.name}」${r.isFirstTime ? ' (NEW!)' : ''}`);
+          if (r.card) got.push(`카드 「${r.card.title}」${r.isFirstTime ? ' (NEW!)' : ''}`);
           out.textContent = `🎉 ${got.join(' + ')}을(를) 받았어요!`;
         }
         await updateGiftUI();

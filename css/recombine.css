@@ -644,3 +644,13 @@
   border-radius: 4px;
   text-align: center;
 }
+
+/* 울트라 중복 교환 */
+.ultra-swap-desc { margin: 0 0 10px; font-family: 'Galmuri'; font-size: 12px; color: var(--text-muted); }
+.ultra-swap-btn {
+  margin-top: 6px; width: 100%; min-height: 44px; padding: 0 8px;
+  background: var(--gold); color: var(--text-dark);
+  border: 2px solid var(--wood-dark); box-shadow: 0 2px 0 var(--wood-dark);
+  font-family: 'Galmuri'; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.ultra-swap-btn:disabled { opacity: 0.5; cursor: default; }

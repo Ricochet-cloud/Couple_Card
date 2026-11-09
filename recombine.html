@@ -41,9 +41,9 @@
               <button class="rarity-btn" data-rarity="hero">영웅</button>
               <button class="rarity-btn" data-rarity="myth">신화</button>
               <button class="rarity-btn" data-rarity="legend">전설</button>
-              <button class="rarity-btn disabled" data-rarity="ultra" disabled>
+              <button class="rarity-btn" data-rarity="ultra">
                 <span class="rarity-btn-text">울트라</span>
-                <span class="rarity-btn-hint">최상위 등급</span>
+                <span class="rarity-btn-hint">중복 교환</span>
               </button>
             </div>
             <div class="rarity-hint" id="rarityHint" style="display: none;">
@@ -52,7 +52,7 @@
           </div>
 
           <!-- 재료 목록 -->
-          <div class="materials-section">
+          <div class="materials-section" id="materialsSection">
             <div class="materials-header">
               <h2>재료로 쓸 수 있는 카드</h2>
               <div class="materials-count" id="materialsCount">0장</div>
@@ -63,7 +63,7 @@
           </div>
 
           <!-- 재조합 슬롯 -->
-          <div class="combine-slots-section">
+          <div class="combine-slots-section" id="slotsSection">
             <div class="slots-header">
               <h2>재료 슬롯</h2>
               <div class="slots-progress" id="slotsProgress">0 / 3</div>
@@ -82,8 +82,19 @@
             <div class="slots-info" id="slotsInfo"></div>
           </div>
 
+          <!-- 울트라 중복 교환 (울트라를 고르면 위 세 구역 대신 보여요) -->
+          <div class="materials-section" id="ultraSwapSection" style="display: none;">
+            <div class="materials-header">
+              <h2>울트라 중복 교환</h2>
+              <div class="materials-count" id="ultraSwapCount">0장</div>
+            </div>
+            <p class="ultra-swap-desc">남는 울트라 카드 1장을 <b>특별 뽑기권 1장</b>으로 바꿔요. 카드는 최소 1장 남아요.</p>
+            <div class="materials-list" id="ultraSwapList"></div>
+            <div class="recombine-message" id="ultraSwapMessage"></div>
+          </div>
+
           <!-- 재조합 버튼 -->
-          <div class="recombine-button-section">
+          <div class="recombine-button-section" id="recombineSection">
             <button id="recombineBtn" class="recombine-button" disabled>
               재조합하기
             </button>
@@ -203,15 +214,18 @@
           btn.classList.add('active');
           currentRarity = btn.dataset.rarity;
           selectedMaterials = [];
+          const ultra = currentRarity === 'ultra';
+          document.getElementById('materialsSection').style.display = ultra ? 'none' : '';
+          document.getElementById('slotsSection').style.display = ultra ? 'none' : '';
+          document.getElementById('recombineSection').style.display = ultra ? 'none' : '';
+          document.getElementById('ultraSwapSection').style.display = ultra ? '' : 'none';
+          if (ultra) {
+            renderUltraSwap();
+            return;
+          }
           updateMaterialsList();
           updateSlotsUI();
         });
-      });
-
-      // 울트라 버튼
-      document.querySelector('[data-rarity="ultra"]').addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('rarityHint').style.display = 'block';
       });
 
       // 슬롯 클릭 (카드 제거)
@@ -307,6 +321,67 @@
 
       materialsList.innerHTML = `<div class="materials-grid">${html}</div>`;
     }
+
+    // ========== 울트라 중복 교환: 남는 1장 → 특별 뽑기권 1장 ==========
+    function renderUltraSwap() {
+      const list = document.getElementById('ultraSwapList');
+      const spare = allCards.filter((c) => c.rarity === 'ultra' && c.count >= 2);
+      document.getElementById('ultraSwapCount').textContent = `${spare.reduce((n, c) => n + (c.count - 1), 0)}장`;
+      if (!spare.length) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-text">교환할 중복 울트라가 없어요</div>
+          </div>`;
+        return;
+      }
+      list.innerHTML = `<div class="materials-grid">${spare.map((card) => `
+        <div class="material-card-item">
+          <div class="material-card-preview">${renderCard(card)}</div>
+          <div class="material-card-info">
+            <div class="material-card-available">남는 카드: ${card.count - 1}장</div>
+            <button type="button" class="ultra-swap-btn" data-swap="${escapeHtml(card.id)}">✨ 특별 뽑기권으로 교환</button>
+          </div>
+        </div>`).join('')}</div>`;
+    }
+
+    function showSwapMessage(text, type) {
+      const elem = document.getElementById('ultraSwapMessage');
+      elem.textContent = text;
+      elem.className = `recombine-message show ${type}`;
+      setTimeout(() => elem.classList.remove('show'), 5000);
+    }
+
+    async function swapUltra(cardId, btn) {
+      const card = allCards.find((c) => c.id === cardId);
+      if (!card || card.rarity !== 'ultra') return;
+      if (!confirm(`「${card.title}」 1장을 특별 뽑기권 1장으로 바꿀까요?`)) return;
+      btn.disabled = true;
+      try {
+        await runTransaction(db, async (tx) => {
+          const ref = doc(db, 'state', 'shared');
+          const snap = await tx.get(ref);
+          if (!snap.exists()) throw new Error('게임 상태를 찾을 수 없어요.');
+          const state = snap.data();
+          const owned = state.owned || {};
+          if (!owned[cardId] || owned[cardId].count < 2) throw new Error('남는 카드가 없어요.');
+          owned[cardId] = { ...owned[cardId], count: owned[cardId].count - 1 };
+          tx.update(ref, { owned, specialTickets: (state.specialTickets || 0) + 1 });
+        });
+        card.count -= 1;
+        renderUltraSwap();
+        showSwapMessage('특별 뽑기권 1장을 받았어요! 🎉', 'info');
+      } catch (error) {
+        console.error('울트라 교환 실패:', error);
+        showSwapMessage('교환 실패: ' + error.message, 'error');
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('ultraSwapList').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-swap]');
+      if (btn && !btn.disabled) swapUltra(btn.dataset.swap, btn);
+    });
 
     function updateSlotsUI() {
       const slots = document.querySelectorAll('.slot');

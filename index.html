@@ -56,6 +56,13 @@
         </div>
       </a>
 
+      <!-- 관리자의 선물 (받을 선물이 있을 때만 보여요) -->
+      <div class="home-section gift-section" id="giftSection" style="display: none;">
+        <h2>🎁 관리자의 선물</h2>
+        <div class="gift-list" id="giftList"></div>
+        <div class="gift-result" id="giftResult"></div>
+      </div>
+
       <!-- 방명록 -->
       <div class="home-section">
         <h2>💌 오늘의 방명록</h2>
@@ -145,6 +152,7 @@
     import { assignOrGetDailyQuiz, submitQuizAnswer } from './js/quiz.js';
     import { getTodayEntries, addEntry } from './js/guestbook.js';
     import { initEventBanner } from './js/event-banner.js';
+    import { loadGifts, claimGift } from './js/gift.js';
 
     // ========== 초기화 ==========
     initAuth(async (user) => {
@@ -175,9 +183,64 @@
       // 이벤트 배너 (실패해도 홈은 그대로)
       initEventBanner().catch((error) => console.warn('이벤트 배너 실패:', error));
 
+      // 관리자의 선물 (실패해도 홈은 그대로)
+      updateGiftUI().catch((error) => console.warn('선물 불러오기 실패:', error));
+
       // 이벤트 리스너
       setupEventListeners();
     }
+
+    // ----- 관리자의 선물 -----
+    function giftRewardText(g, cardName) {
+      const parts = [];
+      if (g.tickets) parts.push(`🎟 뽑기권 ${g.tickets}장`);
+      if (g.specialTickets) parts.push(`✨ 특별 뽑기권 ${g.specialTickets}장`);
+      if (g.dexNo) parts.push(`🃏 카드 No.${g.dexNo}${cardName ? ' ' + cardName : ''}`);
+      return parts.join(' + ');
+    }
+
+    async function updateGiftUI() {
+      const section = document.getElementById('giftSection');
+      const pending = (await loadGifts()).filter((g) => !g.claimedAt);
+      if (!pending.length) { section.style.display = 'none'; return; }
+      let names = {};
+      if (pending.some((g) => g.dexNo)) {
+        try { (await getActiveCards()).forEach((c) => { names[c.dexNo] = c.name; }); } catch (e) { /* 이름 없이 번호만 */ }
+      }
+      document.getElementById('giftList').innerHTML = pending.map((g) => `
+        <div class="gift-item">
+          <div class="gift-item__text">
+            <div class="gift-item__msg">${escapeHtml(g.message || '관리자가 선물을 보냈어요!')}</div>
+            <div class="gift-item__reward">${escapeHtml(giftRewardText(g, names[g.dexNo]))}</div>
+          </div>
+          <button type="button" class="gift-item__btn" data-gift="${escapeHtml(g.id)}">받기</button>
+        </div>`).join('');
+      section.style.display = 'block';
+    }
+
+    document.getElementById('giftList').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-gift]');
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      const out = document.getElementById('giftResult');
+      try {
+        const r = await claimGift(btn.dataset.gift);
+        if (r.already) {
+          out.textContent = '이미 받은 선물이에요.';
+        } else {
+          const got = [];
+          if (r.tickets) got.push(`뽑기권 ${r.tickets}장`);
+          if (r.specialTickets) got.push(`특별 뽑기권 ${r.specialTickets}장`);
+          if (r.card) got.push(`카드 「${r.card.name}」${r.isFirstTime ? ' (NEW!)' : ''}`);
+          out.textContent = `🎉 ${got.join(' + ')}을(를) 받았어요!`;
+        }
+        await updateGiftUI();
+        await updateUI();
+      } catch (error) {
+        out.textContent = `받기 실패: ${error.message}`;
+        btn.disabled = false;
+      }
+    });
 
     async function updateUI() {
       // 뽑기권

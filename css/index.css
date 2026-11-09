@@ -550,3 +550,25 @@ main {
   box-shadow: none;
   cursor: not-allowed;
 }
+
+/* 홈 · 관리자의 선물 */
+.gift-section { border-color: var(--gold); }
+.gift-list { display: flex; flex-direction: column; gap: 8px; }
+.gift-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; background: var(--bg-cream);
+  border: 2px solid var(--wood-dark); box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.2);
+  font-family: 'Galmuri';
+}
+.gift-item__text { flex: 1; min-width: 0; }
+.gift-item__msg { font-size: 13px; font-weight: 700; color: var(--text-dark); word-break: break-all; }
+.gift-item__reward { margin-top: 2px; font-size: 11px; color: var(--text-muted); }
+.gift-item__btn {
+  min-width: 64px; min-height: 44px; padding: 0 12px;
+  background: var(--gold); color: var(--text-dark);
+  border: 2px solid var(--wood-dark); box-shadow: 0 2px 0 var(--wood-dark);
+  font-family: 'Galmuri'; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.gift-item__btn:disabled { opacity: 0.5; cursor: default; }
+.gift-result { margin-top: 8px; font-family: 'Galmuri'; font-size: 12px; color: #b8651b; }
+.gift-result:empty { display: none; }

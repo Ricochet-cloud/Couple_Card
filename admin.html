@@ -245,6 +245,33 @@
             <button type="button" class="btn-primary" id="addCustomSpecialTickets" style="flex: 0 0 auto;">직접 입력</button>
           </div>
         </div>
+
+        <div class="form-section">
+          <h2>🎁 관리자의 선물 보내기</h2>
+          <p style="font-size: 12px; color: var(--mute); margin-bottom: 12px;">올려 두면 홈 화면 '관리자의 선물'에 나타나고, 받기를 누르면 지급돼요. 필요한 것만 채우세요.</p>
+          <div class="form-group">
+            <label for="giftMessage">한마디 (선택, 40자)</label>
+            <input type="text" id="giftMessage" maxlength="40" placeholder="예: 시험 고생했어!">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="giftTickets">뽑기권 (장)</label>
+              <input type="number" id="giftTickets" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="giftSpecialTickets">특별 뽑기권 (장)</label>
+              <input type="number" id="giftSpecialTickets" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="giftDexNo">카드 도감번호</label>
+              <input type="number" id="giftDexNo" min="1" placeholder="없으면 비움">
+            </div>
+          </div>
+          <button type="button" class="btn-primary" id="sendGiftBtn">선물 올리기</button>
+
+          <h3 style="margin: 20px 0 8px; font-size: 14px;">보낸 선물</h3>
+          <div id="giftList" style="font-size: 12px;"></div>
+        </div>
       </div>
 
       <!-- 카드 뒷면 탭 -->
@@ -335,6 +362,7 @@
       deleteQuiz,
     } from './js/admin.js';
     import { initState, getTickets, addTickets, getSpecialTickets, addSpecialTickets } from './js/state.js';
+    import { loadGifts, sendGift, deleteGift } from './js/gift.js';
 
     // 카드 목록(상세 보기용)과 수정 중인 카드
     let cardsCache = [];
@@ -362,6 +390,7 @@
         await loadMissions();
         await loadQuizzes();
         await loadTickets();
+        await loadGiftList();
         suggestNextDexNo();
       } catch (error) {
         console.error('초기화 실패:', error);
@@ -990,6 +1019,61 @@
         showMessage('ticketMessage', `뽑기권 ${amount}개를 지급했습니다.`, 'success');
       } catch (error) {
         showMessage('ticketMessage', `지급 실패: ${error.message}`, 'error');
+      }
+    });
+
+    // ----- 관리자의 선물 -----
+    function giftRewardText(g) {
+      const parts = [];
+      if (g.tickets) parts.push(`뽑기권 ${g.tickets}장`);
+      if (g.specialTickets) parts.push(`특별 뽑기권 ${g.specialTickets}장`);
+      if (g.dexNo) parts.push(`카드 No.${g.dexNo}`);
+      return parts.join(' + ');
+    }
+
+    async function loadGiftList() {
+      const el = document.getElementById('giftList');
+      try {
+        const gifts = (await loadGifts()).slice().reverse();
+        if (!gifts.length) { el.textContent = '아직 보낸 선물이 없어요.'; return; }
+        el.innerHTML = gifts.map((g) => `
+          <div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--mute);">
+            <div style="flex:1; min-width:0;">
+              <div>${escapeHtml(giftRewardText(g))}${g.message ? ' · ' + escapeHtml(g.message) : ''}</div>
+              <div style="color: var(--mute);">${escapeHtml(g.createdAt)} · ${g.claimedAt ? '✔ 받음 ' + escapeHtml(g.claimedAt) : '⏳ 아직 안 받음'}</div>
+            </div>
+            ${g.claimedAt ? '' : `<button type="button" class="btn-secondary" data-gift-del="${escapeHtml(g.id)}">삭제</button>`}
+          </div>`).join('');
+      } catch (error) {
+        el.textContent = `불러오기 실패: ${error.message}`;
+      }
+    }
+
+    document.getElementById('sendGiftBtn').addEventListener('click', async () => {
+      const num = (id) => parseInt(document.getElementById(id).value) || 0;
+      try {
+        await sendGift({
+          message: document.getElementById('giftMessage').value,
+          tickets: num('giftTickets'),
+          specialTickets: num('giftSpecialTickets'),
+          dexNo: num('giftDexNo') || null,
+        });
+        ['giftMessage', 'giftTickets', 'giftSpecialTickets', 'giftDexNo'].forEach((id) => { document.getElementById(id).value = ''; });
+        await loadGiftList();
+        showMessage('ticketMessage', '선물을 올렸어요. 홈 화면에서 받을 수 있어요.', 'success');
+      } catch (error) {
+        showMessage('ticketMessage', `선물 올리기 실패: ${error.message}`, 'error');
+      }
+    });
+
+    document.getElementById('giftList').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-gift-del]');
+      if (!btn) return;
+      try {
+        await deleteGift(btn.dataset.giftDel);
+        await loadGiftList();
+      } catch (error) {
+        showMessage('ticketMessage', `삭제 실패: ${error.message}`, 'error');
       }
     });
 

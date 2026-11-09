@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>한텐구 찾기</title>
+<style>
+:root{
+  --bg:#0d0f1a; --panel:#171a2c; --line:#2c3050; --ink:#f1ead7; --sub:#9aa0bd;
+  --accent:#e8b44c; --red:#e0574f; --green:#3fae7a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+#app{max-width:980px;margin:0 auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+
+/* HUD */
+#hud{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+  padding:8px 12px;border-radius:10px;font-size:14px}
+.stat{white-space:nowrap;color:var(--sub)}
+.stat b{color:var(--ink);font-size:16px;margin-left:4px}
+.timebar{flex:1;position:relative;height:22px;background:#0b0d18;border-radius:11px;overflow:hidden;min-width:80px}
+#timeFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--green);transition:background .3s}
+#timeFill.warn{background:#d9a13a}
+#timeFill.danger{background:var(--red)}
+#timeText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
+#tp{width:44px;height:44px;border-radius:8px;background:#232748;border:1px solid var(--line)}
+
+/* Stage */
+#stageBox{position:relative;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line)}
+#stageBox.shake{animation:shake .18s linear}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#scroller{overflow:auto;-webkit-overflow-scrolling:touch}
+#stage{position:relative;min-width:760px;width:100%;aspect-ratio:16/10}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:manipulation}
+
+/* Overlays */
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,10,20,.86);padding:12px;overflow:auto}
+.overlay.hidden{display:none}
+.overlay.solid{background:#0a0c18}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+  max-width:540px;width:100%;text-align:center}
+.card h1{margin:0 0 4px;font-size:26px;letter-spacing:1px}
+.card h2{margin:0 0 6px;font-size:22px}
+.card p{margin:6px 0;color:var(--sub);font-size:14px;line-height:1.5}
+.preview{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}
+#menuPreview{width:96px;height:96px;border-radius:12px;background:#232748;border:1px solid var(--line)}
+.preview span{font-size:13px;color:var(--ink);text-align:left;line-height:1.5}
+.diffs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+button{font:inherit;color:inherit;cursor:pointer}
+.diff{background:#20243f;border:1px solid var(--line);border-radius:10px;padding:10px 6px;display:flex;
+  flex-direction:column;gap:3px;align-items:center}
+.diff b{font-size:16px}
+.diff span{font-size:11px;color:var(--sub)}
+.diff em{font-style:normal;font-size:11px;color:var(--accent);min-height:14px}
+.diff:hover:not(:disabled){border-color:var(--accent)}
+.diff:disabled{opacity:.35;cursor:not-allowed}
+.btn{background:var(--accent);color:#1a1405;border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:15px}
+.btn.ghost{background:#20243f;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+#cdNum{font-size:88px;font-weight:800;color:var(--accent)}
+#cdSub{color:var(--sub);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0 0;text-align:left}
+.stats div{background:#20243f;border-radius:8px;padding:8px 10px;font-size:13px;color:var(--sub)}
+.stats b{display:block;color:var(--ink);font-size:18px;margin-top:2px}
+#rankBadge{display:inline-block;font-size:34px;font-weight:800;color:var(--accent);margin-left:8px}
+#syncMsg{margin-top:10px;font-size:12px;color:var(--green);min-height:16px}
+.note{margin-top:10px;font-size:11px;color:#6f7596}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <div class="stat">난이도<b id="hudDiff">-</b></div>
+    <div class="timebar"><div id="timeFill"></div><span id="timeText">0.0</span></div>
+    <canvas id="tp" width="88" height="88" title="찾는 대상"></canvas>
+    <div class="stat">점수<b id="hudScore">0</b></div>
+  </header>
+
+  <div id="stageBox">
+    <div id="scroller"><div id="stage"><canvas id="cv"></canvas></div></div>
+
+    <div id="menu" class="overlay">
+      <div class="card">
+        <h1>한텐구 찾기</h1>
+        <p>귀멸의 칼날 캐릭터들 사이에 숨은 한텐구를 찾아 클릭하세요.<br>빨리 찾을수록 점수가 높아져요. 틀리게 누르면 시간이 깎여요.</p>
+        <div class="preview">
+          <canvas id="menuPreview" width="192" height="192"></canvas>
+          <span>이 캐릭터를<br>찾아야 해요!</span>
+        </div>
+        <div class="diffs">
+          <button class="diff" data-d="EASY"><b>EASY</b><span id="info-EASY"></span><em id="best-EASY"></em></button>
+          <button class="diff" data-d="NORMAL"><b>NORMAL</b><span id="info-NORMAL"></span><em id="best-NORMAL"></em></button>
+          <button class="diff" data-d="HARD"><b>HARD</b><span id="info-HARD"></span><em id="best-HARD"></em></button>
+        </div>
+        <div id="placeholderNote" class="note" style="display:none">
+          지금은 임시 캐릭터예요. 코드 위쪽 ASSETS에 이미지 경로를 넣으면 교체돼요.
+        </div>
+      </div>
+    </div>
+
+    <div id="countdown" class="overlay solid hidden">
+      <div style="text-align:center">
+        <div id="cdNum">3</div>
+        <div id="cdSub">준비하세요!</div>
+      </div>
+    </div>
+
+    <div id="result" class="overlay hidden">
+      <div class="card">
+        <h2><span id="resTitle"></span><span id="rankBadge"></span></h2>
+        <p id="resSub"></p>
+        <div class="stats">
+          <div>점수<b id="resScore">0</b></div>
+          <div>걸린 시간<b id="resTime">-</b></div>
+          <div>오답 횟수<b id="resWrong">0</b></div>
+          <div>최고 점수<b id="resBest">0</b></div>
+        </div>
+        <div id="syncMsg"></div>
+        <div class="row">
+          <button class="btn" id="retryBtn">다시 도전 (배치 변경)</button>
+          <button class="btn ghost" id="menuBtn">난이도 선택</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../event-bridge.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* =====================================================
+ * ASSETS — 이미지를 직접 만들었다면 여기에 경로만 넣으면 돼요.
+ *  background : 배경 이미지 (가로형, 960x600 비율 권장)
+ *  target     : 찾아야 할 캐릭터 (배경 투명 PNG)
+ *  decoys     : 방해 캐릭터들 (배경 투명 PNG 여러 장일수록 좋음)
+ * 비워두면 임시 캐릭터/배경이 그려져요.
+ * ===================================================== */
+const ASSETS = {
+  background: 'assets/bg.png',        // 예: 'assets/bg.png'
+  target: 'assets/hantengu.png',            // 한텐구 1장. 예: 'assets/target.png'
+    decoySheets: [
+    { src: 'assets/sheet1.png', cols: 4, rows: 2 },
+    { src: 'assets/sheet2.png', cols: 4, rows: 2 },
+    { src: 'assets/sheet3.png', cols: 4, rows: 2 }   // 시트는 몇 장이든 추가 가능
+  ],
+  keyColor: '#FF00FF',     // 이 색 배경은 자동으로 투명 처리돼요 (이미 투명 PNG면 상관없음, 끄려면 null)
+  pixelGrid: 64            // 캐릭터를 이 크기의 픽셀 격자로 줄여 또렷하게 (끄려면 null)
+};
+
+/* 난이도 설정 */
+const DIFF = {
+  EASY:   { time:60, count:70,  decoyH:[54,74], targetH:70, cluster:0, penalty:2, maxScore:1000 },
+  NORMAL: { time:45, count:150, decoyH:[40,60], targetH:54, cluster:3, penalty:3, maxScore:2000 },
+  HARD:   { time:30, count:280, decoyH:[30,50], targetH:44, cluster:7, penalty:4, maxScore:3000 }
+};
+
+const W = 960, H = 600;
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
+/* ---------- 부모 사이트 연동 (iframe) ---------- */
+const params = new URLSearchParams(location.search);
+const EMBEDDED = window.parent !== window;
+let PARENT_ORIGIN = '*';
+if (params.get('parent')) {
+  PARENT_ORIGIN = params.get('parent');
+} else if (document.referrer) {
+  try { PARENT_ORIGIN = new URL(document.referrer).origin; } catch (e) {}
+}
+let sessionId = '';
+let allowed = ['EASY', 'NORMAL', 'HARD'];
+/* 이벤트 사이트에서 열면 그 난이도만 열려요 (event-bridge.js 가 주소의 ?d= 를 읽어요) */
+if (window.EventBridge && DIFF[EventBridge.difficulty]) allowed = [EventBridge.difficulty];
+
+function notifyParent(type, data) {
+  if (!EMBEDDED) return false;
+  try {
+    window.parent.postMessage(
+      Object.assign({ source: 'hantengu-finder', version: 1, type, sessionId }, data || {}),
+      PARENT_ORIGIN
+    );
+    return true;
+  } catch (e) { return false; }
+}
+
+window.addEventListener('message', e => {
+  if (e.source !== window.parent) return;
+  if (PARENT_ORIGIN !== '*' && e.origin !== PARENT_ORIGIN) return;
+  const m = e.data;
+  if (!m || m.target !== 'hantengu-finder' || m.type !== 'INIT') return;
+  if (typeof m.sessionId === 'string') sessionId = m.sessionId.slice(0, 64);
+  if (Array.isArray(m.allowed)) {
+    const a = m.allowed.filter(k => DIFF[k]);
+    if (a.length) allowed = a;
+    applyAllowed();
+  }
+});
+
+/* ---------- 에셋 로드 ---------- */
+let bgImg = null, targetItem = null, decoyItems = [];
+let PIXEL_BLOCKED = false;
+
+const FILL = 0.85;           // 한 칸에서 캐릭터가 차지하는 평균 비율 (크기 보정 기준)
+const KEY_TOL = 110;         // 배경색으로 볼 색 차이 허용치
+function parseColor(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+const KEY = parseColor(ASSETS.keyColor);
+
+/* 가장자리와 이어진 배경(투명 or 키 색)만 투명하게 — 캐릭터 안쪽의 같은 색은 보존 */
+function floodBackground(d) {
+  const w = d.width, h = d.height, data = d.data;
+  const seen = new Uint8Array(w * h);
+  const stack = new Int32Array(w * h);
+  let sp = 0;
+  const isBg = p => {
+    const i = p * 4;
+    if (data[i + 3] < 16) return true;
+    if (!KEY) return false;
+    const dr = data[i] - KEY[0], dg = data[i + 1] - KEY[1], db = data[i + 2] - KEY[2];
+    return dr * dr + dg * dg + db * db < KEY_TOL * KEY_TOL;
+  };
+  const push = p => { if (!seen[p] && isBg(p)) { seen[p] = 1; stack[sp++] = p; } };
+  for (let x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
+  while (sp) {
+    const p = stack[--sp];
+    data[p * 4 + 3] = 0;
+    const x = p % w;
+    if (x > 0) push(p - 1);
+    if (x < w - 1) push(p + 1);
+    if (p >= w) push(p - w);
+    if (p < w * (h - 1)) push(p + w);
+  }
+}
+
+/* 이미지(또는 시트의 한 칸)를 잘라서: 배경 제거 → 픽셀 격자로 축소 → 여백 제거 */
+function makeSprite(src, sx, sy, sw, sh) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(sw)); c.height = Math.max(1, Math.round(sh));
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  try {
+    const d = x.getImageData(0, 0, c.width, c.height);
+    floodBackground(d);
+    x.putImageData(d, 0, 0);
+  } catch (err) {
+    // file:// 로 직접 열면 브라우저가 픽셀 읽기를 막아요 → 가공 없이 원본 그대로 사용
+    PIXEL_BLOCKED = true;
+    return { canvas: c, ref: 1 };
+  }
+
+  let cur = c;
+  const g = ASSETS.pixelGrid;
+  if (g) {
+    const sc = g / Math.max(c.width, c.height);
+    if (sc < 1) {
+      const sm = document.createElement('canvas');
+      sm.width = Math.max(1, Math.round(c.width * sc)); sm.height = Math.max(1, Math.round(c.height * sc));
+      const sx2 = sm.getContext('2d', { willReadFrequently: true });
+      sx2.imageSmoothingEnabled = true; sx2.imageSmoothingQuality = 'high';
+      sx2.drawImage(c, 0, 0, sm.width, sm.height);
+      const dd = sx2.getImageData(0, 0, sm.width, sm.height);
+      for (let i = 3; i < dd.data.length; i += 4) dd.data[i] = dd.data[i] >= 128 ? 255 : 0;
+      sx2.putImageData(dd, 0, 0);
+      cur = sm;
+    }
+  }
+
+  const cx = cur.getContext('2d', { willReadFrequently: true });
+  const px = cx.getImageData(0, 0, cur.width, cur.height).data;
+  let minX = cur.width, minY = cur.height, maxX = -1, maxY = -1;
+  for (let yy = 0; yy < cur.height; yy++) {
+    for (let xx = 0; xx < cur.width; xx++) {
+      if (px[(yy * cur.width + xx) * 4 + 3] > 16) {
+        if (xx < minX) minX = xx; if (xx > maxX) maxX = xx;
+        if (yy < minY) minY = yy; if (yy > maxY) maxY = yy;
+      }
+    }
+  }
+  if (maxX < 0) return null;                      // 빈 칸
+  const bw = maxX - minX + 1, bh = maxY - minY + 1;
+  const out = document.createElement('canvas');
+  out.width = bw; out.height = bh;
+  out.getContext('2d').drawImage(cur, minX, minY, bw, bh, 0, 0, bw, bh);
+  return { canvas: out, ref: bh / cur.height };   // ref: 칸 대비 캐릭터 높이 비율
+}
+
+function loadImg(src) {
+  return new Promise(res => {
+    if (!src) return res(null);
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    im.src = src;
+  });
+}
+
+/* ---------- 임시 캐릭터 (에셋이 없을 때만 사용) ---------- */
+const HAIRS = ['#1b1b1f', '#3a2a1a', '#5a3b22', '#7a2f2f', '#2b3550', '#8d8d99'];
+const PATTERNS = ['solid', 'stripe', 'check', 'dots', 'haori'];
+const RED = '#c0392b';
+const SCARFS = [RED, '#2e86c1', '#27ae60', '#8e44ad', '#f39c12', '#ecf0f1'];
+
+const TARGET_V = { hue: 35, sat: 35, light: 42, hair: '#2a1d12', pattern: 'solid', hat: false, scarf: RED, band: true };
+
+function randomVariant(easy) {
+  const v = {
+    hue: Math.floor(rand(0, 360)), sat: rand(30, 60), light: rand(28, 52),
+    hair: pick(HAIRS), pattern: pick(PATTERNS),
+    hat: Math.random() < 0.18,
+    scarf: Math.random() < 0.22 ? pick(SCARFS) : null,
+    band: Math.random() < 0.14
+  };
+  if (v.band && v.scarf === RED) v.scarf = '#2e86c1';        // 표식 두 개를 동시에 가진 방해꾼은 없음
+  if (easy) { v.band = false; if (v.scarf === RED) v.scarf = '#2e86c1'; }
+  return v;
+}
+
+function drawPH(c, h, v) {
+  const w = h * 0.72;
+  c.fillStyle = 'rgba(0,0,0,.25)';
+  c.beginPath(); c.ellipse(0, h * 0.5, w * 0.45, h * 0.06, 0, 0, Math.PI * 2); c.fill();
+
+  const top = -h * 0.08, bot = h * 0.5, bw = w * 0.46;
+  c.beginPath();
+  c.moveTo(-bw * 0.7, top); c.lineTo(bw * 0.7, top); c.lineTo(bw, bot); c.lineTo(-bw, bot);
+  c.closePath();
+  c.fillStyle = `hsl(${v.hue},${v.sat}%,${v.light}%)`;
+  c.fill();
+
+  c.save(); c.clip();
+  const alt = `hsl(${(v.hue + 20) % 360},${v.sat}%,${Math.min(v.light + 22, 80)}%)`;
+  c.strokeStyle = alt; c.fillStyle = alt; c.lineWidth = Math.max(1, h * 0.03);
+  const step = Math.max(4, h * 0.1);
+  if (v.pattern === 'stripe') {
+    for (let x = -bw; x < bw; x += step) { c.beginPath(); c.moveTo(x, top); c.lineTo(x, bot); c.stroke(); }
+  } else if (v.pattern === 'check') {
+    for (let y = top, j = 0; y < bot; y += step, j++)
+      for (let x = -bw, i = 0; x < bw; x += step, i++)
+        if ((i + j) % 2 === 0) c.fillRect(x, y, step, step);
+  } else if (v.pattern === 'dots') {
+    for (let y = top + step / 2; y < bot; y += step)
+      for (let x = -bw + step / 2; x < bw; x += step) { c.beginPath(); c.arc(x, y, step * 0.18, 0, 7); c.fill(); }
+  } else if (v.pattern === 'haori') {
+    c.fillRect(-bw, top + (bot - top) * 0.65, bw * 2, (bot - top) * 0.35);
+  }
+  c.restore();
+
+  if (v.scarf) { c.fillStyle = v.scarf; c.fillRect(-bw * 0.75, top - h * 0.03, bw * 1.5, h * 0.09); }
+
+  const hr = h * 0.2, hy = -h * 0.3;
+  c.fillStyle = '#f1d3b5'; c.beginPath(); c.arc(0, hy, hr, 0, 7); c.fill();
+  c.fillStyle = v.hair; c.beginPath(); c.arc(0, hy, hr * 1.05, Math.PI * 1.02, Math.PI * 1.98); c.closePath(); c.fill();
+  if (v.hat) {
+    c.fillStyle = '#4a3b2a';
+    c.fillRect(-hr * 0.7, hy - hr * 1.4, hr * 1.4, hr * 0.8);
+    c.beginPath(); c.ellipse(0, hy - hr * 0.7, hr * 1.5, hr * 0.35, 0, 0, 7); c.fill();
+  }
+  if (v.band) { c.fillStyle = '#e8b44c'; c.fillRect(-hr * 0.95, hy - hr * 0.45, hr * 1.9, hr * 0.22); }
+  c.fillStyle = '#222';
+  const er = Math.max(0.8, h * 0.02);
+  c.beginPath(); c.arc(-hr * 0.38, hy + hr * 0.12, er, 0, 7); c.arc(hr * 0.38, hy + hr * 0.12, er, 0, 7); c.fill();
+}
+
+function mk(x, y, h, isTarget, easy) {
+  const s = { x, y, h, w: h * 0.72, flip: Math.random() < 0.5, isTarget, img: null, v: null };
+  const item = isTarget ? targetItem : (decoyItems.length ? pick(decoyItems) : null);
+  if (item) {
+    const k = Math.min(1.15, Math.max(0.55, item.ref / FILL));   // 캐릭터마다 실제 크기 차이 유지
+    s.img = item.canvas;
+    s.h = h * k;
+    s.w = s.h * item.canvas.width / item.canvas.height;
+  } else if (isTarget) {
+    s.v = TARGET_V;
+  } else {
+    s.v = randomVariant(easy);
+  }
+  return s;
+}
+
+function drawSprite(c, s) {
+  c.save();
+  c.translate(s.x, s.y);
+  if (s.flip) c.scale(-1, 1);
+  if (s.img) {
+    c.imageSmoothingEnabled = (s.h * DPR) < s.img.height;   // 확대할 땐 픽셀 그대로, 축소할 땐 부드럽게
+    c.drawImage(s.img, -s.w / 2, -s.h / 2, s.w, s.h);
+  } else drawPH(c, s.h, s.v);
+  c.restore();
+}
+
+/* ---------- 캔버스 ---------- */
+const cv = $('cv');
+cv.width = W * DPR; cv.height = H * DPR;
+const ctx = cv.getContext('2d');
+const scene = document.createElement('canvas');
+scene.width = W * DPR; scene.height = H * DPR;
+const sctx = scene.getContext('2d');
+
+function paintBackground(c) {
+  if (bgImg) {
+    const r = Math.max(W / bgImg.width, H / bgImg.height);
+    const w = bgImg.width * r, h = bgImg.height * r;
+    c.drawImage(bgImg, (W - w) / 2, (H - h) / 2, w, h);
+    return;
+  }
+  const g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#141a3a'); g.addColorStop(0.55, '#2b2a55'); g.addColorStop(1, '#1b2a2f');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#f4ecc8'; c.beginPath(); c.arc(rand(120, W - 120), rand(70, 130), 38, 0, 7); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.7)';
+  for (let i = 0; i < 60; i++) c.fillRect(rand(0, W), rand(0, H * 0.5), 1.5, 1.5);
+  for (let i = 0; i < 22; i++) {
+    c.fillStyle = 'rgba(20,48,40,' + rand(0.25, 0.5).toFixed(2) + ')';
+    c.fillRect(rand(0, W), 0, rand(6, 14), H);
+  }
+  c.fillStyle = 'rgba(14,26,22,.7)'; c.fillRect(0, H * 0.84, W, H * 0.16);
+}
+
+function renderScene(r) {
+  sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  sctx.clearRect(0, 0, W, H);
+  paintBackground(sctx);
+  if (r) r.sprites.forEach(s => drawSprite(sctx, s));
+}
+
+/* ---------- 라운드 생성 (매번 배치가 달라짐) ---------- */
+let lastPos = null;
+function buildRound(key) {
+  const d = DIFF[key];
+  const easy = key === 'EASY';
+  const th = d.targetH;
+  const margin = 24;
+  let tx, ty, tries = 0;
+  do {
+    tx = rand(margin + th * 0.5, W - margin - th * 0.5);
+    ty = rand(margin + th * 0.5, H - margin - th * 0.5);
+    tries++;
+  } while (lastPos && Math.hypot(tx - lastPos.x, ty - lastPos.y) < 220 && tries < 30);
+  lastPos = { x: tx, y: ty };
+
+  const target = mk(tx, ty, th, true, easy);
+  const sprites = [];
+  let guard = 0;
+  for (let i = 0; i < d.count && guard < 5000; guard++) {
+    const h = rand(d.decoyH[0], d.decoyH[1]);
+    const x = rand(h * 0.4, W - h * 0.4), y = rand(h * 0.5 + 10, H - h * 0.5);
+    if (easy && Math.hypot(x - tx, y - ty) < th * 0.9) continue;   // EASY는 겹치지 않게
+    sprites.push(mk(x, y, h, false, easy));
+    i++;
+  }
+  // NORMAL/HARD: 한텐구 주변에 방해꾼을 앞쪽에 배치해서 일부를 가림
+  for (let i = 0; i < d.cluster; i++) {
+    const h = rand(d.decoyH[0], d.decoyH[1]);
+    const a = rand(0, Math.PI * 2), r = rand(th * 0.25, th * 0.6);
+    sprites.push(mk(tx + Math.cos(a) * r, ty + Math.abs(Math.sin(a)) * r * 0.6 + th * 0.05, h, false, false));
+  }
+  sprites.push(target);
+  sprites.sort((a, b) => a.y - b.y);
+  if (easy) {
+    sprites.splice(sprites.indexOf(target), 1);
+    sprites.push(target);
+  }
+  // 한텐구가 너무 가려지면 앞을 가린 캐릭터를 한텐구 뒤로 보냄 (최소 보이는 비율 보장)
+  for (let n = 0; n < 40; n++) {
+    const { ratio, front } = visibleRatio(target, sprites);
+    if (ratio >= MIN_VISIBLE[key] || !front.length) break;
+    front.sort((a, b) => Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y));
+    const f = front[0];
+    sprites.splice(sprites.indexOf(f), 1);
+    sprites.splice(sprites.indexOf(target), 0, f);
+  }
+  return { d, key, target, sprites };
+}
+
+/* 한텐구가 보이는 비율 (최소값은 난이도별로 다름) */
+const MIN_VISIBLE = { EASY: 1, NORMAL: 0.75, HARD: 0.6 };
+
+function visibleRatio(target, sprites) {
+  const idx = sprites.indexOf(target);
+  const front = sprites.slice(idx + 1).filter(s =>
+    Math.abs(s.x - target.x) < (s.w + target.w) / 2 && Math.abs(s.y - target.y) < (s.h + target.h) / 2);
+  if (!front.length) return { ratio: 1, front };
+
+  const bw = Math.ceil(target.w) + 2, bh = Math.ceil(target.h) + 2;
+  const ox = bw / 2 - target.x, oy = bh / 2 - target.y;
+  try {
+    // 실제 모양(투명도) 기준으로 계산
+    const layer = list => {
+      const c = document.createElement('canvas');
+      c.width = bw; c.height = bh;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      list.forEach(s => drawSprite(x, Object.assign({}, s, { x: s.x + ox, y: s.y + oy })));
+      return x.getImageData(0, 0, bw, bh).data;
+    };
+    const a = layer([target]), b = layer(front);
+    let total = 0, hidden = 0;
+    for (let i = 3; i < a.length; i += 4) {
+      if (a[i] > 40) { total++; if (b[i] > 40) hidden++; }
+    }
+    return { ratio: total ? 1 - hidden / total : 1, front };
+  } catch (err) {
+    // 픽셀을 읽을 수 없을 때(file://)는 대략적인 사각형 기준으로 계산
+    const N = 12;
+    let total = 0, hidden = 0;
+    for (let gy = 0; gy < N; gy++) {
+      for (let gx = 0; gx < N; gx++) {
+        const px = target.x - target.w / 2 + (gx + 0.5) * target.w / N;
+        const py = target.y - target.h / 2 + (gy + 0.5) * target.h / N;
+        total++;
+        if (front.some(s => Math.abs(px - s.x) < s.w * 0.35 && Math.abs(py - s.y) < s.h * 0.45)) hidden++;
+      }
+    }
+    return { ratio: 1 - hidden / total, front };
+  }
+}
+
+/* ---------- 게임 상태 ---------- */
+let state = 'menu';          // menu | countdown | playing | ended
+let round = null, currentDiff = 'NORMAL';
+let timeLeft = 0, playTime = 0, wrongs = 0, roundId = '';
+let fx = [], lastT = 0, cdTimer = null;
+
+const BEST_KEY = 'hantengu_best_v1';
+function loadBest() { try { return JSON.parse(localStorage.getItem(BEST_KEY)) || {}; } catch (e) { return {}; } }
+function saveBest(b) { try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (e) {} }
+
+const show = el => el.classList.remove('hidden');
+const hide = el => el.classList.add('hidden');
+
+function updateTimeHud() {
+  const d = DIFF[currentDiff];
+  const p = Math.max(0, timeLeft / d.time);
+  const fill = $('timeFill');
+  fill.style.width = (p * 100) + '%';
+  fill.className = p < 0.25 ? 'danger' : (p < 0.5 ? 'warn' : '');
+  $('timeText').textContent = timeLeft.toFixed(1) + '초';
+}
+
+function drawPreview(canvas, size) {
+  canvas.width = size * 2; canvas.height = size * 2;
+  const c = canvas.getContext('2d');
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.clearRect(0, 0, size, size);
+  const s = mk(size / 2, size / 2, size * 0.78, true, false);
+  s.flip = false;
+  drawSprite(c, s);
+}
+
+function startGame(key) {
+  if (!allowed.includes(key)) return;
+  clearInterval(cdTimer);
+  currentDiff = key;
+  round = buildRound(key);
+  renderScene(round);
+  timeLeft = round.d.time; playTime = 0; wrongs = 0; fx = [];
+  roundId = uid();
+  hide($('menu')); hide($('result')); show($('countdown'));
+  $('hudDiff').textContent = key;
+  $('hudScore').textContent = '0';
+  updateTimeHud();
+  state = 'countdown';
+  let n = 3;
+  $('cdNum').textContent = n; $('cdSub').textContent = '준비하세요!';
+  cdTimer = setInterval(() => {
+    n--;
+    if (n > 0) { $('cdNum').textContent = n; return; }
+    clearInterval(cdTimer);
+    hide($('countdown'));
+    state = 'playing';
+    lastT = performance.now();
+    notifyParent('START', { difficulty: key, roundId });
+  }, 700);
+}
+
+function showMenu() {
+  clearInterval(cdTimer);
+  state = 'menu';
+  hide($('result')); hide($('countdown')); show($('menu'));
+  refreshMenu();
+}
+
+function refreshMenu() {
+  const best = loadBest();
+  for (const k of Object.keys(DIFF)) {
+    const d = DIFF[k];
+    $('info-' + k).textContent = `${d.time}초 · 캐릭터 ${d.count}명`;
+    $('best-' + k).textContent = best[k] ? `최고 ${best[k]}점` : '';
+  }
+  applyAllowed();
+}
+
+function applyAllowed() {
+  document.querySelectorAll('.diff').forEach(b => { b.disabled = !allowed.includes(b.dataset.d); });
+}
+
+function rankOf(ratio) { return ratio >= 0.7 ? 'S' : ratio >= 0.45 ? 'A' : ratio >= 0.2 ? 'B' : 'C'; }
+
+function finish(success) {
+  if (state !== 'playing') return;
+  state = 'ended';
+  const d = round.d, t = round.target;
+  const ratio = Math.max(0, timeLeft) / d.time;
+  const score = success ? Math.round(d.maxScore * (0.3 + 0.7 * ratio)) : 0;
+  const rank = success ? rankOf(ratio) : '-';
+  const best = loadBest();
+  if (success && score > (best[currentDiff] || 0)) { best[currentDiff] = score; saveBest(best); }
+
+  fx.push({ type: 'mark', x: t.x, y: t.y, r: Math.max(t.w, t.h) * 0.75, t: 0, life: Infinity,
+            color: success ? '#e8b44c' : '#ff6b6b' });
+  $('hudScore').textContent = score;
+  updateTimeHud();
+
+  const result = {
+    roundId, difficulty: currentDiff, success, score, maxScore: d.maxScore, rank,
+    timeLimit: d.time, timeLeft: +Math.max(0, timeLeft).toFixed(2),
+    playTime: +playTime.toFixed(2), wrongClicks: wrongs
+  };
+  const sent = notifyParent('RESULT', result);
+  if (window.EventBridge) EventBridge.report(success === true);   // 클리어하면 사이트가 보상을 줘요
+
+  setTimeout(() => {
+    $('resTitle').textContent = success ? '찾았다!' : '시간 초과…';
+    $('rankBadge').textContent = success ? rank : '';
+    $('resSub').textContent = success ? '한텐구를 찾아냈어요.' : '한텐구는 표시된 곳에 숨어 있었어요.';
+    $('resScore').textContent = score;
+    $('resTime').textContent = success ? playTime.toFixed(1) + '초' : '-';
+    $('resWrong').textContent = wrongs + '회';
+    $('resBest').textContent = (loadBest()[currentDiff] || 0) + '점';
+    $('syncMsg').textContent = sent ? (success ? '결과를 이벤트 사이트로 보냈어요. 보상은 사이트에서 확인하세요!' : '결과를 이벤트 사이트로 보냈어요.') : '';
+    show($('result'));
+  }, success ? 900 : 1500);
+}
+
+function wrongClick(x, y) {
+  const pen = round.d.penalty;
+  wrongs++;
+  timeLeft = Math.max(0, timeLeft - pen);
+  fx.push({ type: 'ring', x, y, t: 0, life: 0.45, r0: 6, r1: 30, color: '#ff5a52' });
+  fx.push({ type: 'text', x, y: y - 10, t: 0, life: 0.8, text: `-${pen}초`, color: '#ff8a84' });
+  const box = $('stageBox');
+  box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+  if (navigator.vibrate) navigator.vibrate(40);
+  updateTimeHud();
+  if (timeLeft <= 0) finish(false);
+}
+
+cv.addEventListener('click', e => {
+  if (state !== 'playing') return;
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX - r.left) * W / r.width;
+  const y = (e.clientY - r.top) * H / r.height;
+  const t = round.target;
+  const hw = Math.max(t.w / 2, 16) + 3, hh = Math.max(t.h / 2, 16) + 3;
+  if (Math.abs(x - t.x) <= hw && Math.abs(y - t.y) <= hh) {
+    fx.push({ type: 'ring', x: t.x, y: t.y, t: 0, life: 0.6, r0: 10, r1: 70, color: '#e8b44c' });
+    finish(true);
+  } else {
+    wrongClick(x, y);
+  }
+});
+
+/* ---------- 렌더 루프 ---------- */
+function frame(t) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, Math.max(0, (t - lastT) / 1000));
+  lastT = t;
+
+  if (state === 'playing') {
+    timeLeft -= dt; playTime += dt;
+    if (timeLeft <= 0) { timeLeft = 0; updateTimeHud(); finish(false); }
+    else updateTimeHud();
+  }
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(scene, 0, 0, W, H);
+
+  for (const f of fx) {
+    f.t += dt;
+    const p = f.life === Infinity ? 0 : Math.min(1, f.t / f.life);
+    if (f.type === 'ring') {
+      ctx.globalAlpha = 1 - p;
+      ctx.strokeStyle = f.color; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r0 + (f.r1 - f.r0) * p, 0, 7); ctx.stroke();
+    } else if (f.type === 'text') {
+      ctx.globalAlpha = 1 - p;
+      ctx.fillStyle = f.color; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+      ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3;
+      ctx.strokeText(f.text, f.x, f.y - p * 24); ctx.fillText(f.text, f.x, f.y - p * 24);
+    } else if (f.type === 'mark') {
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = f.color; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r + Math.sin(f.t * 6) * 4, 0, 7); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  fx = fx.filter(f => f.life === Infinity || f.t < f.life);
+}
+
+/* ---------- 버튼 ---------- */
+document.querySelectorAll('.diff').forEach(b => b.addEventListener('click', () => startGame(b.dataset.d)));
+$('retryBtn').addEventListener('click', () => startGame(currentDiff));
+$('menuBtn').addEventListener('click', showMenu);
+
+/* ---------- 시작 ---------- */
+Promise.all([
+  loadImg(ASSETS.background),
+  loadImg(ASSETS.target),
+  Promise.all((ASSETS.decoys || []).map(loadImg)),
+  Promise.all((ASSETS.decoySheets || []).map(s => loadImg(s.src)))
+])
+  .then(([bg, tg, dc, sheets]) => {
+    bgImg = bg;
+    targetItem = tg ? makeSprite(tg, 0, 0, tg.width, tg.height) : null;
+    decoyItems = [];
+    dc.forEach(im => {
+      if (!im) return;
+      const it = makeSprite(im, 0, 0, im.width, im.height);
+      if (it) decoyItems.push(it);
+    });
+    sheets.forEach((im, i) => {
+      if (!im) return;
+      const cols = ASSETS.decoySheets[i].cols || 4, rows = ASSETS.decoySheets[i].rows || 2;
+      const cw = im.width / cols, ch = im.height / rows;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const it = makeSprite(im, c * cw, r * ch, cw, ch);
+          if (it) decoyItems.push(it);
+        }
+      }
+    });
+    const note = $('placeholderNote');
+    if (PIXEL_BLOCKED) {
+      note.style.display = 'block';
+      note.style.color = '#ff8a84';
+      note.textContent = '⚠ 파일을 더블클릭(file://)으로 열어서 배경 제거·자르기를 쓸 수 없어요. 폴더에서 "python -m http.server" 실행 후 http://localhost:8000 으로 열어주세요.';
+    } else if (!targetItem || !decoyItems.length) {
+      note.style.display = 'block';
+      const miss = [];
+      if (!bgImg && ASSETS.background) miss.push('배경');
+      if (!targetItem && ASSETS.target) miss.push('한텐구');
+      if (!decoyItems.length && (ASSETS.decoySheets.length || ASSETS.decoys.length)) miss.push('방해 캐릭터(시트 경로 확인)');
+      note.textContent = miss.length ? '불러오지 못한 이미지: ' + miss.join(', ') + ' — 해당 부분은 임시 그림으로 표시돼요.'
+                                     : '지금은 임시 캐릭터예요. 코드 위쪽 ASSETS에 이미지 경로를 넣으면 교체돼요.';
+    }
+    renderScene(null);
+    drawPreview($('menuPreview'), 96);
+    drawPreview($('tp'), 44);
+    refreshMenu();
+    requestAnimationFrame(frame);
+    notifyParent('READY', { difficulties: Object.keys(DIFF) });
+  });
+})();
+</script>
+</body>
+</html>

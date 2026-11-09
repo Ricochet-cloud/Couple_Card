@@ -2,12 +2,12 @@
 // 이벤트를 완전히 지울 때: event.html, event/ 폴더, css/event.css, js/event*.js,
 //                          index.html 의 '이벤트 배너' 블록과 event-banner import/호출 을 지우면 끝이에요.
 export const EVENT = {
-  id: 'boss',                        // 수령 기록 이름 (state.events.boss) — 바꾸지 마세요
+  id: 'hantengu',                    // 수령 기록 이름 (state.events.hantengu) — 바꾸지 마세요
   enabled: true,                      // false 면 홈 배너가 사라지고 이벤트 페이지도 닫혀요
-  title: '조하쿠텐 격파전',
-  startDate: '2026-11-05',            // 이 날부터 열려요 (한국 시간, YYYY-MM-DD)
-  endDate: '2026-11-07',                      // 이 날까지 열려요. null 이면 기간 제한 없음
-  gamePath: './event/boss/boss-battle.html',
+  title: '한텐구 찾기',
+  startDate: '2026-11-09',            // 이 날부터 열려요 (한국 시간, YYYY-MM-DD)
+  endDate: '2026-11-16',                      // 이 날까지 열려요. null 이면 기간 제한 없음
+  gamePath: './event/hantengu/hantengu-finder.html',
 
   // 난이도별 보상 카드 (도감번호). 관리자에서 '이벤트 전용'을 체크해 두세요.
   //   key            : 게임이 쓰는 난이도 이름 (게임의 ?d= 값, 결과 메시지의 difficulty 와 같아야 해요)
@@ -23,7 +23,10 @@ export const EVENT = {
   //
   // ※ 클리어한 난이도도 계속 '다시 하기'로 할 수 있어요. 보상은 난이도마다 한 번만 줘요.
   levels: [
-    { key: 'MAIN', name: '조하쿠텐 격파', desc: '보스를 쓰러뜨려요', rewardDexNo: 203 },
+    // ※ 보상은 임시 값이에요. 원하는 카드 번호(rewardDexNo)나 뽑기권 장수로 바꿔 주세요.
+    { key: 'EASY',   name: 'EASY',   desc: '60초 · 한텐구를 찾아요',               rewardTickets: 5 },
+    { key: 'NORMAL', name: 'NORMAL', desc: '45초 · 캐릭터가 더 많아요',            rewardTickets: 7, openAfterDays: 3 },
+    { key: 'HARD',   name: 'HARD',   desc: '30초 · 캐릭터가 아주 많고 작아요',     rewardTickets: 9, openAfterDays: 5 },
   ],
 };
 

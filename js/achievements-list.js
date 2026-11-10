@@ -131,5 +131,14 @@ export const ACHIEVEMENTS = [
     dexNos: [192,193,194],
     rewardDexNo: 1011,
   },
-
+ // 토미에
+  {
+    id: 'tomi-e',
+    icon: '🪓',
+    title: '마성의 그녀',
+    description: '하남자들을 전부 모으세요',
+    type: 'collectSet',
+    dexNos: [32,136,155,156,157,158,186,195,205],
+    rewardDexNo: 1012,
+  },
 ];

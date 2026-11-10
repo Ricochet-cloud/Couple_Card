@@ -634,6 +634,79 @@
   .card[data-rarity="hidden"] .card__photo::before { animation: none; }
 }
 
+/* ===== 카드 특수 디자인: 토미에 (카드 데이터 theme: 'tomie') =====
+   흑백 만화 한 컷: 컬러 없이 흰 종이 + 검은 잉크만 써요. 사진도 흑백으로 바꿔요.
+   모서리에서 검은 머리카락이 자라 나와 프레임을 감싸고, 눈물점 한 점이 찍혀 있어요.
+   6초마다 모서리에 금이 가고 잉크가 번졌다가 머리카락이 꿰매듯 아물며(재생), 순간 흑백이 반전돼요. 영웅 등급 위에 얹어서 써요. */
+.card[data-theme="tomie"] {
+  --f-dark: #000000; --f-shade: #1d1d1d; --f-mid: #4a4a4a; --f-base: #f3f3f3; --f-light: #d9d9d9; --f-hi: #ffffff;
+  --gem: #ffffff;
+  --glow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 255, 255, 0.35);
+  overflow: visible;
+}
+.card[data-theme="tomie"] .card__in { background: #f3f3f3; }
+/* 사진 자리: 종이 + 스크린톤, 사진은 흑백 */
+.card[data-theme="tomie"] .card__photo {
+  background: radial-gradient(circle, rgba(0,0,0,.18) 0 .9px, transparent 1.1px) 0 0 / 5px 5px, linear-gradient(180deg, #ffffff, #dcdcdc);
+}
+.card[data-theme="tomie"] .card__photo img { filter: grayscale(1) contrast(1.15); }
+.card[data-theme="tomie"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #000, inset 0 -5px 0 #fff, inset 0 -6px 0 #000;
+}
+/* 본문: 종이 + 해칭 */
+.card[data-theme="tomie"] .card__body {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 4px, rgba(0, 0, 0, 0.09) 4px 5px),
+    #f3f3f3;
+}
+.card[data-theme="tomie"] .card__title { color: #000; text-shadow: 1px 1px 0 #fff, -1px -1px 0 rgba(0,0,0,.08); }
+.card[data-theme="tomie"] .card__desc { color: #333; }
+.card[data-theme="tomie"] .card__meta { color: #555; border-top-color: #000; }
+.card[data-theme="tomie"] .card__badge { color: #fff; background: #000; box-shadow: inset 0 0 0 1px #fff, 0 0 0 1px #000; }
+.card[data-theme="tomie"] .card__no { background: #fff; color: #000; box-shadow: inset 0 0 0 1px #000; }
+/* 눈물점 한 점 + 富江 */
+.card[data-theme="tomie"] .card__body::before {
+  content: ''; position: absolute; right: 14px; top: 9px; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0 0.8px, #000 1.2px); pointer-events: none;
+}
+.card[data-theme="tomie"] .card__body::after {
+  content: '富江'; position: absolute; right: 8px; bottom: 6px;
+  font-size: 9px; letter-spacing: 0.12em; color: #000; pointer-events: none;
+}
+/* 기울이면 흑백 하프톤 빛 (무지개 대신 회색조) */
+.tilt[data-theme="tomie"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.55), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 머리카락 + 모서리 금 + 잉크 번짐 (카드 밖까지 그려져요) */
+.card[data-theme="tomie"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cstyle%3E.hs%7Bstroke-dasharray:84 100%3Banimation:hg 6s ease-in-out infinite%7D%40keyframes hg%7B0%25,34%25%7Bstroke-dasharray:84 100%7D44%25,52%25%7Bstroke-dasharray:100 100%7D62%25,100%25%7Bstroke-dasharray:84 100%7D%7D.sw1,.sw2%7Btransform-box:fill-box%3Banimation:sw 5s ease-in-out infinite alternate%7D.sw1%7Btransform-origin:100%25 0%25%7D.sw2%7Btransform-origin:0%25 100%25%3Banimation-delay:-2s%7D%40keyframes sw%7Bfrom%7Btransform:rotate(-1.6deg) skewX(-.8deg)%7Dto%7Btransform:rotate(1.6deg) skewX(.8deg)%7D%7D.ck%7Bstroke-dasharray:0 100%3Bopacity:0%3Banimation:ck 6s ease-out infinite%7D%40keyframes ck%7B0%25,37%25%7Bstroke-dasharray:0 100%3Bopacity:0%7D38%25%7Bopacity:1%7D45%25%7Bstroke-dasharray:100 100%3Bopacity:1%7D52%25%7Bstroke-dasharray:100 100%3Bopacity:1%7D62%25,100%25%7Bstroke-dasharray:100 100%3Bopacity:0%7D%7D.st%7Bopacity:0%3Banimation:st 6s ease-out infinite%7D%40keyframes st%7B0%25,49%25%7Bopacity:0%7D53%25,60%25%7Bopacity:1%7D66%25,100%25%7Bopacity:0%7D%7D.bl%7Btransform-box:fill-box%3Btransform-origin:50%25 50%25%3Banimation:bl 6s ease-out infinite%7D%40keyframes bl%7B0%25,36%25%7Btransform:scale(.6)%7D44%25,52%25%7Btransform:scale(1.7)%7D62%25,100%25%7Btransform:scale(.6)%7D%7D%40media (prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.ck,.st%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3Cfilter id='gl' filterUnits='userSpaceOnUse' x='-8' y='-8' width='116' height='156'%3E%3CfeGaussianBlur stdDeviation='.35' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23gl)'%3E%3Cg class='sw1'%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C90,-9 70,-8 54,-3 S28,-7 12,-5' fill='none' stroke='%23ffffff' stroke-width='2.3' stroke-linecap='round' style='animation-delay:0s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C90,-9 70,-8 54,-3 S28,-7 12,-5' fill='none' stroke='%230a0a0a' stroke-width='1.5' stroke-linecap='round' style='animation-delay:0s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C86,-5 72,-1 58,-6 S34,-2 24,-6 S16,-2 10,-3' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' style='animation-delay:-0.6s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C86,-5 72,-1 58,-6 S34,-2 24,-6 S16,-2 10,-3' fill='none' stroke='%230a0a0a' stroke-width='1.0' stroke-linecap='round' style='animation-delay:-0.6s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C109,10 108,40 104,62 S108,96 104,118' fill='none' stroke='%23ffffff' stroke-width='2.3' stroke-linecap='round' style='animation-delay:-0.3s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C109,10 108,40 104,62 S108,96 104,118' fill='none' stroke='%230a0a0a' stroke-width='1.5' stroke-linecap='round' style='animation-delay:-0.3s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C101,12 106,30 101,48 S103,72 99,84 S103,92 102,98' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' style='animation-delay:-1.1s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C101,12 106,30 101,48 S103,72 99,84 S103,92 102,98' fill='none' stroke='%230a0a0a' stroke-width='1.0' stroke-linecap='round' style='animation-delay:-1.1s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C96,-2 92,6 96,12 S104,16 100,22' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' style='animation-delay:-0.4s'/%3E%3Cpath class='hs' pathLength='100' d='M104,-4 C96,-2 92,6 96,12 S104,16 100,22' fill='none' stroke='%230a0a0a' stroke-width='0.8' stroke-linecap='round' style='animation-delay:-0.4s'/%3E%3C/g%3E%3Cg class='sw2'%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C12,149 34,148 50,143 S80,148 96,146' fill='none' stroke='%23ffffff' stroke-width='2.3' stroke-linecap='round' style='animation-delay:-0.2s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C12,149 34,148 50,143 S80,148 96,146' fill='none' stroke='%230a0a0a' stroke-width='1.5' stroke-linecap='round' style='animation-delay:-0.2s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C16,145 28,141 44,147 S68,142 78,146 S88,141 94,143' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' style='animation-delay:-0.8s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C16,145 28,141 44,147 S68,142 78,146 S88,141 94,143' fill='none' stroke='%230a0a0a' stroke-width='1.0' stroke-linecap='round' style='animation-delay:-0.8s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C-9,128 -8,98 -3,78 S-8,40 -3,24' fill='none' stroke='%23ffffff' stroke-width='2.3' stroke-linecap='round' style='animation-delay:-0.5s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C-9,128 -8,98 -3,78 S-8,40 -3,24' fill='none' stroke='%230a0a0a' stroke-width='1.5' stroke-linecap='round' style='animation-delay:-0.5s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C-1,128 -6,110 -1,94 S-3,70 1,60 S-3,52 -2,46' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' style='animation-delay:-1.3s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C-1,128 -6,110 -1,94 S-3,70 1,60 S-3,52 -2,46' fill='none' stroke='%230a0a0a' stroke-width='1.0' stroke-linecap='round' style='animation-delay:-1.3s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C4,142 8,134 4,128 S-4,124 0,118' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' style='animation-delay:-0.7s'/%3E%3Cpath class='hs' pathLength='100' d='M-4,144 C4,142 8,134 4,128 S-4,124 0,118' fill='none' stroke='%230a0a0a' stroke-width='0.8' stroke-linecap='round' style='animation-delay:-0.7s'/%3E%3C/g%3E%3Cg class='bl' transform='translate(-3,-3)'%3E%3Cpath d='M0,0 C4,-1 7,2 6,6 C5,9 1,10 -1,7 C-3,4 -3,1 0,0Z' fill='%230a0a0a'/%3E%3C/g%3E%3Cg class='bl' transform='translate(103,143)'%3E%3Cpath d='M0,0 C-4,1 -7,-2 -6,-6 C-5,-9 -1,-10 1,-7 C3,-4 3,-1 0,0Z' fill='%230a0a0a'/%3E%3C/g%3E%3Cpath class='ck' pathLength='100' d='M-3,-3 L6,4 L4,14 L15,20 L12,31 L24,38' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round' style='animation-delay:0s'/%3E%3Cpath class='ck' pathLength='100' d='M-3,-3 L6,4 L4,14 L15,20 L12,31 L24,38' fill='none' stroke='%230a0a0a' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round' style='animation-delay:0s'/%3E%3Cpath class='ck' pathLength='100' d='M103,143 L94,136 L97,126 L85,120 L88,109 L76,102' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round' style='animation-delay:0.15s'/%3E%3Cpath class='ck' pathLength='100' d='M103,143 L94,136 L97,126 L85,120 L88,109 L76,102' fill='none' stroke='%230a0a0a' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round' style='animation-delay:0.15s'/%3E%3Cg class='st' style='animation-delay:0s'%3E%3Cpath d='M3.4,7.4 l3.2,3.2 M6.6,7.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M8.4,15.4 l3.2,3.2 M11.6,15.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M11.4,24.4 l3.2,3.2 M14.6,24.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M17.4,32.4 l3.2,3.2 M20.6,32.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3C/g%3E%3Cg class='st' style='animation-delay:0.1s'%3E%3Cpath d='M94.4,129.4 l3.2,3.2 M97.6,129.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M89.4,121.4 l3.2,3.2 M92.6,121.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M85.4,113.4 l3.2,3.2 M88.6,113.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3Cpath d='M79.4,104.4 l3.2,3.2 M82.6,104.4 l-3.2,3.2' stroke='%230a0a0a' stroke-width='.5' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 금이 갈 때 순간 흑백 반전 (두 번 번쩍) */
+.card[data-theme="tomie"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 7; pointer-events: none;
+  background: #fff; mix-blend-mode: difference; opacity: 0;
+  animation: tomieFlash 6s steps(1, end) infinite;
+}
+@keyframes tomieFlash {
+  0%, 37.9% { opacity: 0; } 38%, 39.4% { opacity: 1; }
+  39.5%, 41.4% { opacity: 0; } 41.5%, 42.9% { opacity: 1; }
+  43%, 100% { opacity: 0; }
+}
+/* 작은 칸에서는 바깥 이펙트를 숨겨요 */
+.cards-grid .card[data-theme="tomie"]::before,
+.cards-grid .card[data-theme="tomie"]::after,
+.ach-slot .card[data-theme="tomie"]::before,
+.ach-slot .card[data-theme="tomie"]::after,
+.event-slot .card[data-theme="tomie"]::before,
+.event-slot .card[data-theme="tomie"]::after,
+.cards-grid .card[data-theme="tomie"] .card__body::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-theme="tomie"]::after { animation: none; opacity: 0; }
+}
+
 /* ===== 카드 특수 디자인: 도우마 (카드 데이터 theme: 'douma') =====
    흰금 프레임 · 사진 뒤에서 도는 금빛 만다라 후광 · 연꽃과 서리 결정이 감싼 테두리 · 떠다니는 얼음 가루
    · 몇 초에 한 번 번쩍이는 무지개 눈빛 · 아래 서리 안개. 영웅 등급 위에 얹어서 써요. */

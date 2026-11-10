@@ -679,6 +679,16 @@
   background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.55), transparent 52%);
   mix-blend-mode: screen;
 }
+/* 히든 등급 위에 올려도 흑백만: 히든의 보라 안개·푸른 별빛·RGB 글리치를 흑백으로 바꿔요 */
+.card[data-theme="tomie"] .card__photo::before,
+.card[data-theme="tomie"] .card__in::before { background: none; }
+.card[data-rarity="hidden"][data-theme="tomie"] { animation: tomieGlitch 6s steps(1, end) infinite; }
+@keyframes tomieGlitch {
+  0%, 91%, 95%, 100% { filter: none; }
+  92% { filter: drop-shadow(-3px 0 #000) drop-shadow(3px 0 #fff); }
+  93% { filter: drop-shadow(3px 0 #000) drop-shadow(-3px 0 #fff); }
+  94% { filter: drop-shadow(-2px 0 #000) drop-shadow(2px 0 #fff); }
+}
 /* 머리카락 + 모서리 금 + 잉크 번짐 (카드 밖까지 그려져요) */
 .card[data-theme="tomie"]::before {
   content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
@@ -705,6 +715,7 @@
 .cards-grid .card[data-theme="tomie"] .card__body::after { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .card[data-theme="tomie"]::after { animation: none; opacity: 0; }
+  .card[data-rarity="hidden"][data-theme="tomie"] { animation: none; }
 }
 
 /* ===== 카드 특수 디자인: 도우마 (카드 데이터 theme: 'douma') =====

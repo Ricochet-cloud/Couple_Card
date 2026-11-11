@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>상점 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/card.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/shop.css">
+  <link rel="stylesheet" href="./css/audio.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>🌾 추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main style="padding: 0;">
+      <div class="shop-points">
+        <div class="shop-points__icon">💰</div>
+        <div>
+          <div class="shop-points__label">보유 포인트</div>
+          <div class="shop-points__count" id="pointCount">0</div>
+        </div>
+      </div>
+
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-pane="shop">🛒 상점</button>
+        <button class="shop-tab" data-pane="sell">💱 카드 팔기</button>
+        <button class="shop-tab" data-pane="bag">🎒 보관함</button>
+      </div>
+
+      <div class="shop-pane active" id="pane-shop">
+        <div class="shop-msg" id="shopMsg"></div>
+        <div class="shop-grid" id="shopGrid"><div class="shop-empty">불러오는 중...</div></div>
+      </div>
+
+      <div class="shop-pane" id="pane-sell">
+        <p class="shop-note" id="sellNote"></p>
+        <div class="shop-msg" id="sellMsg"></div>
+        <div class="sell-list" id="sellList"></div>
+      </div>
+
+      <div class="shop-pane" id="pane-bag">
+        <h2 class="bag-title">🎨 내 테마</h2>
+        <div class="shop-note">테마를 고른 뒤, 입힐 카드를 눌러요.</div>
+        <div class="theme-chips" id="themeChips"></div>
+        <div class="bag-cards" id="bagCards"></div>
+        <h2 class="bag-title">🖼️ 내 일러스트</h2>
+        <div class="illust-grid" id="illustGrid"></div>
+        <div class="shop-note" id="illustHint" style="display: none; margin-top: 12px;"></div>
+        <div class="bag-cards" id="illustCards"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 팝업 (구매 결과 · 테마 입히기 · 일러스트 크게 보기) -->
+  <div class="shop-modal" id="shopModal" role="dialog" aria-modal="true">
+    <div class="shop-modal__box">
+      <div class="shop-modal__title" id="modalTitle"></div>
+      <div class="shop-modal__card" id="modalCard"></div>
+      <div class="shop-modal__info" id="modalInfo"></div>
+      <div class="shop-modal__btns" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="./index.html" class="nav-item" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="./collection.html" class="nav-item" data-page="collection">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">도감</span>
+    </a>
+    <a href="./recombine.html" class="nav-item" data-page="recombine">
+      <span class="nav-icon">✨</span>
+      <span class="nav-label">재조합</span>
+    </a>
+    <a href="./shop.html" class="nav-item active" data-page="shop">
+      <span class="nav-icon">🛒</span>
+      <span class="nav-label">상점</span>
+    </a>
+    <a href="./achievements.html" class="nav-item" data-page="achievements">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">도전과제</span>
+    </a>
+    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">관리</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
+    import { getCollectionData } from './js/collection.js';
+    import { getActiveCards } from './js/gacha.js';
+    import { renderCard, RARITY, formatDexNo } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
+    import { SELL_POINTS, sellValue, getShopState, loadShopItems, sellCards, buyItem, setCardTheme, setCardPhoto } from './js/shop.js';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const THEME_SAMPLE = { dexNo: 1, title: '미리보기', description: '테마를 입으면 이런 느낌이에요', rarity: 'hero', category: '샘플', memoryDate: '2026-01-01', hue: 30 };
+
+    let st = { points: 0, purchases: {}, themeOverrides: {}, photoOverrides: {}, owned: {} };
+    let items = [];
+    let cards = [];          // 도감 카드 (입힌 테마 반영됨)
+    let baseCards = [];      // 활성 카드 (이름·번호 조회용)
+    let pickedTheme = null;  // 보관함에서 고른 테마 키
+    let pickedIllust = null; // 보관함에서 고른 일러스트 상품 id
+    let themeNames = {};     // 테마 키 → 상품 이름
+
+    initAuth((user) => {
+      guardAuth();
+      if (!user) return;
+      if (isAdmin()) $('adminNav').style.display = 'flex';
+      reload().catch((e) => { console.error(e); $('shopGrid').innerHTML = `<div class="shop-empty">불러오지 못했어요: ${esc(e.message)}</div>`; });
+    });
+
+    async function reload() {
+      [st, items, cards, baseCards] = await Promise.all([getShopState(), loadShopItems(), getCollectionData(), getActiveCards()]);
+      themeNames = {};
+      items.filter((i) => i.type === 'theme').forEach((i) => { themeNames[i.theme] = i.name; });
+      $('pointCount').textContent = st.points;
+      renderShop(); renderSell(); renderBag();
+    }
+
+    function flash(id, msg) { const el = $(id); el.textContent = msg; el.classList.toggle('show', !!msg); }
+
+    // ---------- 팝업 ----------
+    function openModal({ title, cardHtml = '', info = '', buttons = [], tilt = false }) {
+      $('modalTitle').textContent = title;
+      $('modalCard').innerHTML = cardHtml;
+      $('modalInfo').innerHTML = info;
+      const box = $('modalBtns'); box.innerHTML = '';
+      buttons.forEach(({ label, ghost, onClick }) => {
+        const b = document.createElement('button');
+        b.className = 'shop-btn' + (ghost ? ' shop-btn--ghost' : ''); b.textContent = label;
+        b.addEventListener('click', onClick); box.appendChild(b);
+      });
+      if (tilt) initTilt($('modalCard').querySelector('.card'));
+      $('shopModal').classList.add('show'); document.body.style.overflow = 'hidden';
+    }
+    const closeModal = () => { $('shopModal').classList.remove('show'); document.body.style.overflow = ''; };
+    $('shopModal').addEventListener('click', (e) => { if (e.target === $('shopModal')) closeModal(); });
+
+    // ---------- 상점 ----------
+    const TYPE_LABEL = { theme: '🎨 카드 테마', illust: '🖼️ 특별 일러스트', card: '🃏 카드' };
+
+    function itemView(it) {
+      if (it.type === 'theme') return renderCard({ ...THEME_SAMPLE, theme: it.theme });
+      if (it.type === 'illust') return `<img src="${it.imageData}" alt="${esc(it.name)}" data-zoom="${esc(it.id)}">`;
+      const c = baseCards.find((x) => x.dexNo === it.dexNo);
+      return c ? renderCard(c) : '<div class="shop-empty">카드를 찾을 수 없어요</div>';
+    }
+
+    function renderShop() {
+      const list = items.filter((i) => i.active);
+      if (!list.length) { $('shopGrid').innerHTML = '<div class="shop-empty" style="grid-column:1/-1">아직 파는 물건이 없어요</div>'; return; }
+      $('shopGrid').innerHTML = list.map((it) => {
+        const have = it.type !== 'card' && st.purchases[it.id];
+        const enough = st.points >= it.price;
+        return `<div class="shop-item">
+          <div class="shop-item__view">${itemView(it)}</div>
+          <div class="shop-item__type">${TYPE_LABEL[it.type] || ''}</div>
+          <h3 class="shop-item__name">${esc(it.name)}</h3>
+          <p class="shop-item__desc">${esc(it.desc)}</p>
+          <button class="shop-btn" data-buy="${esc(it.id)}" ${have || !enough ? 'disabled' : ''}>${have ? '보유 중' : `💰 ${it.price}`}</button>
+        </div>`;
+      }).join('');
+      $('shopGrid').querySelectorAll('.shop-item__view .card').forEach((el) => { el.style.pointerEvents = 'none'; });
+    }
+
+    $('shopGrid').addEventListener('click', async (e) => {
+      const zoom = e.target.closest('[data-zoom]');
+      if (zoom) { const it = items.find((i) => i.id === zoom.dataset.zoom); if (it) showImage(it.name, it.imageData); return; }
+      const btn = e.target.closest('[data-buy]');
+      if (!btn) return;
+      const it = items.find((i) => i.id === btn.dataset.buy);
+      if (!it || !confirm(`'${it.name}' 을(를) 💰 ${it.price} 포인트에 살까요?`)) return;
+      btn.disabled = true; flash('shopMsg', '');
+      try {
+        const r = await buyItem(it.id);
+        await reload();
+        if (r.card) {
+          openModal({ title: '🛒 구매 완료!', cardHtml: renderCard(r.card), tilt: true,
+            info: `${esc(RARITY[r.card.rarity]?.label || '')} · ${formatDexNo(r.card.dexNo)} ${esc(r.card.title)}<br>${r.isFirstTime ? '처음 획득!' : `보유 ${r.card.count}장`}`,
+            buttons: [{ label: '확인', onClick: closeModal }] });
+        } else if (it.type === 'illust') {
+          openModal({ title: '🛒 구매 완료!', cardHtml: `<img src="${it.imageData}" alt="">`, info: `${esc(it.name)}<br>보관함에서 언제든 볼 수 있어요`, buttons: [{ label: '확인', onClick: closeModal }] });
+        } else {
+          openModal({ title: '🛒 구매 완료!', cardHtml: renderCard({ ...THEME_SAMPLE, theme: it.theme }), tilt: true,
+            info: `${esc(it.name)}<br>보관함에서 원하는 카드에 입혀 보세요`,
+            buttons: [{ label: '확인', onClick: closeModal }, { label: '지금 입히기', onClick: () => { closeModal(); pickedTheme = it.theme; switchPane('bag'); renderBag(); } }] });
+        }
+      } catch (err) { flash('shopMsg', `구매 실패: ${err.message}`); await reload().catch(() => {}); }
+    });
+
+    function showImage(name, src) {
+      openModal({ title: name, cardHtml: `<img src="${src}" alt="">`, buttons: [{ label: '닫기', onClick: closeModal }] });
+    }
+
+    // ---------- 카드 팔기 ----------
+    function renderSell() {
+      $('sellNote').innerHTML = '남는 카드(2장째부터)만 팔 수 있어요. 1장은 꼭 남아요. 히든 카드는 팔 수 없어요.<br>'
+        + Object.entries(SELL_POINTS).map(([k, v]) => `${RARITY[k].label} ${v}`).join(' · ') + ' (1장당 포인트)';
+      const rows = cards.filter((c) => c.isOwned && c.count > 1 && sellValue(c.rarity));
+      if (!rows.length) { $('sellList').innerHTML = '<div class="shop-empty">팔 수 있는 중복 카드가 없어요</div>'; return; }
+      $('sellList').innerHTML = rows.map((c) => {
+        const spare = c.count - 1, v = sellValue(c.rarity);
+        return `<div class="sell-row">
+          <div class="sell-row__info"><b>${esc(c.title)}</b><small>${esc(RARITY[c.rarity].label)} · ${formatDexNo(c.dexNo)} · 남는 ${spare}장 · 1장 💰${v}</small></div>
+          <div class="sell-row__btns">
+            <button class="shop-btn" data-sell="${esc(c.id)}" data-n="1">1장 +${v}</button>
+            ${spare > 1 ? `<button class="shop-btn shop-btn--ghost" data-sell="${esc(c.id)}" data-n="${spare}">전부 +${v * spare}</button>` : ''}
+          </div></div>`;
+      }).join('');
+    }
+
+    $('sellList').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-sell]');
+      if (!btn) return;
+      const c = cards.find((x) => x.id === btn.dataset.sell), n = Number(btn.dataset.n);
+      if (!c || !confirm(`'${c.title}' ${n}장을 💰 ${sellValue(c.rarity) * n} 포인트에 팔까요?`)) return;
+      btn.disabled = true; flash('sellMsg', '');
+      try { await sellCards(c.id, n); } catch (err) { flash('sellMsg', `판매 실패: ${err.message}`); }
+      await reload();
+    });
+
+    // ---------- 보관함 ----------
+    function renderBag() {
+      const bought = Object.values(st.purchases).filter((p) => p.type === 'theme').map((p) => p.theme);
+      if (pickedTheme && !bought.includes(pickedTheme)) pickedTheme = null;
+      $('themeChips').innerHTML = bought.length
+        ? bought.map((t) => `<button class="theme-chip ${t === pickedTheme ? 'active' : ''}" data-theme="${esc(t)}">${esc(themeNames[t] || t)}</button>`).join('')
+        : '<div class="shop-empty">산 테마가 없어요. 상점에서 구경해 보세요!</div>';
+      const mine = cards.filter((c) => c.isOwned);
+      $('bagCards').innerHTML = pickedTheme
+        ? mine.map((c) => `<div class="cards-grid ${st.themeOverrides[c.id] ? 'is-skinned' : ''}" data-card="${esc(c.id)}">${renderCard(c)}</div>`).join('')
+        : '';
+
+      const arts = Object.keys(st.purchases).map((id) => items.find((i) => i.id === id)).filter((i) => i && i.type === 'illust');
+      $('illustGrid').innerHTML = arts.length
+        ? arts.map((i) => `<figure><img src="${i.imageData}" alt="${esc(i.name)}" data-zoom="${esc(i.id)}"><figcaption>${esc(i.name)}<br><button class="shop-btn ${i.id === pickedIllust ? '' : 'shop-btn--ghost'}" style="min-height:36px;margin-top:6px;width:100%;font-size:11px" data-pick="${esc(i.id)}">${i.id === pickedIllust ? '카드를 골라요 ↓' : '카드에 끼우기'}</button></figcaption></figure>`).join('')
+        : '<div class="shop-empty" style="grid-column:1/-1">산 일러스트가 없어요</div>';
+
+      if (pickedIllust && !arts.some((i) => i.id === pickedIllust)) pickedIllust = null;
+      const pic = arts.find((i) => i.id === pickedIllust);
+      $('illustHint').style.display = pic ? '' : 'none';
+      $('illustHint').textContent = pic ? `'${pic.name}' 을(를) 끼울 카드를 눌러요. (🎨 표시는 이미 일러스트를 끼운 카드)` : '';
+      $('illustCards').innerHTML = pic
+        ? mine.map((c) => `<div class="cards-grid ${st.photoOverrides[c.id] ? 'is-skinned' : ''}" data-card="${esc(c.id)}">${renderCard(c)}</div>`).join('')
+        : '';
+    }
+
+    $('themeChips').addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-theme]');
+      if (chip) { pickedTheme = chip.dataset.theme; renderBag(); }
+    });
+    $('illustGrid').addEventListener('click', (e) => {
+      const pick = e.target.closest('[data-pick]');
+      if (pick) {
+        pickedIllust = pickedIllust === pick.dataset.pick ? null : pick.dataset.pick;
+        renderBag();
+        if (pickedIllust) $('illustHint').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      const z = e.target.closest('[data-zoom]');
+      const it = z && items.find((i) => i.id === z.dataset.zoom);
+      if (it) showImage(it.name, it.imageData);
+    });
+
+    // 카드를 누르면 크게 미리 보고 입히기
+    $('bagCards').addEventListener('click', (e) => {
+      const cell = e.target.closest('[data-card]');
+      const c = cell && cards.find((x) => x.id === cell.dataset.card);
+      if (!c || !pickedTheme) return;
+      const base = { ...c, theme: c.baseTheme !== undefined ? c.baseTheme : c.theme };   // 입히기 전 원래 테마
+      const skinned = !!st.themeOverrides[c.id];
+      const apply = async (theme) => {
+        try { await setCardTheme(c.id, theme); closeModal(); await reload(); }
+        catch (err) { alert(`실패: ${err.message}`); }
+      };
+      openModal({
+        title: `${esc(themeNames[pickedTheme] || pickedTheme)} 입혀 보기`,
+        cardHtml: renderCard({ ...base, theme: pickedTheme }), tilt: true,
+        info: `${esc(c.title)}${skinned ? '<br>(지금 다른 테마가 입혀져 있어요)' : ''}`,
+        buttons: [
+          { label: '입히기', onClick: () => apply(pickedTheme) },
+          ...(skinned ? [{ label: '원래대로', ghost: true, onClick: () => apply(null) }] : []),
+          { label: '닫기', ghost: true, onClick: closeModal },
+        ],
+      });
+    });
+
+    // 일러스트: 카드를 누르면 끼운 모습을 크게 미리 보고 끼우기
+    $('illustCards').addEventListener('click', (e) => {
+      const cell = e.target.closest('[data-card]');
+      const c = cell && cards.find((x) => x.id === cell.dataset.card);
+      const it = items.find((i) => i.id === pickedIllust);
+      if (!c || !it) return;
+      const has = !!st.photoOverrides[c.id];
+      const apply = async (itemId) => {
+        try { await setCardPhoto(c.id, itemId); closeModal(); await reload(); }
+        catch (err) { alert(`실패: ${err.message}`); }
+      };
+      openModal({
+        title: `${esc(it.name)} 끼워 보기`,
+        cardHtml: renderCard({ ...c, photoData: it.imageData }), tilt: true,
+        info: `${esc(c.title)}${has ? '<br>(지금 다른 일러스트가 끼워져 있어요)' : ''}`,
+        buttons: [
+          { label: '끼우기', onClick: () => apply(it.id) },
+          ...(has ? [{ label: '원래 사진으로', ghost: true, onClick: () => apply(null) }] : []),
+          { label: '닫기', ghost: true, onClick: closeModal },
+        ],
+      });
+    });
+
+    // ---------- 탭 ----------
+    function switchPane(name) {
+      document.querySelectorAll('.shop-tab').forEach((t) => t.classList.toggle('active', t.dataset.pane === name));
+      document.querySelectorAll('.shop-pane').forEach((p) => p.classList.toggle('active', p.id === `pane-${name}`));
+    }
+    document.querySelectorAll('.shop-tab').forEach((t) => t.addEventListener('click', () => switchPane(t.dataset.pane)));
+
+    $('logoutBtn').addEventListener('click', async () => { await logout(); window.location.href = './login.html'; });
+  </script>
+</body>
+</html>

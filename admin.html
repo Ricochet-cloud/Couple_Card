@@ -27,6 +27,7 @@
         <button class="tab-btn" data-tab="quizzes">퀴즈</button>
         <button class="tab-btn" data-tab="tickets">뽑기권</button>
         <button class="tab-btn" data-tab="cardback">카드 뒷면</button>
+        <button class="tab-btn" data-tab="shop">상점</button>
       </div>
 
       <!-- 카드 탭 -->
@@ -132,6 +133,56 @@
 
         <h2>등록된 카드</h2>
         <div id="cardsList" class="loading">로딩 중...</div>
+      </div>
+
+      <!-- 상점 탭 -->
+      <div class="tab-content" id="shop-tab">
+        <h2>상점 상품 올리기</h2>
+        <p style="color: var(--mute); margin-bottom: 16px;">중복 카드를 팔아 모은 포인트로 사는 상품이에요. 테마·일러스트는 한 번만, 카드는 여러 번 살 수 있어요.</p>
+        <div class="form-container">
+          <form id="shopForm">
+            <div class="form-group">
+              <label for="shopName">상품 이름</label>
+              <input type="text" id="shopName" maxlength="30" required>
+            </div>
+            <div class="form-group">
+              <label for="shopDesc">설명 (선택)</label>
+              <input type="text" id="shopDesc" maxlength="80">
+            </div>
+            <div class="form-group">
+              <label for="shopType">종류</label>
+              <select id="shopType">
+                <option value="theme">🎨 카드 테마</option>
+                <option value="illust">🖼️ 특별 일러스트</option>
+                <option value="card">🃏 카드</option>
+              </select>
+            </div>
+            <div class="form-group" id="shopThemeRow">
+              <label for="shopTheme">테마</label>
+              <select id="shopTheme"></select>
+            </div>
+            <div class="form-group" id="shopDexRow" style="display: none;">
+              <label for="shopDexNo">카드 도감 번호</label>
+              <input type="number" id="shopDexNo" min="1">
+            </div>
+            <div class="form-group" id="shopImageRow" style="display: none;">
+              <label for="shopImage">일러스트 이미지</label>
+              <input type="file" id="shopImage" accept="image/*">
+              <div style="font-size: 12px; color: var(--mute); margin-top: 8px;">최대 400KB, 긴 변 640px 이하로 자동 변환됨</div>
+            </div>
+            <div class="form-group">
+              <label for="shopPrice">가격 (포인트)</label>
+              <input type="number" id="shopPrice" min="1" value="10" required>
+            </div>
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary" id="shopSubmit">상품 올리기</button>
+            </div>
+            <div id="shopFormMsg" style="font-size: 13px; margin-top: 8px;"></div>
+          </form>
+        </div>
+
+        <h2>등록된 상품</h2>
+        <div id="shopList" class="loading">로딩 중...</div>
       </div>
 
       <!-- 미션 탭 -->
@@ -1099,5 +1150,94 @@
     }
   </script>
 <script src="./js/audio.js"></script>
+  <script type="module">
+    // 상점 탭: 상품 올리기 / 판매 중지 / 가격 수정 / 삭제
+    import { convertImageToWebP } from './js/admin.js';
+    import { loadShopItems, addShopItem, updateShopItem, deleteShopItem } from './js/shop.js';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const TYPE = { theme: '🎨 테마', illust: '🖼️ 일러스트', card: '🃏 카드' };
+    let items = [];
+
+    // 테마 목록은 카드 탭의 '특수 디자인' 목록을 그대로 써요 (테마를 추가하면 자동으로 따라와요)
+    $('shopTheme').innerHTML = [...$('cardTheme').options].filter((o) => o.value).map((o) => `<option value="${esc(o.value)}">${esc(o.textContent)}</option>`).join('');
+
+    function syncType() {
+      const t = $('shopType').value;
+      $('shopThemeRow').style.display = t === 'theme' ? '' : 'none';
+      $('shopDexRow').style.display = t === 'card' ? '' : 'none';
+      $('shopImageRow').style.display = t === 'illust' ? '' : 'none';
+    }
+    $('shopType').addEventListener('change', syncType);
+
+    async function refresh() {
+      try {
+        items = await loadShopItems();
+        $('shopList').classList.remove('loading');
+        $('shopList').innerHTML = items.length ? items.map((i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;border:2px solid var(--line);background:var(--surf);">
+            ${i.imageData ? `<img src="${i.imageData}" alt="" style="width:48px;height:48px;object-fit:cover;">` : ''}
+            <div style="flex:1;min-width:0;font-size:13px;">
+              <b>${esc(i.name)}</b> <span style="color:var(--mute)">${TYPE[i.type] || ''}${i.type === 'theme' ? ' · ' + esc(i.theme) : ''}${i.type === 'card' ? ' · No.' + i.dexNo : ''}</span><br>
+              💰 ${i.price} · ${i.active ? '판매 중' : '<span style="color:var(--error)">판매 중지</span>'}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <button type="button" class="btn-secondary" data-act="toggle" data-id="${esc(i.id)}">${i.active ? '중지' : '다시 판매'}</button>
+              <button type="button" class="btn-secondary" data-act="price" data-id="${esc(i.id)}">가격</button>
+              <button type="button" class="btn-secondary" data-act="del" data-id="${esc(i.id)}">삭제</button>
+            </div>
+          </div>`).join('') : '<p style="color:var(--mute)">등록된 상품이 없어요.</p>';
+      } catch (e) {
+        $('shopList').textContent = `불러오지 못했어요: ${e.message} (Firestore 규칙에 shop 을 추가했는지 확인해 주세요)`;
+      }
+    }
+
+    $('shopForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('shopFormMsg'); msg.style.color = 'var(--mute)'; msg.textContent = '올리는 중...';
+      $('shopSubmit').disabled = true;
+      try {
+        const type = $('shopType').value;
+        let imageData = null;
+        if (type === 'illust') {
+          const f = $('shopImage').files[0];
+          if (!f) throw new Error('일러스트 이미지를 골라 주세요.');
+          imageData = (await convertImageToWebP(f)).base64;
+        }
+        await addShopItem({
+          name: $('shopName').value, desc: $('shopDesc').value, type,
+          price: Number($('shopPrice').value), theme: $('shopTheme').value || null,
+          dexNo: Number($('shopDexNo').value), imageData,
+        });
+        $('shopForm').reset(); syncType();
+        msg.style.color = 'var(--grass-green)'; msg.textContent = '상품을 올렸어요!';
+        await refresh();
+      } catch (err) { msg.style.color = 'var(--error)'; msg.textContent = err.message; }
+      $('shopSubmit').disabled = false;
+    });
+
+    $('shopList').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const it = items.find((i) => i.id === b.dataset.id);
+      if (!it) return;
+      try {
+        if (b.dataset.act === 'toggle') await updateShopItem(it.id, { active: !it.active });
+        else if (b.dataset.act === 'price') {
+          const v = Math.floor(Number(prompt(`'${it.name}' 새 가격 (포인트)`, it.price)));
+          if (!(v > 0)) return;
+          await updateShopItem(it.id, { price: v });
+        } else if (b.dataset.act === 'del') {
+          if (!confirm(`'${it.name}' 상품을 삭제할까요?\n(이미 산 일러스트는 보관함에서 사라져요. 보통은 '중지'를 추천해요)`)) return;
+          await deleteShopItem(it.id);
+        }
+        await refresh();
+      } catch (err) { alert(`실패: ${err.message}`); }
+    });
+
+    syncType();
+    refresh();
+  </script>
 </body>
 </html>

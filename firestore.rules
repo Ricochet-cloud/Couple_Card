@@ -22,6 +22,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // shop: 두 UID 읽기, 관리자만 쓰기 (상점 상품)
+    match /shop/{document=**} {
+      allow read: if isAuthorized();
+      allow write: if isAdmin();
+    }
+
     // state/shared: 두 UID 모두 읽기/쓰기
     match /state/shared {
       allow read, write: if isAuthorized();

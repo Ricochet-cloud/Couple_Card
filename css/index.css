@@ -1,5 +1,13 @@
 /* 홈 화면 - 스타듀밸리 감성 */
 
+/* 홈의 상점 바로가기 */
+.shop-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-dark); min-height: 44px; }
+.shop-link__icon { font-size: 26px; }
+.shop-link__text { flex: 1; display: flex; flex-direction: column; gap: 2px; font-family: 'Galmuri'; }
+.shop-link__text b { font-size: 15px; }
+.shop-link__text small { font-size: 11px; color: var(--text-muted); }
+.shop-link__go { font-size: 22px; color: var(--text-muted); }
+
 main {
   max-width: 960px;
   margin: 0 auto;

@@ -63,6 +63,16 @@
         <div class="gift-result" id="giftResult"></div>
       </div>
 
+      <!-- 선물 받기 팝업 (카드 · 뽑기권) -->
+      <div class="event-modal" id="giftModal" role="dialog" aria-modal="true">
+        <div class="event-modal__box">
+          <div class="event-modal__title">🎁 관리자의 선물!</div>
+          <div class="event-modal__card" id="giftModalCard"></div>
+          <div class="event-modal__info" id="giftModalInfo"></div>
+          <button class="event-btn" id="giftModalClose" type="button">확인</button>
+        </div>
+      </div>
+
       <!-- 방명록 -->
       <div class="home-section">
         <h2>💌 오늘의 방명록</h2>
@@ -146,7 +156,8 @@
     import { guardAuth } from './js/auth.js';
     import { grantDailyTicketIfNeeded, getTickets, getSpecialTickets } from './js/ticket.js';
     import { getActiveCards } from './js/gacha.js';
-    import { renderCard } from './js/card.js';
+    import { renderCard, RARITY, formatDexNo } from './js/card.js';
+    import { initTilt } from './js/tilt.js';
     import { getCollectionData } from './js/collection.js';
     import { assignOrGetDailyMission, completeMission } from './js/mission.js';
     import { assignOrGetDailyQuiz, submitQuizAnswer } from './js/quiz.js';
@@ -218,6 +229,33 @@
       section.style.display = 'block';
     }
 
+    function openGiftReveal({ card, isFirstTime, tickets, specialTickets }) {
+      const lines = [];
+      const box = document.getElementById('giftModalCard');
+      if (card) {
+        box.innerHTML = renderCard(card);
+        lines.push(`${escapeHtml(RARITY[card.rarity]?.label || '')} · ${escapeHtml(formatDexNo(card.dexNo))} ${escapeHtml(card.title)}`);
+        lines.push(isFirstTime ? '처음 획득!' : `보유 ${card.count}장`);
+      } else {
+        // 카드 없이 뽑기권만 있는 선물
+        const parts = [];
+        if (tickets) parts.push(`<span>🎟️</span><b>×${tickets}</b>`);
+        if (specialTickets) parts.push(`<span>✨</span><b>×${specialTickets}</b>`);
+        box.innerHTML = `<div class="event-ticket">${parts.join('')}</div>`;
+      }
+      if (tickets) lines.push(`🎟️ 뽑기권 ${tickets}장을 받았어요!`);
+      if (specialTickets) lines.push(`✨ 특별 뽑기권 ${specialTickets}장을 받았어요!`);
+      document.getElementById('giftModalInfo').innerHTML = lines.join('<br>');
+      if (card) initTilt(box.querySelector('.card'));
+      document.getElementById('giftModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.getElementById('giftModalClose').addEventListener('click', () => {
+      document.getElementById('giftModal').classList.remove('show');
+      document.body.style.overflow = '';
+    });
+
     document.getElementById('giftList').addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-gift]');
       if (!btn || btn.disabled) return;
@@ -226,13 +264,9 @@
       try {
         const r = await claimGift(btn.dataset.gift);
         if (r.already) {
-          out.textContent = '이미 받은 선물이에요.';
+          alert('이미 받은 선물이에요.');
         } else {
-          const got = [];
-          if (r.tickets) got.push(`뽑기권 ${r.tickets}장`);
-          if (r.specialTickets) got.push(`특별 뽑기권 ${r.specialTickets}장`);
-          if (r.card) got.push(`카드 「${r.card.title}」${r.isFirstTime ? ' (NEW!)' : ''}`);
-          out.textContent = `🎉 ${got.join(' + ')}을(를) 받았어요!`;
+          openGiftReveal(r);
         }
         await updateGiftUI();
         await updateUI();

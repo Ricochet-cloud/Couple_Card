@@ -135,28 +135,8 @@
   </div>
 
   <!-- 하단 탭 네비 -->
-  <nav class="bottom-nav">
-    <a href="./index.html" class="nav-item active" data-page="home">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="./collection.html" class="nav-item" data-page="collection">
-      <span class="nav-icon">📖</span>
-      <span class="nav-label">도감</span>
-    </a>
-    <a href="./recombine.html" class="nav-item" data-page="recombine">
-      <span class="nav-icon">✨</span>
-      <span class="nav-label">재조합</span>
-    </a>
-    <a href="./achievements.html" class="nav-item" data-page="achievements">
-      <span class="nav-icon">🏆</span>
-      <span class="nav-label">도전과제</span>
-    </a>
-    <a href="./admin.html" class="nav-item" id="adminNav" style="display: none;" data-page="admin">
-      <span class="nav-icon">⚙️</span>
-      <span class="nav-label">관리</span>
-    </a>
-  </nav>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <script type="module" src="./js/nav.js"></script>
 
   <script type="module">
     import { initAuth, isAdmin, logout } from './js/auth.js';

@@ -141,4 +141,24 @@ export const ACHIEVEMENTS = [
     dexNos: [32,136,155,156,157,158,186,195,205],
     rewardDexNo: 1012,
   },
+// 카드 300장
+  {
+    id: 'card-300',
+    icon: '🫨',
+    title: '카드게임에 미친자',
+    description: '서로 다른 카드 300종 모으기',
+    type: 'collectCount',
+    target: 300,
+    rewardDexNo: 1013,   // 보상 카드 번호
+  },
+// 무이치로
+  {
+    id: 'muichiro',
+    icon: '🌁',
+    title: '탄지로와 친구들',
+    description: '탄지로의 친구들을 모아주세요',
+    type: 'collectSet',
+    dexNos: [200, 123, 51, 213],
+    rewardDexNo: 1015,
+  },
 ];

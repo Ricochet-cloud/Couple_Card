@@ -161,4 +161,14 @@ export const ACHIEVEMENTS = [
     dexNos: [200, 123, 51, 213],
     rewardDexNo: 1015,
   },
+// 큰어르신
+  {
+    id: 'ubuyashiki',
+    icon: '🪾',
+    title: '귀살대의 수장',
+    description: '귀살대의 모든 주 들을 집결시키세요.',
+    type: 'collectSet',
+    dexNos: [208, 14, 169, 203, 211, 212, 214, 1011, 1015],
+    rewardDexNo: 1016,
+  },
 ];

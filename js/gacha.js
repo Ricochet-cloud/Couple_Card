@@ -148,7 +148,7 @@ export async function drawCard({ special = false } = {}) {
 
       return {
         cardId: selectedCard.id,
-        card: selectedCard,
+        card: { ...selectedCard, count: owned[selectedCard.id].count },
         isFirstTime: isFirstTime,
       };
     });

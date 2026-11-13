@@ -36,6 +36,22 @@
 
       <div class="shop-pane active" id="pane-shop">
         <div class="shop-msg" id="shopMsg"></div>
+        <div class="shop-filter">
+          <div class="shop-chips" id="shopChips">
+            <button type="button" class="shop-chip active" data-type="all">전체</button>
+            <button type="button" class="shop-chip" data-type="theme">🎨 테마</button>
+            <button type="button" class="shop-chip" data-type="illust">🖼️ 일러스트</button>
+            <button type="button" class="shop-chip" data-type="card">🃏 카드</button>
+          </div>
+          <div class="shop-filter__row">
+            <select id="shopSort" class="shop-sort" aria-label="정렬">
+              <option value="price">낮은 가격순</option>
+              <option value="priceDesc">높은 가격순</option>
+              <option value="new">최신순</option>
+            </select>
+            <label class="shop-toggle"><input type="checkbox" id="shopAffordable"> 살 수 있는 것만</label>
+          </div>
+        </div>
         <div class="shop-grid" id="shopGrid"><div class="shop-empty">불러오는 중...</div></div>
       </div>
 
@@ -130,31 +146,57 @@
 
     function itemView(it) {
       if (it.type === 'theme') return renderCard({ ...THEME_SAMPLE, theme: it.theme });
-      if (it.type === 'illust') return `<img src="${it.imageData}" alt="${esc(it.name)}" data-zoom="${esc(it.id)}">`;
+      if (it.type === 'illust') return `<img src="${it.imageData}" alt="${esc(it.name)}">`;
       const c = baseCards.find((x) => x.dexNo === it.dexNo);
       return c ? renderCard(c) : '<div class="shop-empty">카드를 찾을 수 없어요</div>';
     }
 
+    let shopType = 'all';
     function renderShop() {
-      const list = items.filter((i) => i.active);
-      if (!list.length) { $('shopGrid').innerHTML = '<div class="shop-empty" style="grid-column:1/-1">아직 파는 물건이 없어요</div>'; return; }
-      $('shopGrid').innerHTML = list.map((it) => {
+      let list = items.filter((i) => i.active);
+      const total = list.length;
+      if (shopType !== 'all') list = list.filter((i) => i.type === shopType);
+      if ($('shopAffordable').checked) list = list.filter((i) => !(i.type !== 'card' && st.purchases[i.id]) && st.points >= i.price);
+      const sort = $('shopSort').value;
+      list.sort((x, y) => sort === 'priceDesc' ? y.price - x.price
+        : sort === 'new' ? String(y.createdAt).localeCompare(String(x.createdAt))
+        : x.price - y.price);
+      const grid = $('shopGrid');
+      if (!total) { grid.innerHTML = '<div class="shop-empty" style="grid-column:1/-1">아직 파는 물건이 없어요</div>'; return; }
+      if (!list.length) { grid.innerHTML = '<div class="shop-empty" style="grid-column:1/-1">조건에 맞는 상품이 없어요</div>'; return; }
+      grid.innerHTML = list.map((it) => {
         const have = it.type !== 'card' && st.purchases[it.id];
         const enough = st.points >= it.price;
-        return `<div class="shop-item">
-          <div class="shop-item__view">${itemView(it)}</div>
-          <div class="shop-item__type">${TYPE_LABEL[it.type] || ''}</div>
+        return `<div class="shop-item${have ? ' is-owned' : ''}">
+          <div class="shop-item__view" data-preview="${esc(it.id)}">${itemView(it)}${have ? '<span class="shop-item__badge">보유</span>' : ''}</div>
           <h3 class="shop-item__name">${esc(it.name)}</h3>
-          <p class="shop-item__desc">${esc(it.desc)}</p>
           <button class="shop-btn" data-buy="${esc(it.id)}" ${have || !enough ? 'disabled' : ''}>${have ? '보유 중' : `💰 ${it.price}`}</button>
         </div>`;
       }).join('');
-      $('shopGrid').querySelectorAll('.shop-item__view .card').forEach((el) => { el.style.pointerEvents = 'none'; });
+      grid.querySelectorAll('.shop-item__view .card').forEach((el) => { el.style.pointerEvents = 'none'; });
+    }
+
+    $('shopChips').addEventListener('click', (e) => {
+      const c = e.target.closest('.shop-chip'); if (!c) return;
+      shopType = c.dataset.type;
+      document.querySelectorAll('.shop-chip').forEach((x) => x.classList.toggle('active', x === c));
+      renderShop();
+    });
+    $('shopSort').addEventListener('change', renderShop);
+    $('shopAffordable').addEventListener('change', renderShop);
+
+    // 상품 사진을 누르면 설명과 함께 크게 보여줘요
+    function previewItem(it) {
+      const have = it.type !== 'card' && st.purchases[it.id];
+      const cardHtml = it.type === 'illust' ? `<img src="${it.imageData}" alt="">` : itemView(it);
+      openModal({ title: it.name, cardHtml, tilt: it.type !== 'illust',
+        info: `${TYPE_LABEL[it.type] || ''}${it.desc ? `<br>${esc(it.desc)}` : ''}`,
+        buttons: [{ label: '닫기', onClick: closeModal }] });
     }
 
     $('shopGrid').addEventListener('click', async (e) => {
-      const zoom = e.target.closest('[data-zoom]');
-      if (zoom) { const it = items.find((i) => i.id === zoom.dataset.zoom); if (it) showImage(it.name, it.imageData); return; }
+      const pv = e.target.closest('[data-preview]');
+      if (pv) { const it = items.find((i) => i.id === pv.dataset.preview); if (it) previewItem(it); return; }
       const btn = e.target.closest('[data-buy]');
       if (!btn) return;
       const it = items.find((i) => i.id === btn.dataset.buy);

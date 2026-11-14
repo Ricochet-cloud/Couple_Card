@@ -19,11 +19,13 @@ const FOUR_RATE = 0.1;          // 새 타일이 4 로 나올 확률
 const BEST_COLLECTION = 'minigameScores';
 const BEST_DOC = '2048';
 const REWARD_FIELD = 'minigameRewardDate2048';
-// 타일 이미지 (나중에 에셋이 생기면 여기만 채우면 돼요. 비워 두면 색깔 숫자 타일이 나와요)
-// 예) 2: './images/2048/2.webp', 4: './images/2048/4.webp', ... 2048: './images/2048/2048.webp'
-// 2048 을 넘는 타일 이미지는 big 에 넣어요. 이미지가 있는 타일은 숫자가 왼쪽 아래에 작게 남아요.
+// 타일 이미지: 귀멸의 칼날 12귀월 (파일 이름이 타일 숫자예요. 2048 을 넘는 타일은 big)
+// 그림이 없는 숫자는 색깔 숫자 타일로 나와요. 이미지 타일은 위쪽 그림 + 아래쪽 숫자 띠(숫자는 코드가 얹어요).
 const TILE_IMAGES = {
-  // 2: './images/2048/2.webp',
+  2: './images/2048/2.webp', 4: './images/2048/4.webp', 8: './images/2048/8.webp', 16: './images/2048/16.webp',
+  32: './images/2048/32.webp', 64: './images/2048/64.webp', 128: './images/2048/128.webp', 256: './images/2048/256.webp',
+  512: './images/2048/512.webp', 1024: './images/2048/1024.webp', 2048: './images/2048/2048.webp',
+  big: './images/2048/big.webp',
 };
 const IS_DEV = /[?&]dev=1/.test(location.search);
 
@@ -123,7 +125,8 @@ function paint(t) {
   t.el.classList.toggle('long', String(t.v).length >= 4);
   const img = TILE_IMAGES[t.v > WIN_TILE ? 'big' : t.v];
   t.el.classList.toggle('has-img', !!img);
-  if (img) t.el.style.setProperty('--img', `url("${img}")`);
+  // CSS 변수 안의 url() 은 CSS 파일 위치 기준으로 읽혀서, 페이지 기준 절대 주소로 바꿔 넣어요
+  if (img) t.el.style.setProperty('--img', `url("${new URL(img, document.baseURI).href}")`);
   else t.el.style.removeProperty('--img');
 }
 

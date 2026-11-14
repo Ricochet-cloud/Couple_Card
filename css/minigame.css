@@ -382,3 +382,12 @@ main {
     transition: none;
   }
 }
+
+/* 미니게임 탭 (사천성 | 2048) */
+.game-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.game-tab {
+  flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-cream); color: var(--text-dark); border: 2px solid var(--wood-dark);
+  font-family: 'Galmuri'; font-size: 13px; text-decoration: none;
+}
+.game-tab.active { background: var(--grass-green); color: #fff; font-weight: 700; }

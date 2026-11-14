@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>2048 - 추억카드뽑기</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/minigame.css">
+  <link rel="stylesheet" href="./css/game2048.css">
+  <link rel="stylesheet" href="./css/audio.css">
+</head>
+<body>
+  <div class="main-container">
+    <header class="header">
+      <h1>추억카드뽑기</h1>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    </header>
+
+    <main>
+      <div class="minigame-container">
+        <nav class="game-tabs">
+          <a class="game-tab" href="./minigame.html">🍎 사천성</a>
+          <a class="game-tab active" href="./game2048.html">🔢 2048</a>
+        </nav>
+        <div class="minigame-title">🔢 2048</div>
+        <div class="g2048-hint">밀어서 같은 숫자를 합쳐요. 512 를 만들면 뽑기권 1장(하루 1번)!</div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <div class="g2048-game">
+          <div class="sichuan-hud g2048-hud">
+            <div class="sichuan-box">점수<b id="g2048-score">0</b></div>
+            <div class="sichuan-box">최고 타일<b id="g2048-maxTile">-</b></div>
+            <div class="sichuan-box">내 최고<b id="g2048-bestMine">-</b></div>
+            <div class="sichuan-box">상대 최고<b id="g2048-bestOther">-</b></div>
+          </div>
+
+          <div class="g2048-board" id="g2048-board">
+            <div class="g2048-inner">
+              <div class="g2048-cells" id="g2048-cells"></div>
+              <div class="g2048-tiles" id="g2048-tiles"></div>
+            </div>
+          </div>
+
+          <div class="sichuan-controls">
+            <button class="sichuan-btn" id="g2048-undoBtn">↩ 되돌리기 (1)</button>
+            <button class="sichuan-btn sichuan-btn-sub" id="g2048-restartBtn">↻ 새 판</button>
+          </div>
+          <button class="sichuan-btn sichuan-btn-sub" id="g2048-devBtn" style="display: none;">(개발) 256 두 장 놓기</button>
+        </div>
+
+        <div id="g2048-toast"></div>
+
+        <div class="sichuan-modal" id="g2048-modal">
+          <div class="sichuan-card">
+            <h2 id="g2048-modalTitle">게임 오버</h2>
+            <p class="sichuan-stats" id="g2048-stats"></p>
+            <p class="sichuan-reward" id="g2048-rewardMsg"></p>
+            <button class="sichuan-btn" id="g2048-continueBtn" style="display: none; margin-bottom: 8px;">계속하기</button>
+            <button class="sichuan-btn" id="g2048-againBtn">새 판</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <script type="module" src="./js/nav.js"></script>
+
+  <script type="module">
+    import { initAuth, isAdmin, logout, guardAuth } from './js/auth.js';
+    import { Game2048 } from './js/game2048.js';
+
+    initAuth(async () => {
+      guardAuth();
+      try {
+        await Game2048.start();
+      } catch (error) {
+        console.error('초기화 실패:', error);
+        const e = document.getElementById('errorMessage');
+        e.textContent = '오류가 발생했습니다: ' + error.message;
+        e.style.display = 'block';
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await logout();
+        window.location.href = './login.html';
+      } catch (error) {
+        alert('로그아웃 실패: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

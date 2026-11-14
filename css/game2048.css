@@ -1,0 +1,55 @@
+/* 2048 미니게임 (레이아웃·버튼·모달은 minigame.css 의 것을 같이 써요) */
+.g2048-game { max-width: 360px; margin: 0 auto; }
+.g2048-hud .sichuan-box b { font-size: 16px; }
+.g2048-board {
+  --gap: 8px;
+  position: relative; padding: var(--gap); background: var(--wood-dark);
+  border: 2px solid var(--wood-dark); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+  touch-action: none; user-select: none; -webkit-user-select: none; margin-bottom: 12px;
+}
+.g2048-inner { position: relative; width: 100%; aspect-ratio: 1; }
+.g2048-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.g2048-cell { background: rgba(245, 241, 232, 0.28); }
+.g2048-tiles { position: absolute; inset: 0; }
+.g2048-tile {
+  position: absolute; left: 0; top: 0; z-index: 1;
+  width: calc((100% - 3 * var(--gap)) / 4); height: calc((100% - 3 * var(--gap)) / 4);
+  transform: translate(calc(var(--c) * (100% + var(--gap))), calc(var(--r) * (100% + var(--gap))));
+  transition: transform 110ms ease-out;
+}
+.g2048-tile span {
+  display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+  font-family: 'Galmuri'; font-weight: 700; font-size: clamp(20px, 7vw, 28px); color: var(--text-dark);
+  background: #f5f1e8; border: 2px solid var(--wood-dark); box-shadow: 2px 2px 0 rgba(61, 40, 23, 0.25);
+}
+.g2048-tile.long span { font-size: clamp(15px, 5.2vw, 21px); }
+.g2048-tile.is-new span { animation: g2048New 160ms ease-out; }
+.g2048-tile.is-pop { z-index: 2; }
+.g2048-tile.is-pop span { animation: g2048Pop 160ms ease-out; }
+@keyframes g2048New { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes g2048Pop { 0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.g2048-tile[data-v="4"] span { background: #ecdfc0; }
+.g2048-tile[data-v="8"] span { background: #f3c07a; }
+.g2048-tile[data-v="16"] span { background: #ec9a52; color: #fff; }
+.g2048-tile[data-v="32"] span { background: #e5775a; color: #fff; }
+.g2048-tile[data-v="64"] span { background: #d9503a; color: #fff; }
+.g2048-tile[data-v="128"] span { background: #e9cc6a; }
+.g2048-tile[data-v="256"] span { background: #dcc049; }
+.g2048-tile[data-v="512"] span { background: #9ccb64; color: #fff; }
+.g2048-tile[data-v="1024"] span { background: #6b9e3d; color: #fff; }
+.g2048-tile[data-v="2048"] span { background: var(--gold); box-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 2px 2px 0 rgba(61, 40, 23, 0.25); }
+.g2048-tile[data-v="big"] span { background: var(--wood-dark); color: #fff; }
+/* 이미지가 있는 타일: 그림을 꽉 채우고 숫자는 왼쪽 아래에 작게 */
+.g2048-tile.has-img[data-v] span {
+  background: var(--img) center / cover no-repeat, #f5f1e8;
+  align-items: flex-end; justify-content: flex-start; padding: 0 4px 2px;
+  font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.8);
+}
+.g2048-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-align: center; font-family: 'Galmuri'; }
+#g2048-toast {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 11; pointer-events: none;
+  background: var(--text-dark); color: #fff; padding: 8px 14px; font-size: 12px; font-family: 'Galmuri';
+  border: 2px solid var(--wood-dark); opacity: 0; transition: opacity 0.2s;
+}
+#g2048-toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .g2048-tile { transition: none; } .g2048-tile span { animation: none !important; } }

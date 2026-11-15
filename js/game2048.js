@@ -25,7 +25,8 @@ const TILE_IMAGES = {
   2: './images/2048/2.webp', 4: './images/2048/4.webp', 8: './images/2048/8.webp', 16: './images/2048/16.webp',
   32: './images/2048/32.webp', 64: './images/2048/64.webp', 128: './images/2048/128.webp', 256: './images/2048/256.webp',
   512: './images/2048/512.webp', 1024: './images/2048/1024.webp', 2048: './images/2048/2048.webp',
-  big: './images/2048/big.webp',
+  4096: './images/2048/4096.webp', 8192: './images/2048/8192.webp', 16384: './images/2048/16384.webp',
+  big: './images/2048/big.webp', // 32768 이상
 };
 const IS_DEV = /[?&]dev=1/.test(location.search);
 
@@ -58,9 +59,14 @@ async function saveBestIfHigher(myId, score, tile) {
     const snap = await tx.get(ref);
     const records = snap.exists() ? (snap.data().records || {}) : {};
     const prev = records[myId] || null;
-    if (prev && (prev.score || 0) >= score) return { updated: false, best: prev.score };
-    tx.set(ref, { records: { [myId]: { score, tile, date: getTodayKST() } } }, { merge: true });
-    return { updated: true, best: score };
+    // tile 은 점수와 상관없이 지금까지 만든 가장 큰 타일로 남겨요 (도전과제에서 써요)
+    const bestTile = Math.max(prev ? prev.tile || 0 : 0, tile);
+    if (prev && (prev.score || 0) >= score) {
+      if (bestTile > (prev.tile || 0)) tx.set(ref, { records: { [myId]: { tile: bestTile } } }, { merge: true });
+      return { updated: false, best: prev.score, tile: bestTile };
+    }
+    tx.set(ref, { records: { [myId]: { score, tile: bestTile, date: getTodayKST() } } }, { merge: true });
+    return { updated: true, best: score, tile: bestTile };
   });
 }
 
@@ -123,7 +129,7 @@ function paint(t) {
   t.el.dataset.v = t.v > WIN_TILE ? 'big' : String(t.v);
   t.el.firstChild.textContent = t.v;
   t.el.classList.toggle('long', String(t.v).length >= 4);
-  const img = TILE_IMAGES[t.v > WIN_TILE ? 'big' : t.v];
+  const img = TILE_IMAGES[t.v] || (t.v > WIN_TILE ? TILE_IMAGES.big : null);
   t.el.classList.toggle('has-img', !!img);
   // CSS 변수 안의 url() 은 CSS 파일 위치 기준으로 읽혀서, 페이지 기준 절대 주소로 바꿔 넣어요
   if (img) t.el.style.setProperty('--img', `url("${new URL(img, document.baseURI).href}")`);
@@ -294,7 +300,7 @@ async function persist() {
   try {
     const r = await saveBestIfHigher(myId, score, maxTile);
     if (r.updated) {
-      recordsCache[myId] = { score, tile: maxTile, date: getTodayKST() };
+      recordsCache[myId] = { score, tile: r.tile, date: getTodayKST() };
       updateHud();
     }
   } catch (e) { console.warn('최고기록 저장 실패:', e); }

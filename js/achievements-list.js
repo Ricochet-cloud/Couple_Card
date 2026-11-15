@@ -11,6 +11,8 @@
 //
 // ── 조건 종류 (type) ───────────────────────────────────────
 //   sichuanScore : 사천성 2분 타임어택 최고점 (두 계정 중 높은 쪽)   → target: 목표 점수
+//   game2048Score: 2048 게임 최고점 (두 계정 중 높은 쪽)            → target: 목표 점수
+//   game2048Tile : 2048 게임에서 만든 가장 큰 타일 (두 계정 중 높은 쪽)  → target: 타일 숫자 (512, 1024, 2048, 4096 …)
 //   collectSet   : 지정한 카드를 전부 보유                         → dexNos: [도감번호, ...]
 //   collectCount : 서로 다른 카드를 N장 보유 (히든 카드는 제외)       → target: 장수
 //   drawCount    : 카드뽑기를 N번 함 (재조합은 제외)                → target: 횟수
@@ -19,6 +21,10 @@
 //   ※ drawCount·quizCount·quizCorrect 는 이 기능을 적용한 날부터 세기 시작해요.
 //
 // 예시)
+//   { id: 'g2048-tile', icon: '🔢', title: '2048 달성', description: '2048 게임에서 2048 타일 만들기',
+//     type: 'game2048Tile', target: 2048, rewardDexNo: 1003 },
+//   { id: 'g2048-score', icon: '🏆', title: '2048 고수', description: '2048 게임에서 20,000점 달성',
+//     type: 'game2048Score', target: 20000, rewardDexNo: 1004 },
 //   { id: 'kimetsu-set', icon: '🗡️', title: '귀멸 컬렉터', description: '귀멸의 칼날 카드 3장 모으기',
 //     type: 'collectSet', dexNos: [12, 13, 14], rewardDexNo: 1002 },
 
@@ -170,5 +176,15 @@ export const ACHIEVEMENTS = [
     type: 'collectSet',
     dexNos: [208, 14, 169, 203, 211, 212, 214, 1011, 1015],
     rewardDexNo: 1016,
+  },
+// 2048 game 2048 점수 20000점 달성
+  {
+    id: '2048-20000',
+    icon: '🏆',
+    title: '204840968192',
+    description: '2048 게임에서 20,000점 달성',
+    type: 'game2048Score',
+    target: 20000,
+    rewardDexNo: 1017, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
   },
 ];

@@ -10,6 +10,7 @@ import { ACHIEVEMENTS } from './achievements-list.js';
 
 const STATE_REF = doc(db, 'state', 'shared');
 const SICHUAN_REF = doc(db, 'minigameScores', 'sichuan-2min'); // js/minigame.js 의 최고기록 문서
+const G2048_REF = doc(db, 'minigameScores', '2048'); // js/game2048.js 의 최고기록 문서 (계정별 score, tile)
 
 function getTodayKST() {
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
@@ -21,15 +22,17 @@ function getTodayKST() {
  * @returns {{cards: Array, claimed: Object, sichuanBest: number}}
  */
 export async function loadAchievementData() {
-  const [cards, stateSnap, sichuanSnap] = await Promise.all([
+  const [cards, stateSnap, sichuanSnap, g2048Snap] = await Promise.all([
     getActiveCards(),
     getDoc(STATE_REF),
     getDoc(SICHUAN_REF).catch(() => null), // 기록 문서를 못 읽어도 나머지는 보여줘요
+    getDoc(G2048_REF).catch(() => null),
   ]);
 
   const state = stateSnap.exists() ? stateSnap.data() : {};
   const owned = state.owned || {};
   const records = sichuanSnap && sichuanSnap.exists() ? sichuanSnap.data().records || {} : {};
+  const records2048 = Object.values(g2048Snap && g2048Snap.exists() ? g2048Snap.data().records || {} : {});
 
   return {
     cards: cards.map((c) => ({
@@ -42,6 +45,8 @@ export async function loadAchievementData() {
     manualDone: state.manualDone || {},
     stats: state.stats || {}, // { draws, quizAnswered, quizCorrect } 누적 횟수
     sichuanBest: Object.values(records).reduce((max, r) => Math.max(max, r.score || 0), 0),
+    game2048Score: records2048.reduce((max, r) => Math.max(max, r.score || 0), 0),
+    game2048Tile: records2048.reduce((max, r) => Math.max(max, r.tile || 0), 0),
   };
 }
 
@@ -79,6 +84,12 @@ export function evaluateAchievement(ach, data) {
 
   if (ach.type === 'sichuanScore') {
     current = data.sichuanBest;
+    target = ach.target;
+  } else if (ach.type === 'game2048Score') {
+    current = data.game2048Score;
+    target = ach.target;
+  } else if (ach.type === 'game2048Tile') {
+    current = data.game2048Tile;
     target = ach.target;
   } else if (ach.type === 'collectSet') {
     target = ach.dexNos.length;

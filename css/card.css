@@ -2091,6 +2091,114 @@
   .card[data-theme="tanjiro"] .card__photo::before { animation: none; }
 }
 
+/* ===== 카드 특수 디자인: 젠이츠 (카드 데이터 theme: 'zenitsu') =====
+   어두운 밤하늘에 하오리의 노란 삼각 비늘(우로코) 무늬가 숨 쉬고, 테두리에는 정전기 스파크가 튀어요.
+   9초에 한 번 숨을 죽이며(화면이 어두워지고 스파크가 거세짐) → 벽력일섬: 금빛 번개가 카드를 가르고
+   세 번 깜빡이는 하얀 섬광이 카드 밖까지 번져요 → 한 박자 늦게 천둥처럼 카드가 쿵 떨리고 충격파가 퍼져요.
+   초희귀 등급 위에 얹어서 써요. */
+.card[data-theme="zenitsu"] {
+  --f-dark: #3a2a00; --f-shade: #8a6a00; --f-mid: #d9a400; --f-base: #ffd23a; --f-light: #fff0a0; --f-hi: #fffbe0;
+  --gem: #fff27a;
+  --glow: 0 0 16px rgba(255, 215, 60, 0.65), 0 0 34px rgba(255, 225, 90, 0.35);
+  overflow: visible;
+  animation: znShake 9s linear infinite;
+}
+.card[data-theme="zenitsu"] .card__in { background: #0c0a24; }
+/* 사진 자리: 번개 구름이 낀 밤하늘 */
+.card[data-theme="zenitsu"] .card__photo {
+  background:
+    radial-gradient(ellipse 60% 35% at 70% 18%, rgba(120, 90, 220, 0.5), transparent 70%),
+    radial-gradient(ellipse 55% 30% at 25% 62%, rgba(70, 60, 170, 0.45), transparent 70%),
+    linear-gradient(180deg, #0a0820 0%, #1c1650 60%, #2d2370 100%);
+}
+.card[data-theme="zenitsu"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #1a1200, inset 0 -5px 0 #d9a400, inset 0 -6px 0 #fff0a0;
+}
+/* 삼각 비늘 무늬: 숨 쉬듯 밝아졌다 어두워져요 */
+.card[data-theme="zenitsu"] .card__photo::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='34' viewBox='0 0 20 34'%3E%3Cg fill='none' stroke='%23ffd23a' stroke-width='.7' stroke-opacity='.8'%3E%3Cpath d='M10 1L19 17H1Z M0 18L9 34H-9Z M20 18L29 34H11Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 20px 34px repeat;
+  mix-blend-mode: screen; opacity: 0.35;
+  animation: znBreath 4.5s ease-in-out infinite alternate;
+}
+.card[data-theme="zenitsu"] .card__body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='34' viewBox='0 0 20 34'%3E%3Cg fill='none' stroke='%23ffd23a' stroke-width='.7' stroke-opacity='.8'%3E%3Cpath d='M10 1L19 17H1Z M0 18L9 34H-9Z M20 18L29 34H11Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 20px 34px,
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 215, 60, 0.05) 3px 4px), #0c0a24;
+}
+.card[data-theme="zenitsu"] .card__title { color: #fff6b8; text-shadow: 0 0 8px rgba(255, 215, 60, 0.8); }
+.card[data-theme="zenitsu"] .card__desc { color: #d9d0a0; }
+.card[data-theme="zenitsu"] .card__meta { color: #a8a070; border-top-color: rgba(255, 215, 60, 0.4); }
+.card[data-theme="zenitsu"] .card__badge {
+  color: #ffe27a; background: #0a0818;
+  box-shadow: inset 0 0 0 1px #d9a400, 0 0 6px rgba(255, 215, 60, 0.6);
+}
+.card[data-theme="zenitsu"] .card__no { background: #100d2c; color: #fff0a0; box-shadow: inset 0 0 0 1px #d9a400; }
+.card[data-theme="zenitsu"] .card__body::after {
+  content: '雷'; position: absolute; right: 8px; bottom: 2px;
+  font-size: 38px; line-height: 1; color: rgba(255, 220, 80, 0.14); pointer-events: none;
+}
+.tilt[data-theme="zenitsu"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 240, 150, 0.55), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 번개 맞기 직전: 숨을 죽이듯 카드가 어두워졌다가 번쩍하는 순간 걷혀요 */
+.card[data-theme="zenitsu"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: #04021a; opacity: 0;
+  animation: znDim 9s linear infinite;
+}
+/* 스파크 · 번개 · 섬광 · 충격파 (카드 밖까지 그려져요) */
+.card[data-theme="zenitsu"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 7; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='b1' x='-30%25' y='-30%25' width='160%25' height='160%25'%3E%3CfeGaussianBlur stdDeviation='1.6'/%3E%3C/filter%3E%3Cfilter id='b2' x='-30%25' y='-30%25' width='160%25' height='160%25'%3E%3CfeGaussianBlur stdDeviation='3.6'/%3E%3C/filter%3E%3C/defs%3E%3Cstyle%3E.bf%7Bfill:none%3Bstroke:%23ffe27a%3Bstroke-width:.45%3Bopacity:.7%7D.spg%7Banimation:spg 9s linear infinite%7D%40keyframes spg%7B0%25,30%25%7Bopacity:.35%7D50%25,55.5%25%7Bopacity:1%7D56%25,64%25%7Bopacity:1%7D80%25,100%25%7Bopacity:.35%7D%7D.sp%7Bfill:none%3Bstroke:%23fff6b0%3Bstroke-width:.55%3Bstroke-linecap:round%3Bstroke-linejoin:round%3Bopacity:0%3Banimation:sp 1.4s steps(1) infinite%7D%40keyframes sp%7B0%25%7Bopacity:0%7D8%25%7Bopacity:1%7D14%25%7Bopacity:0%7D46%25%7Bopacity:0%7D52%25%7Bopacity:1%7D57%25%7Bopacity:0%7D78%25%7Bopacity:0%7D84%25%7Bopacity:1%7D88%25%7Bopacity:0%7D%7D.bg%7Bfill:none%3Bstroke:%23ffd91a%3Bstroke-width:17%3Bstroke-linecap:round%3Bstroke-linejoin:round%3Bopacity:0%7D.bm%7Bfill:none%3Bstroke:%23fff3a0%3Bstroke-width:7%3Bstroke-linecap:round%3Bstroke-linejoin:round%3Bopacity:0%7D.bc%7Bfill:none%3Bstroke:%23fff%3Bstroke-width:2.8%3Bstroke-linecap:round%3Bstroke-linejoin:round%3Bopacity:0%7D.bg,.bm,.bc%7Banimation:bolt 9s linear infinite%7D%40keyframes bolt%7B0%25,55.9%25%7Bopacity:0%7D56%25%7Bopacity:1%7D56.7%25%7Bopacity:.12%7D57.3%25%7Bopacity:1%7D58.2%25%7Bopacity:.5%7D59%25%7Bopacity:1%7D61%25%7Bopacity:.7%7D64%25%7Bopacity:.2%7D67%25,100%25%7Bopacity:0%7D%7D.gh%7Bfill:none%3Bstroke:%23ffe14d%3Bstroke-width:3%3Bstroke-linecap:round%3Bstroke-linejoin:round%3Bopacity:0%3Banimation:gh 9s linear infinite%7D.gh2%7Btransform:translate(-5px,2px)%7D.gh3%7Btransform:translate(6px,-2px)%7D%40keyframes gh%7B0%25,56.5%25%7Bopacity:0%7D57.5%25%7Bopacity:.7%7D70%25%7Bopacity:.2%7D78%25,100%25%7Bopacity:0%7D%7D.fw%7Bfill:%23fff%3Bopacity:0%3Banimation:fw 9s linear infinite%7D%40keyframes fw%7B0%25,55.9%25%7Bopacity:0%7D56%25%7Bopacity:1%7D57%25%7Bopacity:.55%7D57.4%25%7Bopacity:1%7D58.3%25%7Bopacity:.5%7D59%25%7Bopacity:.9%7D60.5%25%7Bopacity:.4%7D63%25%7Bopacity:.15%7D67%25,100%25%7Bopacity:0%7D%7D.fy%7Bfill:%23ffe14d%3Bopacity:0%3Banimation:fy 9s linear infinite%7D%40keyframes fy%7B0%25,56%25%7Bopacity:0%7D57%25%7Bopacity:.6%7D64%25%7Bopacity:.3%7D74%25,100%25%7Bopacity:0%7D%7D.sw%7Bfill:none%3Bstroke:%23fff2a0%3Bstroke-width:2.2%3Bvector-effect:non-scaling-stroke%3Bopacity:0%3Btransform-box:fill-box%3Btransform-origin:50%25 50%25%3Banimation:sw 9s linear infinite%7D%40keyframes sw%7B0%25,63.8%25%7Bopacity:0%3Btransform:scale(.04)%7D64.4%25%7Bopacity:.95%7D73%25,100%25%7Bopacity:0%3Btransform:scale(1)%7D%7D.pt%7Bfill:%23fff6a0%3Bopacity:0%3Banimation:pt 9s linear infinite%7D%40keyframes pt%7B0%25,56%25%7Bopacity:0%3Btransform:translate(0,0)%7D57%25%7Bopacity:1%7D75%25%7Bopacity:.8%3Btransform:translate(var(--dx),var(--dy))%7D82%25,100%25%7Bopacity:0%3Btransform:translate(var(--dx),var(--dy))%7D%7D%40media(prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.bg,.bm,.bc,.gh,.fw,.fy,.sw,.pt%7Bdisplay:none%7D%7D%3C/style%3E%3Crect class='bf' x='-2' y='-2' width='104' height='144'/%3E%3Cg class='spg'%3E%3Cpath class='sp' style='animation-delay:-0.71s' transform='translate(8 -2) rotate(-2.857226789410884)' d='M0.0 0.0 L1.5 0.2 L3.0 1.2 L4.5 -0.1'/%3E%3Cpath class='sp' style='animation-delay:-1.11s' transform='translate(25 -2) rotate(5.243089730993816)' d='M0.0 0.0 L1.5 -0.9 L3.0 0.0 L4.5 0.4'/%3E%3Cpath class='sp' style='animation-delay:-0.97s' transform='translate(42 -2) rotate(-24.352592626246892)' d='M0.0 0.0 L1.5 -0.6 L3.0 -1.1 L4.5 0.9'/%3E%3Cpath class='sp' style='animation-delay:-0.86s' transform='translate(59 -2) rotate(-27.48717981780924)' d='M0.0 0.0 L1.5 1.4 L3.0 1.3 L4.5 0.4'/%3E%3Cpath class='sp' style='animation-delay:-0.27s' transform='translate(76 -2) rotate(-20.550354291590253)' d='M0.0 0.0 L1.5 -1.4 L3.0 0.1 L4.5 -1.2'/%3E%3Cpath class='sp' style='animation-delay:-1.18s' transform='translate(93 -2) rotate(-15.483419180087115)' d='M0.0 0.0 L1.5 -1.3 L3.0 -0.1 L4.5 -0.2'/%3E%3Cpath class='sp' style='animation-delay:-0.64s' transform='translate(8 142) rotate(181.1474468858446)' d='M0.0 0.0 L1.5 0.4 L3.0 -0.0 L4.5 0.5'/%3E%3Cpath class='sp' style='animation-delay:-0.99s' transform='translate(25 142) rotate(166.68977397983315)' d='M0.0 0.0 L1.5 1.4 L3.0 1.4 L4.5 1.0'/%3E%3Cpath class='sp' style='animation-delay:-1.07s' transform='translate(42 142) rotate(168.916633020933)' d='M0.0 0.0 L1.5 -0.8 L3.0 -0.6 L4.5 -1.2'/%3E%3Cpath class='sp' style='animation-delay:-1.19s' transform='translate(59 142) rotate(174.02398829510946)' d='M0.0 0.0 L1.5 1.0 L3.0 -0.3 L4.5 1.3'/%3E%3Cpath class='sp' style='animation-delay:-1.37s' transform='translate(76 142) rotate(150.03269622333423)' d='M0.0 0.0 L1.5 -0.8 L3.0 1.1 L4.5 -0.1'/%3E%3Cpath class='sp' style='animation-delay:-0.38s' transform='translate(93 142) rotate(173.84546328475687)' d='M0.0 0.0 L1.5 -1.2 L3.0 0.4 L4.5 0.8'/%3E%3Cpath class='sp' style='animation-delay:-0.17s' transform='translate(-2 10) rotate(-114.7713480988698)' d='M0.0 0.0 L1.5 -0.5 L3.0 1.3 L4.5 0.7'/%3E%3Cpath class='sp' style='animation-delay:-0.25s' transform='translate(-2 34) rotate(-105.2167230664122)' d='M0.0 0.0 L1.5 -1.1 L3.0 -1.2 L4.5 0.8'/%3E%3Cpath class='sp' style='animation-delay:-0.18s' transform='translate(-2 58) rotate(-86.44229150337631)' d='M0.0 0.0 L1.5 -0.1 L3.0 -0.9 L4.5 0.6'/%3E%3Cpath class='sp' style='animation-delay:-0.38s' transform='translate(-2 82) rotate(-81.37709257732998)' d='M0.0 0.0 L1.5 -1.1 L3.0 -0.2 L4.5 -0.8'/%3E%3Cpath class='sp' style='animation-delay:-0.29s' transform='translate(-2 106) rotate(-61.74425662687851)' d='M0.0 0.0 L1.5 0.8 L3.0 -0.5 L4.5 1.1'/%3E%3Cpath class='sp' style='animation-delay:-1.39s' transform='translate(-2 130) rotate(-96.34352177567673)' d='M0.0 0.0 L1.5 1.0 L3.0 0.4 L4.5 -1.1'/%3E%3Cpath class='sp' style='animation-delay:-0.41s' transform='translate(102 10) rotate(72.79460211465135)' d='M0.0 0.0 L1.5 -0.7 L3.0 0.8 L4.5 -0.5'/%3E%3Cpath class='sp' style='animation-delay:-0.84s' transform='translate(102 34) rotate(64.40391320330545)' d='M0.0 0.0 L1.5 -1.1 L3.0 0.2 L4.5 -0.7'/%3E%3Cpath class='sp' style='animation-delay:-0.80s' transform='translate(102 58) rotate(82.30224279559368)' d='M0.0 0.0 L1.5 -0.1 L3.0 1.3 L4.5 -0.0'/%3E%3Cpath class='sp' style='animation-delay:-1.14s' transform='translate(102 82) rotate(111.99154006813333)' d='M0.0 0.0 L1.5 -0.9 L3.0 -1.0 L4.5 1.1'/%3E%3Cpath class='sp' style='animation-delay:-0.28s' transform='translate(102 106) rotate(74.96991398575497)' d='M0.0 0.0 L1.5 -0.9 L3.0 0.7 L4.5 1.2'/%3E%3Cpath class='sp' style='animation-delay:-0.15s' transform='translate(102 130) rotate(117.00815113851871)' d='M0.0 0.0 L1.5 1.1 L3.0 0.3 L4.5 -0.2'/%3E%3C/g%3E%3Cg filter='url(%23b2)'%3E%3Cpath class='gh gh2' d='M72.0 -9.0 L63.6 5.6 L62.4 20.4 L63.4 31.4 L48.7 50.6 L49.5 61.1 L59.1 77.0 L52.6 91.4 L45.4 103.7 L41.7 122.6 L36.1 136.2 L32.0 149.0 M63.4 31.4 L58.0 39.3 L53.0 47.1 L46.2 54.4 L37.9 60.4 M59.1 77.0 L68.7 84.3 L73.5 89.1 L76.9 96.5 L88.2 102.4 M45.4 103.7 L38.5 109.1 L35.7 115.2 L29.0 122.8 M49.5 61.1 L51.8 67.0 L55.6 70.8 L63.1 74.8'/%3E%3Cpath class='gh gh3' d='M72.0 -9.0 L63.6 5.6 L62.4 20.4 L63.4 31.4 L48.7 50.6 L49.5 61.1 L59.1 77.0 L52.6 91.4 L45.4 103.7 L41.7 122.6 L36.1 136.2 L32.0 149.0 M63.4 31.4 L58.0 39.3 L53.0 47.1 L46.2 54.4 L37.9 60.4 M59.1 77.0 L68.7 84.3 L73.5 89.1 L76.9 96.5 L88.2 102.4 M45.4 103.7 L38.5 109.1 L35.7 115.2 L29.0 122.8 M49.5 61.1 L51.8 67.0 L55.6 70.8 L63.1 74.8'/%3E%3C/g%3E%3Cg filter='url(%23b1)'%3E%3Cpath class='bg' d='M72.0 -9.0 L63.6 5.6 L62.4 20.4 L63.4 31.4 L48.7 50.6 L49.5 61.1 L59.1 77.0 L52.6 91.4 L45.4 103.7 L41.7 122.6 L36.1 136.2 L32.0 149.0 M63.4 31.4 L58.0 39.3 L53.0 47.1 L46.2 54.4 L37.9 60.4 M59.1 77.0 L68.7 84.3 L73.5 89.1 L76.9 96.5 L88.2 102.4 M45.4 103.7 L38.5 109.1 L35.7 115.2 L29.0 122.8 M49.5 61.1 L51.8 67.0 L55.6 70.8 L63.1 74.8'/%3E%3C/g%3E%3Cpath class='bm' d='M72.0 -9.0 L63.6 5.6 L62.4 20.4 L63.4 31.4 L48.7 50.6 L49.5 61.1 L59.1 77.0 L52.6 91.4 L45.4 103.7 L41.7 122.6 L36.1 136.2 L32.0 149.0 M63.4 31.4 L58.0 39.3 L53.0 47.1 L46.2 54.4 L37.9 60.4 M59.1 77.0 L68.7 84.3 L73.5 89.1 L76.9 96.5 L88.2 102.4 M45.4 103.7 L38.5 109.1 L35.7 115.2 L29.0 122.8 M49.5 61.1 L51.8 67.0 L55.6 70.8 L63.1 74.8'/%3E%3Cpath class='bc' d='M72.0 -9.0 L63.6 5.6 L62.4 20.4 L63.4 31.4 L48.7 50.6 L49.5 61.1 L59.1 77.0 L52.6 91.4 L45.4 103.7 L41.7 122.6 L36.1 136.2 L32.0 149.0 M63.4 31.4 L58.0 39.3 L53.0 47.1 L46.2 54.4 L37.9 60.4 M59.1 77.0 L68.7 84.3 L73.5 89.1 L76.9 96.5 L88.2 102.4 M45.4 103.7 L38.5 109.1 L35.7 115.2 L29.0 122.8 M49.5 61.1 L51.8 67.0 L55.6 70.8 L63.1 74.8'/%3E%3Ccircle class='pt' style='--dx:54.1px%3B--dy:-10.1px' cx='50' cy='70' r='0.8'/%3E%3Ccircle class='pt' style='--dx:30.2px%3B--dy:20.9px' cx='50' cy='70' r='1.2'/%3E%3Ccircle class='pt' style='--dx:17.5px%3B--dy:33.3px' cx='50' cy='70' r='0.8'/%3E%3Ccircle class='pt' style='--dx:-2.8px%3B--dy:31.7px' cx='50' cy='70' r='0.8'/%3E%3Ccircle class='pt' style='--dx:-27.1px%3B--dy:44.5px' cx='50' cy='70' r='1.1'/%3E%3Ccircle class='pt' style='--dx:-44.1px%3B--dy:30.9px' cx='50' cy='70' r='0.8'/%3E%3Ccircle class='pt' style='--dx:-36.3px%3B--dy:7.1px' cx='50' cy='70' r='1.0'/%3E%3Ccircle class='pt' style='--dx:-32.5px%3B--dy:-11.8px' cx='50' cy='70' r='0.9'/%3E%3Ccircle class='pt' style='--dx:-15.9px%3B--dy:-29.4px' cx='50' cy='70' r='0.9'/%3E%3Ccircle class='pt' style='--dx:8.6px%3B--dy:-54.8px' cx='50' cy='70' r='1.1'/%3E%3Ccircle class='pt' style='--dx:25.5px%3B--dy:-37.3px' cx='50' cy='70' r='0.8'/%3E%3Ccircle class='pt' style='--dx:23.1px%3B--dy:-19.8px' cx='50' cy='70' r='1.2'/%3E%3Ccircle class='sw' cx='50' cy='70' r='90'/%3E%3Crect class='fy' x='-8' y='-8' width='116' height='156'/%3E%3Crect class='fw' x='-8' y='-8' width='116' height='156'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+}
+/* 작은 칸에서는 바깥 이펙트와 흔들림을 숨겨요 */
+.cards-grid .card[data-theme="zenitsu"]::before,
+.cards-grid .card[data-theme="zenitsu"]::after,
+.ach-slot .card[data-theme="zenitsu"]::before,
+.ach-slot .card[data-theme="zenitsu"]::after,
+.event-slot .card[data-theme="zenitsu"]::before,
+.event-slot .card[data-theme="zenitsu"]::after,
+.cards-grid .card[data-theme="zenitsu"],
+.ach-slot .card[data-theme="zenitsu"],
+.event-slot .card[data-theme="zenitsu"],
+.cards-grid .card[data-theme="zenitsu"] .card__body::after { animation: none; }
+.cards-grid .card[data-theme="zenitsu"]::before,
+.cards-grid .card[data-theme="zenitsu"]::after,
+.ach-slot .card[data-theme="zenitsu"]::before,
+.ach-slot .card[data-theme="zenitsu"]::after,
+.event-slot .card[data-theme="zenitsu"]::before,
+.event-slot .card[data-theme="zenitsu"]::after,
+.cards-grid .card[data-theme="zenitsu"] .card__body::after { display: none; }
+
+@keyframes znBreath {
+  from { opacity: 0.18; }
+  to   { opacity: 0.55; }
+}
+@keyframes znDim {
+  0%, 40% { opacity: 0; }
+  55.5% { opacity: 0.5; }
+  55.95% { opacity: 0.5; }
+  56% { opacity: 0; }
+  100% { opacity: 0; }
+}
+/* 천둥: 번개가 친 뒤 약 0.5초 늦게 카드가 쿵 떨려요 */
+@keyframes znShake {
+  0%, 63.9% { translate: 0 0; }
+  64.4% { translate: -4px 3px; }
+  65.2% { translate: 4px -3px; }
+  66% { translate: -3px -2px; }
+  66.8% { translate: 3px 2px; }
+  67.6% { translate: -2px 1px; }
+  68.4% { translate: 1px -1px; }
+  69.2%, 100% { translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card[data-theme="zenitsu"] { animation: none; }
+  .card[data-theme="zenitsu"] .card__photo::before { animation: none; opacity: 0.35; }
+}
+
 /* ===== 카드 특수 디자인: 시노부 (카드 데이터 theme: 'shinobu') =====
    위에서 늘어진 등꽃(살랑살랑 + 꽃잎), 아래에서 날갯짓하는 나비 6마리, 카드 전체에 은은한 보라 안개. 영웅 등급 위에 얹어서 써요. */
 .card[data-theme="shinobu"] {

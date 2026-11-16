@@ -18,6 +18,12 @@ const TIME_LIMIT_MS = TIME_LIMIT_SEC * 1000;
 const WARN_SEC = 10;               // 남은 시간이 이 이하면 시간 표시를 빨갛게
 const REFILL_DELAY_MS = 700;       // 판을 다 지운 뒤 새 판이 채워지기까지 잠깐 멈추는 시간
 const REWARD_MIN_SCORE = 500;      // 이 점수 이상이어야 뽑기권 지급 (하루 1번 제한은 그대로)
+
+// ============ 최고기록 갱신 보상 (숫자는 여기서만 바꾸면 돼요) ============
+const RECORD_REWARD_AMOUNT = 1;          // 내 최고기록을 넘을 때마다 받는 뽑기권 (첫 기록 포함)
+const RECORD_REWARD_LIMIT_PER_DAY = 3;   // 하루(한국 시간) 최대 횟수
+const RECORD_REWARD_DATE_FIELD = 'sichuanRecordRewardDate';   // state/shared: 마지막으로 받은 날
+const RECORD_REWARD_COUNT_FIELD = 'sichuanRecordRewardCount'; // state/shared: 그날 받은 횟수
 const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑','🍉','🥕','🌽','🍄',
                 '🐶','🐱','🐰','🐻','🐼','🐸','🦊','🐧','🌸','🌻','⭐','🌙',
                 '🍀','🎈','🎀','🔔','🍪','🧸'];
@@ -266,20 +272,51 @@ function splitRecords(records, myId) {
 }
 
 // 기존 최고 점수보다 높을 때만 갱신한다.
+// 기록이 갱신되면 같은 트랜잭션 안에서 뽑기권도 준다 (하루 RECORD_REWARD_LIMIT_PER_DAY 번까지).
+// 기록 저장과 뽑기권 지급이 한 덩어리라서 새로고침이나 연타로 두 번 지급되지 않는다.
 async function saveBestIfHigher(myId, score, timeSec) {
   const ref = doc(db, BEST_COLLECTION, BEST_DOC);
-  return runTransaction(db, async (tx) => {
+  const stateRef = doc(db, 'state', 'shared');
+  const today = getTodayKST();
+  const res = await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
+    const stateSnap = await tx.get(stateRef);   // 읽기는 쓰기보다 먼저 전부 끝낸다
     const records = snap.exists() ? (snap.data().records || {}) : {};
     const prev = records[myId] || null;
     if (prev && (prev.score || 0) >= score) {
-      return { updated: false, prevScore: prev.score, best: prev.score };
+      return { updated: false, prevScore: prev.score, best: prev.score, reward: null };
     }
     tx.set(ref, {
-      records: { [myId]: { score: score, time: timeSec, date: getTodayKST() } },
+      records: { [myId]: { score: score, time: timeSec, date: today } },
     }, { merge: true });
-    return { updated: true, prevScore: prev ? prev.score : null, best: score };
+
+    // 뽑기권: 오늘 받은 횟수가 한도 안일 때만. 상태 문서가 없으면 보상 없이 기록만 저장.
+    let reward = null;
+    if (stateSnap.exists()) {
+      const st = stateSnap.data();
+      const used = st[RECORD_REWARD_DATE_FIELD] === today ? (st[RECORD_REWARD_COUNT_FIELD] || 0) : 0;
+      if (used < RECORD_REWARD_LIMIT_PER_DAY) {
+        tx.update(stateRef, {
+          tickets: (st.tickets || 0) + RECORD_REWARD_AMOUNT,
+          [RECORD_REWARD_DATE_FIELD]: today,
+          [RECORD_REWARD_COUNT_FIELD]: used + 1,
+        });
+        reward = { granted: true, amount: RECORD_REWARD_AMOUNT, left: RECORD_REWARD_LIMIT_PER_DAY - used - 1 };
+      } else {
+        reward = { granted: false, amount: 0, left: 0 };
+      }
+    }
+    return { updated: true, prevScore: prev ? prev.score : null, best: score, reward: reward };
   });
+
+  if (res.reward && res.reward.granted) {
+    try {
+      await addDoc(collection(db, 'minigameRewards'), {
+        date: today, gameId: 'sichuan-record', amount: res.reward.amount, grantedAt: Timestamp.now(),
+      });
+    } catch (e) { console.warn('최고기록 보상 기록 저장 실패 (보상 자체는 성공):', e); }
+  }
+  return res;
 }
 
 // ============ 게임 상태 관리 ============
@@ -783,9 +820,16 @@ export const SichuanGame = (function () {
         });
         refreshBestUi();
         if (res.updated) {
-          setScoreMsg(res.prevScore == null
+          const head = res.prevScore == null
             ? '🏆 첫 기록이에요!'
-            : '🏆 최고기록 갱신! (이전 ' + res.prevScore + '점)');
+            : '🏆 최고기록 갱신! (이전 ' + res.prevScore + '점)';
+          let tail = '';
+          if (res.reward && res.reward.granted) {
+            tail = ' 🎟️ 뽑기권 +' + res.reward.amount + ' (오늘 ' + res.reward.left + '번 더)';
+          } else if (res.reward) {
+            tail = ' 오늘 기록 보상은 다 받았어요.';
+          }
+          setScoreMsg(head + tail);
         } else {
           setScoreMsg('내 최고 기록은 ' + res.best + '점이에요.');
         }

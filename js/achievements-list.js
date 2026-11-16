@@ -187,4 +187,14 @@ export const ACHIEVEMENTS = [
     target: 20000,
     rewardDexNo: 1017, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
   },
+// 요리이치
+  {
+    id: '2048-8192',
+    icon: '☀️',
+    title: '세계관 최강자',
+    description: '2048 게임에서 8,192 타일 달성',
+    type: 'game2048Tile',
+    target: 8192,
+    rewardDexNo: 1014, // 히든 카드를 등록한 뒤 1001 등으로 바꿔주세요
+  },
 ];

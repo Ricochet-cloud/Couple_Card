@@ -164,7 +164,7 @@ export const ACHIEVEMENTS = [
     title: '탄지로와 친구들',
     description: '탄지로의 친구들을 모아주세요',
     type: 'collectSet',
-    dexNos: [200, 123, 51, 213],
+    dexNos: [200, 123, 51, 213, 219,168],
     rewardDexNo: 1015,
   },
 // 큰어르신

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>시노부 vs 도우마 - 2D 탄막 보스전</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header>
+    <div class="title-group">
+      <h1>🦋 시노부 vs 도우마 ❄️</h1>
+      <span class="badge" id="headerDifficultyBadge">NORMAL</span>
+    </div>
+    <div class="hud-pill" id="fpsDisplay">FPS: 60</div>
+  </header>
+
+  <!-- 메인 작업 뷰포트 -->
+  <main>
+    <!-- 캔버스 영역 -->
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="540" height="960"></canvas>
+      <div class="canvas-hud">
+        <div class="hud-pill" id="activeCharHud">상태: READY</div>
+        <div class="hud-pill" id="renderModeHud" style="color:#ffd54f;">절차적 렌더러 (Fallback)</div>
+      </div>
+    </div>
+
+    <!-- 난이도 선택 모달 -->
+    <div class="difficulty-modal" id="difficultyModal">
+      <div class="difficulty-modal-content">
+        <h2>난이도 선택</h2>
+        <p style="color: #9e9cb4; margin-bottom: 20px;">게임을 시작할 난이도를 선택하세요</p>
+
+        <div class="difficulty-options">
+          <button class="difficulty-option" data-diff="EASY">
+            <div class="difficulty-name">쉬움</div>
+            <div class="difficulty-desc">EASY</div>
+            <div class="difficulty-detail">기본 탄막과 표준 밸런스</div>
+          </button>
+          <button class="difficulty-option active" data-diff="NORMAL">
+            <div class="difficulty-name">보통</div>
+            <div class="difficulty-desc">NORMAL</div>
+            <div class="difficulty-detail">권장 난이도</div>
+          </button>
+          <button class="difficulty-option" data-diff="HARD">
+            <div class="difficulty-name">어려움</div>
+            <div class="difficulty-desc">HARD</div>
+            <div class="difficulty-detail">고급 탄막 패턴</div>
+          </button>
+        </div>
+
+        <button class="difficulty-start-btn" id="btnStartGame">게임 시작</button>
+      </div>
+    </div>
+
+    <!-- 대시보드 컨트롤 패널 (숨김) -->
+    <div class="dashboard-panel">
+      <!-- 1. 난이도 선택 (EASY / NORMAL / HARD) -->
+      <div>
+        <div class="section-title">난이도 선택 (Difficulty)</div>
+        <div class="tab-group" style="grid-template-columns: 1fr 1fr 1fr;">
+          <button class="tab-btn" data-diff="EASY" id="btnDiffEasy" style="color:#69f0ae;">쉬움 (EASY)</button>
+          <button class="tab-btn active" data-diff="NORMAL" id="btnDiffNormal" style="color:#ffd54f; background:#312e4f;">보통 (NORMAL)</button>
+          <button class="tab-btn" data-diff="HARD" id="btnDiffHard" style="color:#ff80ab;">어려움 (HARD)</button>
+        </div>
+        <div id="diffDesc" style="font-size:0.76rem; color:#9e9cb4; margin-top:6px; padding: 0 4px;">
+          기본 탄막 패턴과 표준 밸런스.
+        </div>
+      </div>
+
+      <!-- 2. 전투 조작 안내 -->
+      <div>
+        <div class="section-title">조작 방법 (Controls)</div>
+        <div class="card-box" style="font-size:0.84rem; line-height: 1.6;">
+          <div>⌨️ <strong>이동:</strong> 방향키 또는 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+          <div>📱 <strong>터치 드래그:</strong> 캔버스 드래그 (1:1 상대 이동)</div>
+          <div>⚔️ <strong>자동 공격:</strong> 전방 독침 & 유도 나비 상시 연사</div>
+          <div>🔍 <strong>저속 집중:</strong> <kbd>Shift</kbd> (히트박스 노출 & 집탄율↑)</div>
+          <div>🦋 <strong>결전 오의 (폭탄):</strong> <kbd>Space</kbd> 또는 <kbd>X</kbd> (탄막 소거 & 무적)</div>
+          <div>🎯 <strong>예측 공격 회피:</strong> 이동을 멈추거나 급격히 방향 꺾기</div>
+          <div>⏸️ <strong>일시정지:</strong> <kbd>P</kbd> 또는 <kbd>ESC</kbd></div>
+        </div>
+      </div>
+
+      <!-- 3. 전투 단축 액션 -->
+      <div>
+        <div class="section-title">전투 액션 (Action Triggers)</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <button class="action-btn" id="btnTriggerAttack">🦋 결전 오의 (폭탄)</button>
+          <button class="action-btn" id="btnRevive">🔄 게임 재시작</button>
+        </div>
+      </div>
+
+      <!-- 4. 렌더러 & 디버그 설정 -->
+      <div>
+        <div class="section-title">디버그 옵션 (Settings)</div>
+        <div class="card-box">
+          <!-- 애셋 강제 폴백 토글 -->
+          <div class="switch-row">
+            <div>
+              <div class="switch-label">강제 절차적 Fallback 모드</div>
+              <div class="switch-desc">스프라이트 유무와 무관하게 벡터 그래픽 유지</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleForceProcedural">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- 피격점(Hitbox) 표시 토글 -->
+          <div class="switch-row">
+            <div>
+              <div class="switch-label">피격점(Hitbox Core) 가시화</div>
+              <div class="switch-desc">시노부 도트 피격점 및 보스 타격 영역 표시</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleHitbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- 도우마 방향 시선 추적 토글 -->
+          <div class="switch-row">
+            <div>
+              <div class="switch-label">도우마 시선 추적 (Look at Boss)</div>
+              <div class="switch-desc">시노부가 상단 도우마를 향해 시선 및 각도 조준</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleLookAtBoss" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- 시노부 스프라이트 좌우 반전 토글 -->
+          <div class="switch-row">
+            <div>
+              <div class="switch-label">시노부 좌우 반전 (Invert Facing)</div>
+              <div class="switch-desc">스프라이트 원본 좌우 시선이 반대일 때 반전</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleFlipShinobu">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 실시간 전투 진단 정보 -->
+      <div>
+        <div class="section-title">전투 진단 정보 (Diagnostics)</div>
+        <div class="card-box">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td>보스 상태 / 페이즈</td>
+                <td class="val" id="diagBossPhase">Phase 1 / 3</td>
+              </tr>
+              <tr>
+                <td>체력 현황</td>
+                <td class="val" id="diagHp">P: 100 | B: 1300</td>
+              </tr>
+              <tr>
+                <td>화면 내 활성 탄환</td>
+                <td class="val" id="diagFrame">0발</td>
+              </tr>
+              <tr>
+                <td>오브젝트 풀링</td>
+                <td class="val" style="color:#69f0ae;">BulletPool (1200개 재사용)</td>
+              </tr>
+              <tr>
+                <td>외형 시스템</td>
+                <td class="val" id="diagAssetStatus" style="color:#ffd54f;">절차적 렌더러 (정상 구동)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 6. 6대 탄막 패턴 안내 -->
+      <div class="notice-box">
+        ❄️ <strong>도우마 6대 탄막 패턴 가이드:</strong><br>
+        1. <strong>추적형 얼음탄:</strong> 느리게 궤적을 그리므로 슬쩍 비틀어 회피.<br>
+        2. <strong>원형 확산:</strong> 방사 각도 사이의 틈새로 침착하게 통과.<br>
+        3. <strong>부채형 광역:</strong> 부채살 탄막 간격 사이 안전 구역 이동.<br>
+        4. <strong>결정 낙하:</strong> 천장에서 내려오는 고드름 틈새로 진입.<br>
+        5. <strong>위치 예측 저격:</strong> 이동을 멈추거나 반대로 꺾어 빗나가게 유도!<br>
+        6. <strong>복합 탄막 콤보:</strong> 3페이즈 발악, 속도가 다른 탄막 층위 회피.
+      </div>
+    </div>
+  </main>
+
+  <!-- 사이트 이벤트 연결: 사이트가 ?d= 로 난이도를 알려주고, 클리어하면 결과를 보내요 (사이트 없이 열면 아무 일도 안 해요) -->
+  <script src="../event-bridge.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

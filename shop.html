@@ -144,11 +144,19 @@
     // ---------- 상점 ----------
     const TYPE_LABEL = { theme: '🎨 카드 테마', illust: '🖼️ 특별 일러스트', card: '🃏 카드' };
 
+    // 아직 없는 카드는 뒷면으로 가려요 (등급 색만 보여요). 가진 카드는 앞면 그대로.
+    const isOwnedDex = (dexNo) => cards.some((x) => x.dexNo === dexNo && x.isOwned);
+    function cardBackHtml(rarity) {
+      const r = RARITY[rarity] ? rarity : 'rare';
+      return `<div class="card-back card-back--${r}"><div class="card-back__in"><span class="card-back__badge">${esc(RARITY[r].label)}</span><span class="card-back__q">?</span><span class="card-back__sub">???</span></div></div>`;
+    }
+
     function itemView(it) {
       if (it.type === 'theme') return renderCard({ ...THEME_SAMPLE, theme: it.theme });
       if (it.type === 'illust') return `<img src="${it.imageData}" alt="${esc(it.name)}">`;
       const c = baseCards.find((x) => x.dexNo === it.dexNo);
-      return c ? renderCard(c) : '<div class="shop-empty">카드를 찾을 수 없어요</div>';
+      if (!c) return '<div class="shop-empty">카드를 찾을 수 없어요</div>';
+      return isOwnedDex(c.dexNo) ? renderCard(c) : cardBackHtml(c.rarity);
     }
 
     let shopType = 'all';
@@ -206,9 +214,24 @@
         const r = await buyItem(it.id);
         await reload();
         if (r.card) {
-          openModal({ title: '🛒 구매 완료!', cardHtml: renderCard(r.card), tilt: true,
-            info: `${esc(RARITY[r.card.rarity]?.label || '')} · ${formatDexNo(r.card.dexNo)} ${esc(r.card.title)}<br>${r.isFirstTime ? '처음 획득!' : `보유 ${r.card.count}장`}`,
-            buttons: [{ label: '확인', onClick: closeModal }] });
+          const info = `${esc(RARITY[r.card.rarity]?.label || '')} · ${formatDexNo(r.card.dexNo)} ${esc(r.card.title)}<br>${r.isFirstTime ? '처음 획득!' : `보유 ${r.card.count}장`}`;
+          if (r.isFirstTime) {
+            // 뒷면 → 뒤집혀서 앞면 공개
+            openModal({ title: '🛒 구매 완료!', cardHtml: `<div class="flip-wrap">${cardBackHtml(r.card.rarity)}</div>`, info: '카드를 뒤집는 중…', buttons: [] });
+            const wrap = $('modalCard').querySelector('.flip-wrap');
+            setTimeout(() => wrap.classList.add('flip-out'), 500);
+            setTimeout(() => {
+              $('modalCard').innerHTML = `<div class="flip-wrap flip-in">${renderCard(r.card)}</div>`;
+              initTilt($('modalCard').querySelector('.card'));
+              $('modalInfo').innerHTML = info;
+              const box = $('modalBtns'); box.innerHTML = '';
+              const b = document.createElement('button'); b.className = 'shop-btn'; b.textContent = '확인';
+              b.addEventListener('click', closeModal); box.appendChild(b);
+            }, 500 + 320);
+          } else {
+            openModal({ title: '🛒 구매 완료!', cardHtml: renderCard(r.card), tilt: true, info,
+              buttons: [{ label: '확인', onClick: closeModal }] });
+          }
         } else if (it.type === 'illust') {
           openModal({ title: '🛒 구매 완료!', cardHtml: `<img src="${it.imageData}" alt="">`, info: `${esc(it.name)}<br>보관함에서 언제든 볼 수 있어요`, buttons: [{ label: '확인', onClick: closeModal }] });
         } else {

@@ -100,3 +100,37 @@
 .shop-modal__info { color: #fff; font-size: 12px; text-align: center; line-height: 1.6; }
 .shop-modal__btns { display: flex; gap: 8px; width: 100%; }
 .shop-modal__btns .shop-btn { flex: 1; }
+
+/* ===== 상점: 미보유 카드 뒷면 (신비감) ===== */
+.card-back { --bk-a:#8fa3b8; --bk-b:#5d7186; --bk-glow:rgba(143,163,184,.55);
+  position: relative; width: 100%; aspect-ratio: 5 / 7; box-sizing: border-box; padding: 5%;
+  background: linear-gradient(145deg, var(--bk-a), var(--bk-b)); border: 3px solid #2b2b2b;
+  box-shadow: 0 0 10px var(--bk-glow), inset 0 0 0 2px rgba(255,255,255,.35); overflow: hidden; container-type: inline-size; }
+.card-back::before { content: ''; position: absolute; inset: 0; opacity: .22;
+  background: repeating-linear-gradient(45deg, #fff 0 4px, transparent 4px 12px); }
+.card-back::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+  animation: bkShine 3.2s ease-in-out infinite; }
+@keyframes bkShine { 0%,55% { left: -60%; } 100% { left: 130%; } }
+.card-back__in { position: relative; z-index: 1; height: 100%; box-sizing: border-box; border: 2px dashed rgba(255,255,255,.7);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; color: #fff; font-family: 'Galmuri'; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.card-back__badge { position: absolute; top: 6%; padding: 1px 8px; background: rgba(0,0,0,.4); font-size: 10px; }
+.card-back__q { font-size: 38cqw; line-height: 1; margin-top: 10%; font-weight: 700; animation: bkPulse 2.2s ease-in-out infinite; }
+.card-back__sub { font-size: 10px; letter-spacing: 3px; opacity: .85; }
+@keyframes bkPulse { 50% { transform: scale(1.12); } }
+.card-back--rare { --bk-a:#7fb0e6; --bk-b:#3f6fa8; --bk-glow:rgba(100,160,230,.6); }
+.card-back--superrare { --bk-a:#a98be0; --bk-b:#5f3fa8; --bk-glow:rgba(150,110,230,.65); }
+.card-back--hero { --bk-a:#f0a35a; --bk-b:#b4571d; --bk-glow:rgba(240,150,70,.7); }
+.card-back--myth { --bk-a:#5ed1a0; --bk-b:#1f7a63; --bk-glow:rgba(70,220,160,.75); }
+.card-back--legend { --bk-a:#ffe27a; --bk-b:#c48a00; --bk-glow:rgba(255,210,80,.9); }
+.card-back--hidden { --bk-a:#555; --bk-b:#111; --bk-glow:rgba(120,120,120,.6); }
+.card-back--ultra { --bk-a:#ff8ad4; --bk-b:#6a5cff; --bk-glow:rgba(255,140,220,.9);
+  background: linear-gradient(145deg,#ff7a7a,#ffd36a,#7aff9e,#6ad0ff,#b07aff); background-size: 300% 300%; animation: bkRainbow 5s linear infinite; }
+@keyframes bkRainbow { 50% { background-position: 100% 100%; } }
+.shop-item__view .card-back { pointer-events: none; }
+.flip-wrap { width: 100%; perspective: 800px; }
+.flip-out { animation: flipOut .32s ease-in forwards; }
+.flip-in { animation: flipIn .45s ease-out; }
+@keyframes flipOut { to { transform: rotateY(90deg); } }
+@keyframes flipIn { from { transform: rotateY(-90deg) scale(.9); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .card-back::after, .card-back__q, .card-back--ultra { animation: none; } }

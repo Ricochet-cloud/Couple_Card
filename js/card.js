@@ -100,15 +100,3 @@ export function renderLockedCard(dexNo) {
     </div>
   </article>`;
 }
-
-/**
- * 등급에 따라 랜덤으로 뽑기 (무게 기반)
- * @returns {string} 선택된 등급 키
- */
-export function pickRarity() {
-  let r = Math.random() * 100;
-  for (const [key, { weight }] of Object.entries(RARITY)) {
-    if ((r -= weight) < 0) return key;
-  }
-  return 'rare';
-}

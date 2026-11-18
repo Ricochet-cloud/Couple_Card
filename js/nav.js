@@ -77,3 +77,10 @@ function render() {
 }
 
 render();
+
+// 서비스 워커 등록 (파일 저장·오프라인 대비). 실패해도 사이트는 그대로 동작해요.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch((e) => console.warn('서비스 워커 등록 실패:', e));
+  });
+}

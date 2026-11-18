@@ -57,40 +57,5 @@ export async function grantDailyTicketIfNeeded() {
   }
 }
 
-/**
- * 현재 뽑기권 수 조회
- */
-export async function getTickets() {
-  try {
-    const { getDoc } = await import(
-      'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js'
-    );
-    const snapshot = await getDoc(doc(db, 'state', 'shared'));
-    if (snapshot.exists()) {
-      return snapshot.data().tickets || 0;
-    }
-    return 0;
-  } catch (error) {
-    console.error('뽑기권 조회 실패:', error);
-    throw error;
-  }
-}
-
-/**
- * 현재 특별 뽑기권 수 조회 (안 가진 카드만 나오는 뽑기권)
- */
-export async function getSpecialTickets() {
-  try {
-    const { getDoc } = await import(
-      'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js'
-    );
-    const snapshot = await getDoc(doc(db, 'state', 'shared'));
-    if (snapshot.exists()) {
-      return snapshot.data().specialTickets || 0;
-    }
-    return 0;
-  } catch (error) {
-    console.error('특별 뽑기권 조회 실패:', error);
-    throw error;
-  }
-}
+// 뽑기권 수 조회는 state.js 에 있는 것을 그대로 써요 (예전에는 같은 함수가 여기에도 하나 더 있었어요)
+export { getTickets, getSpecialTickets } from './state.js';

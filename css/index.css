@@ -583,7 +583,8 @@ main {
 
 /* 대표 카드 */
 .featured-section { text-align: center; }
-.featured-card { display: block; width: min(220px, 62vw); margin: 16px auto 8px; }
+.featured-card, .featured-card:hover, .featured-card:visited { display: block; width: min(220px, 62vw); margin: 16px auto 8px; text-decoration: none; color: inherit; }
+.featured-card * { text-decoration: none; }
 .featured-hint, .featured-empty {
   font-family: 'Galmuri'; font-size: 11px; color: var(--text-muted);
 }

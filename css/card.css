@@ -2538,6 +2538,92 @@
   .card[data-theme="gyomei"], .card[data-theme="gyomei"] .card__photo::before { animation: none; }
 }
 
+/* ===== 카드 특수 디자인: 오바나이 (카드 데이터 theme: 'obanai') =====
+   사행주 이구로 오바나이. 하오리처럼 흑백 줄무늬 테두리에, 양옆 테두리는 입가 붕대처럼 흰 천이 감겨 있고 아래 모서리에서 끝자락이 펄럭여요.
+   설명칸은 뱀 비늘 무늬이고, 사진 위로는 비늘에 빛이 천천히 훑고 지나가요.
+   8초에 한 번: 보라색 구부러진 참격이 카드를 가로질러 두 줄기로 베고 지나가며 프레임이 보랏빛으로 번쩍여요. 영웅 등급 위에 얹어서 써요(프레임 색만 흑백으로 바꿔요). */
+.card[data-theme="obanai"] {
+  --f-dark: #050507; --f-shade: #3a3a44; --f-mid: #8d8d98; --f-base: #d9d9df; --f-light: #f2f2f2; --f-hi: #ffffff;
+  --gem: #b57cff;
+  --glow: 0 0 14px rgba(160, 100, 255, 0.42), 0 0 28px rgba(110, 60, 220, 0.2);
+  overflow: visible;
+  background: repeating-linear-gradient(135deg, #f2f2f2 0 4px, #0d0d12 4px 8px);
+}
+.card[data-theme="obanai"] .card__in { background: #0c0e13; }
+/* 사진 자리: 먹빛 안개에 보랏빛 */
+.card[data-theme="obanai"] .card__photo {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 112%, rgba(140, 90, 230, 0.34), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 8%, rgba(120, 210, 190, 0.12), transparent 70%),
+    linear-gradient(180deg, #0c0e13 0%, #171b26 60%, #20243a 100%);
+}
+.card[data-theme="obanai"] .card__photo::after {
+  box-shadow: inset 0 -2px 0 #050507, inset 0 -5px 0 #8d8d98, inset 0 -6px 0 #ffffff;
+}
+/* 비늘 빛 훑기: 비스듬한 빛줄기가 천천히 지나가요 */
+.card[data-theme="obanai"] .card__photo::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 38%, rgba(210, 190, 255, 0.13) 50%, transparent 62%);
+  background-size: 260% 100%; background-position: 130% 0;
+  animation: obSheen 7s ease-in-out infinite;
+}
+.card[data-theme="obanai"] .card__body {
+  position: relative;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cg fill='none' stroke='%239fd4c8' stroke-opacity='.2' stroke-width='.6'%3E%3Cpath d='M0 8Q5 1 10 8'/%3E%3Cpath d='M-5 4Q0 -3 5 4Q10 -3 15 4'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 10px 8px, #0f1219;
+}
+.card[data-theme="obanai"] .card__title {
+  background: linear-gradient(90deg, #ffffff 0%, #e2d2ff 55%, #b890ff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 3px rgba(170, 120, 255, 0.5));
+}
+.card[data-theme="obanai"] .card__desc { color: #c9cdd6; }
+.card[data-theme="obanai"] .card__meta { color: #8f94a3; border-top-color: rgba(200, 190, 240, 0.3); }
+.card[data-theme="obanai"] .card__badge {
+  color: #ffffff; background: #0a0a0e;
+  box-shadow: inset 0 0 0 1px #8d8d98, 0 0 6px rgba(160, 100, 255, 0.5);
+}
+.card[data-theme="obanai"] .card__no { background: #14141a; color: #f2f2f2; box-shadow: inset 0 0 0 1px #8d8d98; }
+/* 蛇 */
+.card[data-theme="obanai"] .card__body::after {
+  content: '蛇'; position: absolute; right: 8px; bottom: 2px;
+  font-size: 38px; line-height: 1; color: rgba(210, 195, 245, 0.12); pointer-events: none;
+}
+.tilt[data-theme="obanai"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(200, 170, 255, 0.3), transparent 52%);
+  mix-blend-mode: screen;
+}
+/* 보라색 구부러진 참격 (카드 안쪽을 덮어요) */
+.card[data-theme="obanai"]::after {
+  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e2c6ff'/%3E%3Cstop offset='.5' stop-color='%23a66bff'/%3E%3Cstop offset='1' stop-color='%235a22d4'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeGaussianBlur stdDeviation='1.8'/%3E%3C/filter%3E%3C/defs%3E%3Cstyle%3E.s%7Bfill:none;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;opacity:0;animation:sk 8s ease-out infinite%7D.t2%7Banimation-delay:.22s%7D.sg%7Bstroke:%239a5cff;stroke-width:6.5;filter:url(%23b)%7D.sc%7Bstroke:url(%23g);stroke-width:2.4%7D.sw%7Bstroke:%23fff;stroke-width:.8%7D%40keyframes sk%7B0%25,70%25%7Bstroke-dashoffset:100;opacity:0%7D71%25%7Bopacity:1%7D77%25%7Bstroke-dashoffset:0;opacity:1%7D86%25%7Bstroke-dashoffset:0;opacity:.9%7D94%25,100%25%7Bstroke-dashoffset:0;opacity:0%7D%7D.fl%7Bfill:%23b07cff;opacity:0;animation:fk 8s ease-out infinite%7D%40keyframes fk%7B0%25,75%25%7Bopacity:0%7D77%25%7Bopacity:.28%7D86%25%7Bopacity:0%7D100%25%7Bopacity:0%7D%7D%40media(prefers-reduced-motion:reduce)%7B%2A%7Banimation:none%21important%7D.fl,.s%7Bdisplay:none%7D%7D%3C/style%3E%3Crect class='fl' width='100' height='140'/%3E%3Cpath class='s sg' pathLength='100' d='M-6 16C32 -8 42 38 50 62S70 106 106 126'/%3E%3Cpath class='s sc' pathLength='100' d='M-6 16C32 -8 42 38 50 62S70 106 106 126'/%3E%3Cpath class='s sw' pathLength='100' d='M-6 16C32 -8 42 38 50 62S70 106 106 126'/%3E%3Cpath class='s sg t2' pathLength='100' d='M106 24C68 6 60 50 50 72S30 114 -6 118'/%3E%3Cpath class='s sc t2' pathLength='100' d='M106 24C68 6 60 50 50 72S30 114 -6 118'/%3E%3Cpath class='s sw t2' pathLength='100' d='M106 24C68 6 60 50 50 72S30 114 -6 118'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 붕대·프레임 번쩍임 (카드 밖까지 그려져요) */
+.card[data-theme="obanai"]::before {
+  content: ''; position: absolute; left: -8%; width: 116%; top: -5.714%; height: 111.43%; z-index: 6; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -8 116 156' preserveAspectRatio='none'%3E%3Cstyle%3E.tl%7Btransform-box:fill-box;transform-origin:50%25 0;animation:tlk 2.8s ease-in-out infinite alternate%7D.tr%7Banimation-direction:alternate-reverse%7D%40keyframes tlk%7Bfrom%7Btransform:rotate(-13deg)%7Dto%7Btransform:rotate(15deg)%7D%7D.fr%7Bfill:none;stroke:%23b57cff;stroke-width:1.2;opacity:0;filter:drop-shadow(0 0 1.6px %239a5cff);animation:frg 8s ease-in-out infinite%7D%40keyframes frg%7B0%25,73%25,100%25%7Bopacity:0%7D79%25%7Bopacity:1%7D90%25%7Bopacity:.4%7D96%25%7Bopacity:0%7D%7D%40media(prefers-reduced-motion:reduce)%7B%2A%7Banimation:none%21important%7D.fr%7Bdisplay:none%7D%7D%3C/style%3E%3Cpolygon points='-3.4,12 3.8,9.4 3.8,14.2 -3.4,16.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,12 96.2,9.4 96.2,14.2 103.4,16.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,21 3.8,18.4 3.8,23.2 -3.4,25.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,21 96.2,18.4 96.2,23.2 103.4,25.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,30 3.8,27.4 3.8,32.2 -3.4,34.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,30 96.2,27.4 96.2,32.2 103.4,34.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,39 3.8,36.4 3.8,41.2 -3.4,43.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,39 96.2,36.4 96.2,41.2 103.4,43.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,48 3.8,45.4 3.8,50.2 -3.4,52.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,48 96.2,45.4 96.2,50.2 103.4,52.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,57 3.8,54.4 3.8,59.2 -3.4,61.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,57 96.2,54.4 96.2,59.2 103.4,61.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,66 3.8,63.4 3.8,68.2 -3.4,70.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,66 96.2,63.4 96.2,68.2 103.4,70.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,75 3.8,72.4 3.8,77.2 -3.4,79.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,75 96.2,72.4 96.2,77.2 103.4,79.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,84 3.8,81.4 3.8,86.2 -3.4,88.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,84 96.2,81.4 96.2,86.2 103.4,88.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,93 3.8,90.4 3.8,95.2 -3.4,97.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,93 96.2,90.4 96.2,95.2 103.4,97.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,102 3.8,99.4 3.8,104.2 -3.4,106.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,102 96.2,99.4 96.2,104.2 103.4,106.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,111 3.8,108.4 3.8,113.2 -3.4,115.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,111 96.2,108.4 96.2,113.2 103.4,115.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='-3.4,120 3.8,117.4 3.8,122.2 -3.4,124.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon points='103.4,120 96.2,117.4 96.2,122.2 103.4,124.8' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpath d='M-3.2 14 L3.6 11.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 14 L96.4 11.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 23 L3.6 20.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 23 L96.4 20.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 32 L3.6 29.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 32 L96.4 29.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 41 L3.6 38.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 41 L96.4 38.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 50 L3.6 47.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 50 L96.4 47.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 59 L3.6 56.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 59 L96.4 56.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 68 L3.6 65.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 68 L96.4 65.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 77 L3.6 74.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 77 L96.4 74.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 86 L3.6 83.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 86 L96.4 83.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 95 L3.6 92.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 95 L96.4 92.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 104 L3.6 101.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 104 L96.4 101.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 113 L3.6 110.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 113 L96.4 110.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M-3.2 122 L3.6 119.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpath d='M103.2 122 L96.4 119.6' stroke='%238d887a' stroke-opacity='.35' stroke-width='.35'/%3E%3Cpolygon class='tl' points='-3.4,129 3,127.6 1.6,143 -4.6,141' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Cpolygon class='tl tr' points='103.4,129 97,127.6 98.4,143 104.6,141' fill='%23ece8de' stroke='%23aaa393' stroke-width='.3' stroke-linejoin='round'/%3E%3Crect class='fr' x='.6' y='.6' width='98.8' height='138.8' rx='3'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+/* 작은 칸(목록·업적·이벤트 칸)에서는 바깥 붕대와 참격, 빛 훑기를 숨겨요 */
+.cards-grid .card[data-theme="obanai"]::before,
+.cards-grid .card[data-theme="obanai"]::after,
+.collection-grid .card[data-theme="obanai"]::before,
+.collection-grid .card[data-theme="obanai"]::after,
+.ach-slot .card[data-theme="obanai"]::before,
+.ach-slot .card[data-theme="obanai"]::after,
+.event-slot .card[data-theme="obanai"]::before,
+.event-slot .card[data-theme="obanai"]::after,
+.cards-grid .card[data-theme="obanai"] .card__body::after,
+.collection-grid .card[data-theme="obanai"] .card__body::after { display: none; }
+.cards-grid .card[data-theme="obanai"] .card__photo::before,
+.collection-grid .card[data-theme="obanai"] .card__photo::before { animation: none; }
+
+@keyframes obSheen {
+  from { background-position: 130% 0; }
+  to   { background-position: -30% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card[data-theme="obanai"] .card__photo::before { animation: none; }
+}
+
 /* ===== 카드 특수 디자인: 기유 (카드 데이터 theme: 'giyu') =====
    물주 토미오카 기유. 11번째 형 '응(凪)': 모든 물결이 가라앉은 고요한 수면이에요.
    프레임 둘레로 물거품이 느리게 흐르고, 위아래 가장자리에서는 잔물결이 일렁이고, 옆에서 기포가 올라와요.

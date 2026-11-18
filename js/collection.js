@@ -1,20 +1,16 @@
 // 도감 페이지 로직
 import { db } from './firebase.js';
-import { collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { RARITY } from './card.js';
-import { applySkins } from './skin.js';
+import { loadActiveCards } from './cards-store.js';
 
 /**
  * 모든 활성 카드 조회 (번호순)
  */
 export async function getActiveCards() {
   try {
-    const snapshot = await getDocs(query(collection(db, 'cards'), where('active', '==', true)));
-    return applySkins(
-      snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => a.dexNo - b.dexNo)
-    );
+    const cards = await loadActiveCards();
+    return cards.sort((a, b) => a.dexNo - b.dexNo);
   } catch (error) {
     console.error('카드 조회 실패:', error);
     throw error;

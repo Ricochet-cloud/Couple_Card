@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
   <title>홈 - 추억카드뽑기</title>
+  <link rel="preload" href="./fonts/Galmuri-11.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/card.css">
   <link rel="stylesheet" href="./css/style.css">
@@ -172,7 +173,7 @@
       try {
         await grantDailyTicketIfNeeded();
       } catch (error) {
-        console.error('뽄기권 지급 실패:', error);
+        console.error('뽑기권 지급 실패:', error);
       }
 
       // UI 업데이트
@@ -274,11 +275,11 @@
       document.getElementById('specialDrawBtn').disabled = specialTickets <= 0;
       document.getElementById('specialTicket').classList.toggle('has-tickets', specialTickets > 0);
 
-      // 뽄기 버튼 상태
+      // 뽑기 버튼 상태
       const drawBtn = document.getElementById('drawBtn');
       if (tickets <= 0) {
         drawBtn.disabled = true;
-        showDrawMessage('뽄기권이 없습니다. 내일 다시 시도해주세요.', 'error');
+        showDrawMessage('뽑기권이 없습니다. 내일 다시 시도해주세요.', 'error');
       } else {
         drawBtn.disabled = false;
       }
@@ -294,7 +295,7 @@
 
       if (recent.length === 0) {
         document.getElementById('recentCards').innerHTML =
-          '<div class="recent-empty">아직 뽄은 카드가 없습니다</div>';
+          '<div class="recent-empty">아직 뽑은 카드가 없습니다</div>';
       } else {
         const html = recent
           .slice(0, 3)

@@ -23,15 +23,20 @@
 ## 폰트 (Galmuri 도트 폰트)
 
 **설치**:
-1. `fonts/Galmuri-11.ttf` 또는 `fonts/Galmuri-9.ttf` 파일을 준비
-   - 출처: https://github.com/daruling/galmuri (OFL 라이선스)
-   - 또는 수동으로 다운로드: https://releases.ubuntu.com/font-files/
+1. `fonts/Galmuri-11.woff2` — 갈무리11에서 한글 11,172자 + 영문·기호·가나 + 사이트에서 쓰는 글자만 뽑아 woff2 로 만든 파일이에요 (원본 TTF 5.2MB → 약 220KB).
+   - 출처: https://github.com/daruling/galmuri (OFL 라이선스, 원래 문서에 적혀 있던 출처)
+   - 원본 TTF 는 저장소에서 뺐어요. 카드에 드문 한자 등 새 글자가 필요해서 폰트를 다시 만들 땐, 원본을 받아서
+     `pyftsubset Galmuri11.ttf --text-file=글자목록.txt --flavor=woff2 --layout-features='*' --output-file=fonts/Galmuri-11.woff2`
+     (글자목록.txt 에 필요한 글자를 모두 적어요. 한글 전체와 기존 글자도 같이 넣어야 해요.)
+   - 폰트에 없는 글자는 기기 기본 글꼴로 대신 보여요 (깨지지는 않아요).
+2. 모든 페이지 `<head>` 에 `<link rel="preload" href="./fonts/Galmuri-11.woff2" as="font" type="font/woff2" crossorigin>` 가 있어서 CSS 와 동시에 받아요.
 
 **CSS**:
 ```css
 @font-face {
   font-family: 'Galmuri';
-  src: url('../fonts/Galmuri-11.ttf') format('truetype');
+  src: url('../fonts/Galmuri-11.woff2') format('woff2');
+  font-display: swap;
 }
 
 body {

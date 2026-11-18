@@ -13,6 +13,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { RARITY, HIDDEN_DEX_BASE } from './card.js';
 import { initState, getTickets, addTickets } from './state.js';
+import { bumpCardsVersion } from './cards-store.js';
 
 // ========== 카드 관리 ==========
 
@@ -95,6 +96,7 @@ export async function addCard(cardData) {
     };
 
     const docRef = await addDoc(collection(db, 'cards'), newCard);
+    await bumpCardsVersion();
     return { id: docRef.id, ...newCard };
   } catch (error) {
     console.error('카드 추가 실패:', error);
@@ -116,6 +118,7 @@ export async function updateCard(cardId, updates) {
     }
 
     await updateDoc(doc(db, 'cards', cardId), updates);
+    await bumpCardsVersion();
   } catch (error) {
     console.error('카드 수정 실패:', error);
     throw error;
@@ -128,6 +131,7 @@ export async function updateCard(cardId, updates) {
 export async function toggleCardActive(cardId, currentActive) {
   try {
     await updateDoc(doc(db, 'cards', cardId), { active: !currentActive });
+    await bumpCardsVersion();
   } catch (error) {
     console.error('카드 상태 변경 실패:', error);
     throw error;
@@ -140,6 +144,7 @@ export async function toggleCardActive(cardId, currentActive) {
 export async function deleteCard(cardId) {
   try {
     await deleteDoc(doc(db, 'cards', cardId));
+    await bumpCardsVersion();
   } catch (error) {
     console.error('카드 삭제 실패:', error);
     throw error;

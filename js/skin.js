@@ -14,11 +14,18 @@ async function illustImage(itemId) {
   return imageCache.get(itemId);
 }
 
-/** 카드 배열에 입힌 테마·일러스트를 반영해서 돌려줘요 (실패하면 원래 카드 그대로) */
-export async function applySkins(cards) {
+/**
+ * 카드 배열에 입힌 테마·일러스트를 반영해서 돌려줘요 (실패하면 원래 카드 그대로)
+ * stateData: 이미 읽어 둔 state/shared 내용. 주면 다시 읽지 않아요 (null 이면 입히지 않고 그대로 돌려줘요).
+ */
+export async function applySkins(cards, stateData) {
+  if (stateData === null) return cards;
   try {
-    const snap = await getDoc(doc(db, 'state', 'shared'));
-    const data = snap.exists() ? snap.data() : {};
+    let data = stateData;
+    if (data === undefined) {
+      const snap = await getDoc(doc(db, 'state', 'shared'));
+      data = snap.exists() ? snap.data() : {};
+    }
     const skins = data.themeOverrides || {};
     const photos = data.photoOverrides || {};
     const ids = [...new Set(cards.map((c) => photos[c.id]).filter(Boolean))];

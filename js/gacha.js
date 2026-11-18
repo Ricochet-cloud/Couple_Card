@@ -1,16 +1,12 @@
 // 뽑기 시스템
 import { db } from './firebase.js';
 import {
-  collection,
-  getDocs,
-  query,
-  where,
   doc,
   runTransaction,
   Timestamp,
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { RARITY } from './card.js';
-import { applySkins } from './skin.js';
+import { loadActiveCards } from './cards-store.js';
 
 /**
  * 오늘 날짜 (KST YYYY-MM-DD)
@@ -26,8 +22,7 @@ function getTodayKST() {
  */
 export async function getActiveCards() {
   try {
-    const snapshot = await getDocs(query(collection(db, 'cards'), where('active', '==', true)));
-    return applySkins(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    return await loadActiveCards();
   } catch (error) {
     console.error('카드 조회 실패:', error);
     throw error;

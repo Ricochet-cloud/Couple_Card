@@ -291,3 +291,111 @@ main {
     animation: none;
   }
 }
+
+/* ===== 전설·울트라 뽑기 연출 (js/draw-fx.js) ===== */
+.main-container { overflow-x: clip; }   /* 빛줄기가 화면 옆으로 삐져나가도 가로 스크롤이 생기지 않게 */
+.card-stage { position: relative; }
+.card-stage .card-flipper { position: relative; z-index: 2; }
+.card-stage.fx-on { z-index: 30; }
+
+/* 어두운 막: 카드에 시선이 모이게 */
+.fx-dim {
+  position: fixed; inset: 0; z-index: 20; pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(20, 10, 40, 0.35), rgba(5, 2, 15, 0.82));
+  animation: fxIn 0.6s ease-out both;
+}
+@keyframes fxIn { from { opacity: 0; } to { opacity: 1; } }
+
+.fx-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; --c1: #ffcf4a; --c2: #fff3b0; }
+.fx-ultra { --c1: #ff6bd6; --c2: #8fe8ff; }
+
+/* 뒤에서 도는 빛줄기 */
+.fx-rays {
+  position: absolute; left: 50%; top: 50%; width: min(620px, 100vw); aspect-ratio: 1; margin-left: calc(min(620px, 100vw) / -2); margin-top: calc(min(620px, 100vw) / -2);
+  border-radius: 50%; opacity: 0;
+  -webkit-mask: radial-gradient(circle, #000 14%, transparent 68%); mask: radial-gradient(circle, #000 14%, transparent 68%);
+  background: repeating-conic-gradient(from 0deg, rgba(255, 220, 110, 0.85) 0 5deg, transparent 5deg 15deg);
+  animation: fxSpin 16s linear infinite;
+  transition: opacity 0.9s ease-out;
+}
+.fx-ultra .fx-rays {
+  background: repeating-conic-gradient(from 0deg,
+    #ff6b8b 0 5deg, transparent 5deg 12deg, #ffd96b 12deg 17deg, transparent 17deg 24deg, #6bffb0 24deg 29deg, transparent 29deg 36deg,
+    #6bd5ff 36deg 41deg, transparent 41deg 48deg, #c58bff 48deg 53deg, transparent 53deg 60deg);
+}
+.fx-charging .fx-rays { opacity: 0.55; animation-duration: 6s; }
+.fx-burst .fx-rays { opacity: 0.8; animation-duration: 22s; }
+@keyframes fxSpin { to { transform: rotate(360deg); } }
+
+/* 카드 둘레 후광 */
+.fx-aura {
+  position: absolute; inset: -6px; opacity: 0; transition: opacity 0.9s ease-out;
+  box-shadow: 0 0 36px 12px var(--c1), 0 0 90px 28px var(--c2);
+}
+.fx-charging .fx-aura { opacity: 0.55; }
+.fx-burst .fx-aura { opacity: 0.9; animation: fxPulse 2.4s ease-in-out infinite alternate; }
+@keyframes fxPulse { from { opacity: 0.55; } to { opacity: 1; } }
+
+/* 떨리는 카드 뒷면 */
+.fx-shake-1 { animation: fxShake 0.12s linear infinite; --amp: 1px; }
+.fx-shake-2 { animation: fxShake 0.08s linear infinite; --amp: 2.5px; }
+.fx-shake-3 { animation: fxShake 0.05s linear infinite; --amp: 4px; }
+@keyframes fxShake {
+  0% { transform: translate(var(--amp), 0) rotate(0.4deg); }
+  25% { transform: translate(0, calc(var(--amp) * -1)) rotate(-0.4deg); }
+  50% { transform: translate(calc(var(--amp) * -1), 0) rotate(0.3deg); }
+  75% { transform: translate(0, var(--amp)) rotate(-0.3deg); }
+  100% { transform: translate(var(--amp), 0) rotate(0.4deg); }
+}
+
+/* 섬광 (한 번, 은은하게) */
+.fx-flash { position: fixed; inset: 0; z-index: 60; pointer-events: none; background: #fff; opacity: 0; animation: fxFlash 0.6s ease-out forwards; }
+@keyframes fxFlash { 0% { opacity: 0; } 12% { opacity: 0.55; } 100% { opacity: 0; } }
+
+/* 충격파 */
+.fx-ring {
+  position: absolute; left: 50%; top: 50%; width: 100%; aspect-ratio: 1; margin-left: -50%; margin-top: -50%;
+  border: 4px solid var(--c2); border-radius: 50%; box-shadow: 0 0 18px var(--c1);
+  animation: fxRing 0.9s ease-out forwards;
+}
+@keyframes fxRing { from { transform: scale(0.4); opacity: 1; } to { transform: scale(3.4); opacity: 0; } }
+
+/* 반짝이 조각 */
+.fx-bit {
+  position: absolute; left: 50%; top: 50%; margin: -4px 0 0 -4px; opacity: 0;
+  box-shadow: 0 0 6px currentColor; animation: fxBit 1.2s ease-out forwards;
+}
+@keyframes fxBit {
+  0% { transform: translate(0, 0) scale(1) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(var(--r)); opacity: 0; }
+}
+
+/* 배너 */
+.fx-banner {
+  position: absolute; left: 50%; top: -46px; z-index: 5; white-space: nowrap;
+  transform: translateX(-50%); animation: fxBanner 3s ease-out forwards;
+}
+.fx-banner span {
+  display: inline-block; padding: 8px 18px; font-family: 'Galmuri'; font-size: 20px; font-weight: 700; letter-spacing: 2px;
+  color: #3a2200; background: linear-gradient(180deg, var(--c2), var(--c1));
+  border: 3px solid #3d2817; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45), 0 0 18px var(--c1);
+}
+@keyframes fxBanner {
+  0% { transform: translateX(-50%) scale(2.2); opacity: 0; }
+  10% { transform: translateX(-50%) scale(1); opacity: 1; }
+  80% { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 0; }
+}
+
+/* 색종이 (울트라) */
+.fx-confetti { position: fixed; inset: 0; z-index: 55; pointer-events: none; overflow: hidden; }
+.fx-confetti i { position: absolute; top: -14px; width: 7px; height: 11px; opacity: 0; animation: fxFall 2.2s linear forwards; }
+@keyframes fxFall {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--sw), 105vh) rotate(540deg); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rays, .fx-aura, .fx-dim, .fx-banner, .fx-shake-1, .fx-shake-2, .fx-shake-3 { animation: none; }
+  .fx-banner { transform: translateX(-50%); }
+}

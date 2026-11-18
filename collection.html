@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/card.css">
   <link rel="stylesheet" href="./css/collection.css">
-  <link rel="stylesheet" href="./css/audio.css">
 </head>
 <body>
   <div class="main-container">
@@ -99,6 +98,7 @@
     import { guardAuth } from './js/auth.js';
     import { renderCard, renderLockedCard, RARITY, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
+    import { getFeaturedId, setFeaturedId } from './js/featured.js';
     import { isShapeshifter, wobbleInto, pickRandomOwned } from './js/morph.js';
     import {
       getCollectionData,
@@ -116,6 +116,7 @@
       owned: 'all',
     };
     let sortBy = 'number';
+    let featuredId = null;   // 홈에 크게 보여 줄 대표 카드
 
     // ========== 초기화 ==========
     initAuth((user) => {
@@ -130,7 +131,7 @@
 
     async function init() {
       try {
-        allCards = await getCollectionData();
+        [allCards, featuredId] = await Promise.all([getCollectionData(), getFeaturedId()]);
 
         if (allCards.length === 0) {
           showEmptyState();
@@ -256,7 +257,7 @@
       const gridHtml = filteredCards
         .map((card) => {
           if (card.isOwned) {
-            return `<div class="card-grid-item" onclick="openModal('${card.id}')">${renderCard(card)}</div>`;
+            return `<div class="card-grid-item${card.id === featuredId ? ' is-featured' : ''}" data-id="${card.id}" onclick="openModal('${card.id}')">${renderCard(card)}</div>`;
           } else {
             return `<div class="card-grid-item locked">${renderLockedCard(card.dexNo)}</div>`;
           }
@@ -300,6 +301,7 @@
           ${renderCard(card)}
         </div>
         ${isShapeshifter(card) ? '<div class="morph-hint" id="morphHint">👆 카드를 눌러 보세요. 무엇으로 변할까요?</div>' : ''}
+        <button type="button" class="featured-btn${card.id === featuredId ? ' is-on' : ''}" id="featuredBtn" onclick="toggleFeatured('${card.id}')">${card.id === featuredId ? '⭐ 대표 카드 해제' : '☆ 대표 카드로 지정'}</button>
         <div class="modal-info">
           <div class="modal-info-row">
             <div class="modal-info-label">설명</div>
@@ -337,6 +339,26 @@
       document.body.style.overflow = 'hidden';
     };
 
+    // 대표 카드 지정·해제 (홈에 크게 보여요)
+    window.toggleFeatured = async function (cardId) {
+      const btn = document.getElementById('featuredBtn');
+      if (!btn || btn.disabled) return;
+      const next = featuredId === cardId ? null : cardId;
+      btn.disabled = true;
+      try {
+        await setFeaturedId(next);
+        featuredId = next;
+        btn.classList.toggle('is-on', !!next);
+        btn.textContent = next ? '⭐ 대표 카드 해제' : '☆ 대표 카드로 지정';
+        document.querySelectorAll('.card-grid-item.is-featured').forEach((el) => el.classList.remove('is-featured'));
+        if (next) document.querySelector(`.card-grid-item[data-id="${next}"]`)?.classList.add('is-featured');
+      } catch (error) {
+        alert('대표 카드 저장에 실패했어요: ' + error.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
     // 변신 카드: 누를 때마다 울렁이며 가지고 있는 카드 중 하나로 변신해요
     function setupShapeshift(cardEl, card) {
       let busy = false;
@@ -372,6 +394,5 @@
       return String(str).replace(/[&<>"']/g, (c) => map[c]);
     }
   </script>
-<script src="./js/audio.js"></script>
 </body>
 </html>

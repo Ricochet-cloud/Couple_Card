@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/card.css">
   <link rel="stylesheet" href="./css/draw.css">
-  <link rel="stylesheet" href="./css/audio.css">
 </head>
 <body>
   <div class="main-container">
@@ -67,6 +66,7 @@
     import { initTilt } from './js/tilt.js';
     import { isShapeshifter, wobbleInto } from './js/morph.js';
     import { getTickets, getSpecialTickets } from './js/ticket.js';
+    import { fxRarityOf, charge, burst, clear as clearFx } from './js/draw-fx.js';
 
     // 홈의 '특별 뽑기'에서 들어오면 ?mode=special — 안 가진 카드만 나오는 특별 뽑기권으로 뽑아요
     const isSpecial = new URLSearchParams(location.search).get('mode') === 'special';
@@ -128,6 +128,7 @@
 
       flipper.classList.remove('flipped');
       resultSection.classList.remove('show');
+      clearFx();
 
       try {
         // 뽑기 실행
@@ -152,12 +153,19 @@
           </div>
         `;
 
+        // 전설·울트라는 특별 연출 (변신 카드는 변장한 카드의 등급을 기준으로 해서 정체를 미리 들키지 않아요)
+        const stage = flipper.parentElement;
+        const fxKey = fxRarityOf(disguise || drawResult.card);
+
         // 뒤집기 연출
-        if (!reducedMotion) {
+        if (fxKey && !reducedMotion) {
+          await charge(stage, fxKey);
+        } else if (!reducedMotion) {
           await new Promise((resolve) => setTimeout(resolve, 450));
         }
 
         flipper.classList.add('flipped');
+        if (fxKey) burst(stage, fxKey, { reduced: reducedMotion });
 
         if (!reducedMotion) {
           await new Promise((resolve) => setTimeout(resolve, 700));
@@ -170,6 +178,8 @@
         if (disguise) {
           if (!reducedMotion) await new Promise((resolve) => setTimeout(resolve, 1300));
           await wobbleInto(cardFront.querySelector('.card'), drawResult.card);
+          const realKey = fxRarityOf(drawResult.card);
+          if (realKey && realKey !== fxKey) burst(stage, realKey, { reduced: reducedMotion });
           cardFront.firstElementChild.insertAdjacentHTML('beforeend', newBadge);
         }
 
@@ -256,6 +266,5 @@
       return String(str).replace(/[&<>"']/g, (c) => map[c]);
     }
   </script>
-<script src="./js/audio.js"></script>
 </body>
 </html>

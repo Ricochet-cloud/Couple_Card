@@ -580,3 +580,11 @@ main {
 .gift-item__btn:disabled { opacity: 0.5; cursor: default; }
 .gift-result { margin-top: 8px; font-family: 'Galmuri'; font-size: 12px; color: #b8651b; }
 .gift-result:empty { display: none; }
+
+/* 대표 카드 */
+.featured-section { text-align: center; }
+.featured-card { display: block; width: min(220px, 62vw); margin: 16px auto 8px; }
+.featured-hint, .featured-empty {
+  font-family: 'Galmuri'; font-size: 11px; color: var(--text-muted);
+}
+.featured-empty { display: block; padding: 14px 8px; min-height: 44px; text-decoration: none; }

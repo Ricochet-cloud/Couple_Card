@@ -21,6 +21,29 @@ service cloud.firestore {
       allow read: if isAuthorized();
       allow write: if isAdmin();
     }
+    // quizzes: 두 UID 읽기, 관리자만 쓰기
+    match /quizzes/{document=**} {
+      allow read: if isAuthorized();
+      allow write: if isAdmin();
+    }
+    // guestbook: 두 UID 읽기, 글 작성(create)만 가능 (수정·삭제는 콘솔에서 직접)
+    match /guestbook/{docId} {
+      allow read: if isAuthorized();
+      allow create: if isAuthorized()
+        && request.resource.data.keys().hasOnly(['nickname', 'text', 'date', 'createdAt', 'uid'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 10
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 100
+        && request.resource.data.createdAt == request.time;
+    }
+    // minigameScores : 둘다 읽고쓰기
+    match /minigameScores/{docId} {
+      allow read, write: if request.auth != null;
+    }
 
     // shop: 두 UID 읽기, 관리자만 쓰기 (상점 상품)
     match /shop/{document=**} {
@@ -34,8 +57,48 @@ service cloud.firestore {
     }
 
     // 그 외 모든 경로는 거부
-    match /{document=**} {
-      allow read, write: if false;
+    
+    // 2048 앱: 로그인한 사람은 서로의 기록을 읽고, 자기 문서만 쓸 수 있어요
+    match /game2048_users/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nickname', 'avatar', 'best', 'bestTile', 'plays', 'updatedAt', 'gold', 'daily', 'owned', 'frame', 'title', 'bio', 'week', 'weekClaim', 'bg', 'nameFx', 'streak', 'chDone', 'chClaim', 'challenge', 'jokers', 'bestJk'])
+        && (!('nickname' in request.resource.data) || (request.resource.data.nickname is string && request.resource.data.nickname.size() <= 24))
+        && (!('avatar' in request.resource.data) || (request.resource.data.avatar is string && request.resource.data.avatar.size() <= 20))
+        && (!('best' in request.resource.data) || (request.resource.data.best is int && request.resource.data.best >= 0))
+        && (!('bestTile' in request.resource.data) || (request.resource.data.bestTile is int && request.resource.data.bestTile >= 0))
+        && (!('plays' in request.resource.data) || (request.resource.data.plays is int && request.resource.data.plays >= 0))
+        && (!('gold' in request.resource.data) || (request.resource.data.gold is int && request.resource.data.gold >= 0 && request.resource.data.gold <= 1000000))
+        && (!('daily' in request.resource.data) || (request.resource.data.daily is map && request.resource.data.daily.keys().hasOnly(['day', 'done', 'claimed'])))
+        && (!('owned' in request.resource.data) || (request.resource.data.owned is list && request.resource.data.owned.size() <= 100))
+        && (!('frame' in request.resource.data) || (request.resource.data.frame is string && request.resource.data.frame.size() <= 20))
+        && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 20))
+        && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 40))
+        && (!('week' in request.resource.data) || (request.resource.data.week is map && request.resource.data.week.keys().hasOnly(['k', 's', 'pk', 'ps'])))
+        && (!('weekClaim' in request.resource.data) || (request.resource.data.weekClaim is string && request.resource.data.weekClaim.size() <= 10))
+        && (!('bg' in request.resource.data) || (request.resource.data.bg is string && request.resource.data.bg.size() <= 20))
+        && (!('nameFx' in request.resource.data) || (request.resource.data.nameFx is string && request.resource.data.nameFx.size() <= 20))
+        && (!('streak' in request.resource.data) || (request.resource.data.streak is map && request.resource.data.streak.keys().hasOnly(['last', 'n', 'claimed'])))
+        && (!('chDone' in request.resource.data) || (request.resource.data.chDone is string && request.resource.data.chDone.size() <= 10))
+        && (!('chClaim' in request.resource.data) || (request.resource.data.chClaim is string && request.resource.data.chClaim.size() <= 10))
+        && (!('challenge' in request.resource.data) || (request.resource.data.challenge is map && request.resource.data.challenge.keys().hasOnly(['day', 'score', 'tile', 'pd', 'ps'])))
+        && (!('jokers' in request.resource.data) || (request.resource.data.jokers is map && request.resource.data.jokers.keys().hasOnly(['undo', 'erase', 'shuffle', 'upgrade']) && request.resource.data.jokers.get('undo', 0) is int && request.resource.data.jokers.get('undo', 0) >= 0 && request.resource.data.jokers.get('undo', 0) <= 99 && request.resource.data.jokers.get('erase', 0) is int && request.resource.data.jokers.get('erase', 0) >= 0 && request.resource.data.jokers.get('erase', 0) <= 99 && request.resource.data.jokers.get('shuffle', 0) is int && request.resource.data.jokers.get('shuffle', 0) >= 0 && request.resource.data.jokers.get('shuffle', 0) <= 99 && request.resource.data.jokers.get('upgrade', 0) is int && request.resource.data.jokers.get('upgrade', 0) >= 0 && request.resource.data.jokers.get('upgrade', 0) <= 99))
+        && (!('bestJk' in request.resource.data) || request.resource.data.bestJk is bool);
+      allow delete: if false;
+    }
+
+    // 응원 보내기: 보낸 사람과 받는 사람만 읽고, 보낸 사람이 하루에 한 사람에게 한 번만 만들 수 있어요 (문서 id 가 보낸이_받는이_날짜)
+    match /game2048_cheers/{id} {
+      allow read: if request.auth != null && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'to', 'day', 'msg', 'at'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string && request.resource.data.to != request.auth.uid
+        && request.resource.data.day is string && request.resource.data.day.size() <= 10
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 20
+        && id == request.auth.uid + '_' + request.resource.data.to + '_' + request.resource.data.day;
+      allow update, delete: if false;
     }
   }
 }

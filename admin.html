@@ -418,9 +418,11 @@
 
     // 카드 목록(상세 보기용)과 수정 중인 카드
     let cardsCache = [];
+    let rarityFilter = 'all';
     let editingCard = null;
     import { renderCard, RARITY, HIDDEN_DEX_BASE, formatDexNo } from './js/card.js';
     import { initTilt } from './js/tilt.js';
+    import { resetZoom } from './js/zoom-guard.js';
     import { isShapeshifter, wobbleInto } from './js/morph.js';
 
     // 관리자 권한 확인
@@ -473,26 +475,38 @@
     // ========== 카드 관리 ==========
     async function loadCards() {
       try {
-        const cards = await getAllCards();
-        cardsCache = cards;
-        const html = cards.length === 0
-          ? '<p style="color: var(--mute);">등록된 카드가 없습니다.</p>'
-          : `<p class="cards-hint">카드를 누르면 크게 보고 수정할 수 있어요 (총 ${cards.length}장)</p>
-             <div class="cards-grid">${cards
-              .map((card) => `
-                <div class="card-item-wrapper ${!card.active ? 'inactive' : ''}" data-card-id="${card.id}" role="button" tabindex="0" aria-label="${escapeHtml(card.title)} 상세 보기">
-                  ${renderCard({
-                    ...card,
-                    hue: 30,
-                  })}
-                  <div class="card-status">${card.active ? '활성' : '비활성'}</div>
-                </div>
-              `)
-              .join('')}</div>`;
-        document.getElementById('cardsList').innerHTML = html;
+        cardsCache = await getAllCards();
+        renderCardsList();
       } catch (error) {
         document.getElementById('cardsList').innerHTML = `<div class="message error">카드 로드 실패: ${error.message}</div>`;
       }
+    }
+
+    // 등급 필터 + 카드 목록 그리기
+    function renderCardsList() {
+      const cards = cardsCache;
+      if (cards.length === 0) {
+        document.getElementById('cardsList').innerHTML = '<p style="color: var(--mute);">등록된 카드가 없습니다.</p>';
+        return;
+      }
+      const counts = {};
+      cards.forEach((c) => { counts[c.rarity] = (counts[c.rarity] || 0) + 1; });
+      const chips = [['all', '전체', cards.length], ...Object.entries(RARITY).map(([k, v]) => [k, v.label, counts[k] || 0])]
+        .map(([k, label, n]) => `<button type="button" class="rarity-chip ${k === rarityFilter ? 'active' : ''}" data-rarity="${k}">${label}<span class="n">${n}</span></button>`)
+        .join('');
+      const shown = rarityFilter === 'all' ? cards : cards.filter((c) => c.rarity === rarityFilter);
+      document.getElementById('cardsList').innerHTML = `
+        <div class="rarity-filter">${chips}</div>
+        <p class="cards-hint">카드를 누르면 크게 보고 수정할 수 있어요 (${shown.length}장)</p>
+        ${shown.length === 0 ? '<p style="color: var(--mute);">이 등급의 카드가 없어요.</p>' : ''}
+        <div class="cards-grid">${shown
+          .map((card) => `
+            <div class="card-item-wrapper ${!card.active ? 'inactive' : ''}" data-card-id="${card.id}" role="button" tabindex="0" aria-label="${escapeHtml(card.title)} 상세 보기">
+              ${renderCard({ ...card, hue: 30 })}
+              <div class="card-status">${card.active ? '활성' : '비활성'}</div>
+            </div>
+          `)
+          .join('')}</div>`;
     }
 
     async function suggestNextDexNo() {
@@ -761,9 +775,16 @@
       document.getElementById('cardDetailModal').classList.remove('show');
       document.body.style.overflow = '';
       detailCardId = null;
+      resetZoom();
     }
 
     document.getElementById('cardsList').addEventListener('click', (e) => {
+      const chip = e.target.closest('.rarity-chip');
+      if (chip) {
+        rarityFilter = chip.dataset.rarity;
+        renderCardsList();
+        return;
+      }
       const item = e.target.closest('[data-card-id]');
       if (item) openCardDetail(item.dataset.cardId);
     });

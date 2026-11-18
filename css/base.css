@@ -145,6 +145,11 @@ button.danger {
   color: var(--white);
 }
 
+/* 더블탭 확대 방지 (핀치 줌은 그대로 가능) */
+html {
+  touch-action: manipulation;
+}
+
 /* 입력창 */
 input,
 textarea,

@@ -90,7 +90,7 @@ main {
   border: 2px solid var(--wood-dark);
   border-radius: 0;
   font-family: 'Galmuri';
-  font-size: 11px;
+  font-size: 16px; /* 16px 미만이면 아이폰이 입력칸을 누를 때 화면을 확대해요 */
   box-sizing: border-box;
   color: var(--text-dark);
   background: var(--white);
@@ -402,7 +402,7 @@ main {
   .form-group input,
   .form-group textarea,
   .form-group select {
-    font-size: 10px;
+    font-size: 16px;
     padding: 6px;
   }
 
@@ -742,3 +742,16 @@ main {
 }
 .crop-btn--ok { color: #fff; background: var(--grass-green, #6a9d3a); }
 .crop-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+
+/* 카드 등급 필터 */
+.rarity-filter {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--spacing-md);
+}
+.rarity-chip {
+  min-height: 44px; padding: 6px 12px; font-size: 12px;
+  font-family: 'Galmuri'; cursor: pointer;
+  background: var(--white); color: var(--text-dark);
+  border: 2px solid var(--wood-dark); border-radius: 0;
+}
+.rarity-chip.active { background: var(--wood-dark); color: var(--white); }
+.rarity-chip .n { opacity: .7; margin-left: 4px; }

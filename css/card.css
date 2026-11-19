@@ -653,7 +653,7 @@
 .card[data-rarity="error"] .card__in {
   background: #07040a;
   clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 82%, 96% 88%, 89% 90%, 91% 100%, 0 100%);
-  animation: errTear 3.4s steps(1, end) infinite;
+  animation: errTear 3.4s steps(1, end) infinite, errJitter 4.5s steps(1, end) infinite;
 }
 
 /* 사진 자리: 노이즈 그 자체. 사진이 있으면 노이즈 아래에 깔려 있다가 가끔 비쳐요 */
@@ -707,11 +707,19 @@
 
 /* 몇 초에 한 번 RGB 가 갈라지며 덜덜 떨려요 */
 @keyframes errShake {
-  0%, 84%, 90%, 100% { filter: none; transform: none; }
-  85% { filter: drop-shadow(-4px 0 #ff2d6f) drop-shadow(4px 0 #00e5ff); transform: translateX(-2px); }
-  86% { filter: drop-shadow(4px 0 #ff2d6f) drop-shadow(-4px 0 #00e5ff) invert(1); transform: translateX(3px) skewX(-2deg); }
-  87% { filter: drop-shadow(-2px 0 #ff2d6f) drop-shadow(2px 0 #00e5ff) hue-rotate(120deg); transform: translateX(-1px); }
-  88% { filter: none; transform: translateX(2px); }
+  0%, 84%, 90%, 100% { filter: none; }
+  85% { filter: drop-shadow(-4px 0 #ff2d6f) drop-shadow(4px 0 #00e5ff); }
+  86% { filter: drop-shadow(4px 0 #ff2d6f) drop-shadow(-4px 0 #00e5ff) invert(1); }
+  87% { filter: drop-shadow(-2px 0 #ff2d6f) drop-shadow(2px 0 #00e5ff) hue-rotate(120deg); }
+  88% { filter: none; }
+}
+/* 덜덜 떠는 건 안쪽 카드만: 바깥 .card 의 transform 은 기울이기(tilt)가 쓰고 있어서 건드리면 커서를 못 따라가요 */
+@keyframes errJitter {
+  0%, 84%, 90%, 100% { transform: none; }
+  85% { transform: translateX(-2px); }
+  86% { transform: translateX(3px) skewX(-2deg); }
+  87% { transform: translateX(-1px); }
+  88% { transform: translateX(2px); }
 }
 @keyframes errTear {
   0%   { clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 82%, 96% 88%, 89% 90%, 91% 100%, 0 100%); }

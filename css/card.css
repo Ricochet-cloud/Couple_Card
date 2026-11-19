@@ -221,7 +221,9 @@
   animation: spin 3s linear infinite, ultraGlow 3s linear infinite;
 }
  
-/* 카드 전체를 비스듬히 훑고 지나가는 무지개 빛 */
+/* 카드 전체를 비스듬히 훑고 지나가는 무지개 빛
+   빛줄기 무늬를 가로로 이어 붙여(repeat-x) 한 칸만큼 밀어서, 쉬는 구간 없이 끊김 없이 계속 이어져요.
+   테두리 회전·바깥 빛과 같은 3초 주기라서 세 가지가 어긋나지 않고 함께 돌아요. */
 .card[data-rarity="ultra"]::after {
   content: '';
   position: absolute;
@@ -229,17 +231,17 @@
   z-index: 3;
   pointer-events: none;
   background: linear-gradient(115deg,
-    transparent 30%, rgba(255, 90, 180, 0.28) 38%, rgba(255, 240, 120, 0.38) 45%,
-    rgba(90, 255, 190, 0.3) 52%, rgba(90, 160, 255, 0.28) 59%, transparent 67%) 0 0 / 300% 100%;
+    transparent 0%, rgba(255, 90, 180, 0.28) 14%, rgba(255, 240, 120, 0.38) 30%,
+    rgba(90, 255, 190, 0.3) 46%, rgba(90, 160, 255, 0.28) 62%, rgba(192, 90, 255, 0.22) 78%, transparent 100%) 0 0 / 200% 100% repeat-x;
   mix-blend-mode: color-dodge;
-  animation: holo 3.2s ease-in-out infinite;
+  animation: holo 3s linear infinite;
 }
- 
+
 @keyframes holo {
-  0%   { background-position: 100% 0; }
-  60%, 100% { background-position: 0 0; }
+  from { background-position: 200% 0; }
+  to   { background-position: 0 0; }
 }
- 
+
 @keyframes ultraGlow {
   0%, 100% { filter: drop-shadow(0 0 6px #ff6ec7); }
   33%      { filter: drop-shadow(0 0 6px #ffe14d); }

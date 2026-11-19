@@ -1,7 +1,7 @@
 // 도감 페이지 로직
 import { db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-import { RARITY } from './card.js';
+import { RARITY, isSecretRarity } from './card.js';
 import { loadActiveCards } from './cards-store.js';
 
 /**
@@ -70,13 +70,13 @@ export async function getCollectionData() {
  */
 export function getCollectionStats(cards) {
   // 히든 카드는 수집률에 넣지 않아요 (일반 카드만으로 100% 가능)
-  const normal = cards.filter((c) => c.rarity !== 'hidden');
+  const normal = cards.filter((c) => !isSecretRarity(c.rarity));
   const total = normal.length;
   const owned = normal.filter((c) => c.isOwned).length;
 
   const rarityStats = {};
   for (const [key, value] of Object.entries(RARITY)) {
-    if (key === 'hidden') continue;
+    if (isSecretRarity(key)) continue;
     rarityStats[key] = {
       label: value.label,
       total: normal.filter((c) => c.rarity === key).length,
@@ -85,9 +85,11 @@ export function getCollectionStats(cards) {
   }
 
   // 히든은 얻은 뒤에만 보여주고, 전체 장수는 비밀이라 total 을 null 로 둬요
-  const hiddenOwned = cards.filter((c) => c.rarity === 'hidden' && c.isOwned).length;
-  if (hiddenOwned > 0) {
-    rarityStats.hidden = { label: RARITY.hidden.label, total: null, owned: hiddenOwned };
+  for (const key of ['hidden', 'error']) {
+    const secretOwned = cards.filter((c) => c.rarity === key && c.isOwned).length;
+    if (secretOwned > 0) {
+      rarityStats[key] = { label: RARITY[key].label, total: null, owned: secretOwned };
+    }
   }
 
   return { total, owned, rarityStats };
@@ -98,7 +100,7 @@ export function getCollectionStats(cards) {
  */
 export function filterAndSortCards(cards, filters, sortBy) {
   // 아직 못 얻은 히든 카드는 도감에서 숨겨요
-  let result = cards.filter((c) => !(c.rarity === 'hidden' && !c.isOwned));
+  let result = cards.filter((c) => !(isSecretRarity(c.rarity) && !c.isOwned));
 
   // 등급 필터
   if (filters.rarity && filters.rarity !== 'all') {
@@ -135,7 +137,7 @@ export function filterAndSortCards(cards, filters, sortBy) {
  * 분류 목록 추출
  */
 export function getCategories(cards) {
-  const visible = cards.filter((c) => !(c.rarity === 'hidden' && !c.isOwned)); // 숨긴 히든 카드의 분류는 노출 금지
+  const visible = cards.filter((c) => !(isSecretRarity(c.rarity) && !c.isOwned)); // 숨긴 히든 카드의 분류는 노출 금지
   const categories = new Set(visible.map((c) => c.category).filter(Boolean));
   return Array.from(categories).sort();
 }

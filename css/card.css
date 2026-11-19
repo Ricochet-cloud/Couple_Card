@@ -634,6 +634,133 @@
   .card[data-rarity="hidden"] .card__photo::before { animation: none; }
 }
 
+/* ===== ERROR 등급: 깨진 카드 =====
+   데이터가 통째로 깨진 카드예요. 카드 전체가 컬러 픽셀 노이즈로 덮여 있고(세로 줄무늬 포함),
+   글자 자리만 어둡게 눌러서 읽을 수 있게 해요. 노이즈가 계속 지글거리다가 가끔 RGB 로 갈라지며 사진이 비쳐 보여요.
+   움직임은 전부 CSS 애니메이션이라 도감·관리자 목록에서는 아래 fx-lite 규칙이 알아서 멈춰요. */
+
+.card[data-rarity="error"] {
+  --f-dark: #000; --f-shade: #1a0a14; --f-mid: #7a2a4a; --f-base: #14070f; --f-light: #ff4d8d; --f-hi: #ffffff;
+  --gem: #39ff88;
+  --err-noise: url("data:image/png;base64,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");
+  --glow: 0 0 14px rgba(255, 45, 111, 0.45), 0 0 30px rgba(0, 229, 255, 0.25);
+  background: var(--err-noise) 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  animation: errShake 4.5s steps(1, end) infinite, errFrame 0.45s steps(1, end) infinite;
+}
+
+/* 안쪽 카드: 오른쪽 아래가 뜯겨 나가 있어요. 가끔 모양이 바뀌었다 돌아와요 */
+.card[data-rarity="error"] .card__in {
+  background: #07040a;
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 82%, 96% 88%, 89% 90%, 91% 100%, 0 100%);
+  animation: errTear 3.4s steps(1, end) infinite;
+}
+
+/* 사진 자리: 노이즈 그 자체. 사진이 있으면 노이즈 아래에 깔려 있다가 가끔 비쳐요 */
+.card[data-rarity="error"] .card__photo {
+  background: var(--err-noise) 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  animation: errNoise 0.4s steps(1, end) infinite;
+}
+.card[data-rarity="error"] .card__photo img { filter: contrast(1.6) saturate(2); }
+
+/* 사진 위 노이즈 덮개: 거의 불투명하게 사진을 가렸다가 가끔 걷혀요 */
+.card[data-rarity="error"] .card__photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--err-noise) 40% 60% / 100% 100%;
+  image-rendering: pixelated;
+  opacity: 0.92;
+  animation: errCover 2.6s steps(1, end) infinite, errNoise 0.33s steps(1, end) infinite;
+}
+
+/* 글자 자리: 노이즈를 어둡게 눌러서 글자가 읽히게 해요 */
+.card[data-rarity="error"] .card__body {
+  background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), var(--err-noise) 70% 20% / 100% 100%;
+  image-rendering: pixelated;
+  animation: errNoise 0.5s steps(1, end) infinite;
+}
+.card[data-rarity="error"] .card__title {
+  color: #fff;
+  text-shadow: -2px 0 #ff2d6f, 2px 0 #00e5ff;
+  animation: errText 1.9s steps(1, end) infinite;
+}
+.card[data-rarity="error"] .card__desc,
+.card[data-rarity="error"] .card__meta { color: #e4d6ea; text-shadow: 0 1px 0 #000; }
+.card[data-rarity="error"] .card__meta { border-top-color: rgba(255, 255, 255, 0.5); }
+.card[data-rarity="error"] .card__no { letter-spacing: 0.08em; }
+.card[data-rarity="error"] .card__badge {
+  letter-spacing: 0.14em;
+  color: #000;
+  background: #ff1744;
+  box-shadow: 0 0 6px rgba(255, 23, 68, 0.7);
+  animation: errBlink 1.1s steps(1, end) infinite;
+}
+
+.tilt[data-rarity="error"] .card__in::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 90, 170, 0.45), rgba(0, 229, 255, 0.2) 40%, transparent 56%);
+  mix-blend-mode: screen;
+}
+
+/* 몇 초에 한 번 RGB 가 갈라지며 덜덜 떨려요 */
+@keyframes errShake {
+  0%, 84%, 90%, 100% { filter: none; transform: none; }
+  85% { filter: drop-shadow(-4px 0 #ff2d6f) drop-shadow(4px 0 #00e5ff); transform: translateX(-2px); }
+  86% { filter: drop-shadow(4px 0 #ff2d6f) drop-shadow(-4px 0 #00e5ff) invert(1); transform: translateX(3px) skewX(-2deg); }
+  87% { filter: drop-shadow(-2px 0 #ff2d6f) drop-shadow(2px 0 #00e5ff) hue-rotate(120deg); transform: translateX(-1px); }
+  88% { filter: none; transform: translateX(2px); }
+}
+@keyframes errTear {
+  0%   { clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 82%, 96% 88%, 89% 90%, 91% 100%, 0 100%); }
+  30%  { clip-path: polygon(0 0, 100% 0, 100% 74%, 90% 78%, 94% 85%, 86% 88%, 88% 100%, 0 100%); }
+  34%  { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  36%  { clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 82%, 96% 88%, 89% 90%, 91% 100%, 0 100%); }
+  70%  { clip-path: polygon(0 0, 100% 0, 100% 84%, 95% 85%, 97% 91%, 92% 93%, 94% 100%, 0 100%); }
+}
+/* 노이즈가 지글거려요: 같은 그림을 여러 위치로 툭툭 옮겨요 */
+@keyframes errNoise {
+  0%   { background-position: 0 0; }
+  20%  { background-position: 37% 71%; }
+  40%  { background-position: 83% 12%; }
+  60%  { background-position: 21% 48%; }
+  80%  { background-position: 64% 90%; }
+}
+@keyframes errFrame {
+  0%   { background-position: 0 0; }
+  25%  { background-position: 52% 33%; }
+  50%  { background-position: 9% 86%; }
+  75%  { background-position: 71% 54%; }
+}
+@keyframes errCover {
+  0%, 58%, 66%, 100% { opacity: 0.92; }
+  60% { opacity: 0.3; }
+  62% { opacity: 0.5; }
+  64% { opacity: 0.15; }
+}
+@keyframes errText {
+  0%, 100% { text-shadow: -2px 0 #ff2d6f, 2px 0 #00e5ff; transform: none; }
+  45% { text-shadow: 3px 0 #ff2d6f, -3px 0 #00e5ff; transform: translateX(1px) skewX(-6deg); }
+  50% { text-shadow: -3px 0 #ff2d6f, 3px 0 #00e5ff; transform: translateX(-2px); }
+  55% { text-shadow: -2px 0 #ff2d6f, 2px 0 #00e5ff; transform: none; }
+}
+@keyframes errBlink {
+  0%, 100% { background: #ff1744; color: #000; }
+  50%      { background: #000; color: #ff1744; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card[data-rarity="error"],
+  .card[data-rarity="error"] .card__in,
+  .card[data-rarity="error"] .card__photo,
+  .card[data-rarity="error"] .card__photo::before,
+  .card[data-rarity="error"] .card__body,
+  .card[data-rarity="error"] .card__title,
+  .card[data-rarity="error"] .card__badge { animation: none; }
+}
+
 /* ===== 카드 특수 디자인: 토미에 (카드 데이터 theme: 'tomie') =====
    흑백 만화 한 컷: 컬러 없이 흰 종이 + 검은 잉크만 써요. 사진도 흑백으로 바꿔요.
    모서리에서 검은 머리카락이 자라 나와 프레임을 감싸고, 눈물점 한 점이 찍혀 있어요.

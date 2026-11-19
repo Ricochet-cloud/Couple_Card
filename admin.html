@@ -54,6 +54,7 @@
                   <option value="superrare">초희귀</option>
                   <option value="rare">희귀</option>
                   <option value="hidden">히든 (도전과제 보상)</option>
+                  <option value="error">ERROR (깨진 카드, 뽑기 제외)</option>
                 </select>
               </div>
             </div>
@@ -420,7 +421,7 @@
     let cardsCache = [];
     let rarityFilter = 'all';
     let editingCard = null;
-    import { renderCard, RARITY, HIDDEN_DEX_BASE, formatDexNo } from './js/card.js';
+    import { renderCard, RARITY, HIDDEN_DEX_BASE, formatDexNo, isSecretRarity } from './js/card.js';
     import { initTilt } from './js/tilt.js';
     import { resetZoom } from './js/zoom-guard.js';
     import { isShapeshifter, wobbleInto } from './js/morph.js';
@@ -511,7 +512,7 @@
 
     async function suggestNextDexNo() {
       // 히든 등급이면 S번호(1 → S01)를, 아니면 일반 도감번호를 제안해요
-      const isHidden = document.getElementById('cardRarity').value === 'hidden';
+      const isHidden = isSecretRarity(document.getElementById('cardRarity').value);
       const nextNo = isHidden ? await getNextHiddenNo() : await getNextDexNo();
       document.getElementById('cardDexNoLabel').textContent = isHidden ? '히든번호 * (1 입력 → S01)' : '도감번호 *';
       document.getElementById('cardDexNo').placeholder = isHidden
@@ -574,7 +575,7 @@
 
         // 히든 카드는 입력한 번호(1~99)에 1000을 더해 저장해요 (1 → 1001 → S01)
         const dexNoValue = parseInt(dexNo);
-        const isHiddenCard = rarity === 'hidden';
+        const isHiddenCard = isSecretRarity(rarity);
         if (isHiddenCard && (dexNoValue < 1 || dexNoValue > 99)) {
           throw new Error('히든번호는 1~99 사이로 입력해주세요. (S01~S99)');
         }
@@ -650,7 +651,7 @@
 
     function enterEditMode(card) {
       editingCard = card;
-      const isHidden = card.rarity === 'hidden';
+      const isHidden = isSecretRarity(card.rarity);
 
       document.getElementById('cardRarity').value = card.rarity;
       setDexNoLabel(isHidden);

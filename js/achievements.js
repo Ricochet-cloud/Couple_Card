@@ -6,6 +6,7 @@ import {
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 import { getActiveCards } from './collection.js';
+import { isSecretRarity } from './card.js';
 import { ACHIEVEMENTS } from './achievements-list.js';
 
 const STATE_REF = doc(db, 'state', 'shared');
@@ -129,7 +130,7 @@ export function evaluateAchievement(ach, data) {
     current = data.manualDone[ach.id] ? 1 : 0;
     target = 1;
   } else if (ach.type === 'collectCount') {
-    current = data.cards.filter((c) => c.rarity !== 'hidden' && c.isOwned).length;
+    current = data.cards.filter((c) => !isSecretRarity(c.rarity) && c.isOwned).length;
     target = ach.target;
   }
 

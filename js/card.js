@@ -9,7 +9,13 @@ export const RARITY = {
   superrare: { label: '초희귀', weight: 30 },
   rare: { label: '희귀', weight: 40 },
   hidden: { label: '히든', weight: 0 }, // 뽑기·재조합 대상이 아니에요 (도전과제 보상 전용)
+  error: { label: 'ERROR', weight: 0 }, // 깨진 카드. 히든처럼 뽑기·재조합 대상이 아니에요
 };
+
+// 뽑기에 안 나오고 도감에서 숨겨지는 비밀 등급 (히든, 에러)
+export function isSecretRarity(rarity) {
+  return rarity === 'hidden' || rarity === 'error';
+}
 
 // HTML 이스케이프 (XSS 방지)
 function escapeHtml(str) {
@@ -73,7 +79,7 @@ export function renderCard(card) {
 
   return `<article class="card" data-rarity="${escapeHtml(rarity)}"${themeAttr} style="--h:${hue}">
     <div class="card__in">
-      <div class="card__photo">${photoHtml}<span class="card__no">${formatDexNo(dexNo)}</span></div>
+      <div class="card__photo">${photoHtml}<span class="card__no">${rarity === 'error' ? 'No.???' : formatDexNo(dexNo)}</span></div>
       <div class="card__body">
         <span class="card__badge">${escapeHtml(RARITY[rarity]?.label || '?')}</span>
         <h3 class="card__title">${escapeHtml(title)}</h3>

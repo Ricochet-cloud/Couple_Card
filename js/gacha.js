@@ -5,7 +5,7 @@ import {
   runTransaction,
   Timestamp,
 } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-import { RARITY } from './card.js';
+import { RARITY, isSecretRarity } from './card.js';
 import { loadActiveCards } from './cards-store.js';
 
 /**
@@ -110,7 +110,7 @@ export async function drawCard({ special = false } = {}) {
         throw new Error('뽑을 수 있는 카드가 없습니다.');
       }
       if (special) {
-        pool = pool.filter((c) => c.rarity !== 'hidden' && !owned[c.id]);
+        pool = pool.filter((c) => !isSecretRarity(c.rarity) && !owned[c.id]);
         if (pool.length === 0) {
           // 던지면 트랜잭션이 취소돼서 특별 뽑기권은 그대로예요
           throw new Error('이미 모든 카드를 모았어요! 특별 뽑기권은 그대로 남아 있어요.');

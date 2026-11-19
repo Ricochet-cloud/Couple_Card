@@ -149,11 +149,12 @@
         });
 
         // 히든 카드를 하나라도 얻었을 때만 등급 필터에 '히든'이 나타나요
-        if (allCards.some((c) => c.rarity === 'hidden' && c.isOwned)) {
-          const hiddenOption = document.createElement('option');
-          hiddenOption.value = 'hidden';
-          hiddenOption.textContent = RARITY.hidden.label;
-          document.getElementById('filterRarity').appendChild(hiddenOption);
+        for (const key of ['hidden', 'error']) {
+          if (!allCards.some((c) => c.rarity === key && c.isOwned)) continue;
+          const secretOption = document.createElement('option');
+          secretOption.value = key;
+          secretOption.textContent = RARITY[key].label;
+          document.getElementById('filterRarity').appendChild(secretOption);
         }
 
         // 통계 업데이트

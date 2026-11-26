@@ -281,3 +281,45 @@ textarea {
     font-size: 10px;
   }
 }
+
+/* 귀여운 로딩 표시: 통통 튀는 하트와 카드 세 개 + 문구 (이미지 없이 CSS만) */
+.cute-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 8px;
+  color: var(--text-muted, #8b7355);
+  font-size: 13px;
+  text-align: center;
+}
+.cute-loading__dots {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 26px;
+}
+.cute-loading__dots i {
+  width: 14px;
+  height: 18px;
+  border: 2px solid var(--wood-dark, #8b5a3c);
+  border-radius: 3px;
+  background: #fff7e0;
+  box-shadow: 0 2px 0 var(--wood-light, #d4a574);
+  animation: cuteHop 0.9s ease-in-out infinite;
+}
+.cute-loading__dots i:nth-child(2) {
+  background: #ffc2d1;
+  animation-delay: 0.15s;
+}
+.cute-loading__dots i:nth-child(3) {
+  background: #cfe8ff;
+  animation-delay: 0.3s;
+}
+@keyframes cuteHop {
+  0%, 60%, 100% { transform: translateY(0) rotate(0); }
+  30% { transform: translateY(-9px) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cute-loading__dots i { animation: none; }
+}

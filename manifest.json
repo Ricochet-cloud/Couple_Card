@@ -2,7 +2,7 @@
   "name": "Couple-Card",
   "short_name": "Couple-Card",
   "description": "Our own Couple Card Collection",
-  "start_url": "./login.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f8f3e8",
